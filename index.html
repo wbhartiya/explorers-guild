@@ -6,6 +6,11 @@
 <title>Summer Explorer's Guild</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Public+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<!-- Optional: enables cross-device sync (leaderboard/parent dashboard seeing all
+     players regardless of which device they played on). Harmless if Firebase
+     isn't configured below — the app just falls back to local-only storage. -->
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
 <style>
   :root{
     --bg-deep:#0D1128;
@@ -1278,8 +1283,11 @@ const MAX_DIFFICULTY_DAY = 15; // difficulty ramps up until day 15, then holds s
 function dayDifficultyFactor(p){
   return Math.min(MAX_DIFFICULTY_DAY, Math.max(0, (p.totalDaysPlayed||1) - 1));
 }
-function scaledBossMaxHP(p){ return BOSS_MAX_HP + Math.round(dayDifficultyFactor(p) * 6); }
-function scaledWrongDamage(p){ return Math.round(WRONG_DAMAGE + dayDifficultyFactor(p) * 1.1); }
+// Kept intentionally gentle now — the actual pacing (6-10 hits to defeat a
+// boss, 10-12 wrong answers before HP hits 0) is controlled directly in
+// startBattle() via a per-battle random hit target, not by these alone.
+function scaledBossMaxHP(p){ return BOSS_MAX_HP + Math.round(dayDifficultyFactor(p) * 2); }
+function scaledWrongDamage(p){ return Math.round(WRONG_DAMAGE + dayDifficultyFactor(p) * 0.3); }
 
 /* ---------- Persistent daily HP ---------- */
 // HP now carries across every battle within the same day (not reset per
@@ -1388,11 +1396,61 @@ function checkDailyXPRewards(p){
    and opened directly (e.g., double-clicked, or put on each kid's device) —
    in that case, data is saved per-device/per-browser.
    ========================================================================= */
+/* =========================================================================
+   OPTIONAL CROSS-DEVICE SYNC (Firebase Realtime Database)
+   Fill in FIREBASE_CONFIG below (see the setup guide) to make player
+   profiles and the player list shared across every device — so the
+   leaderboard and Parent Dashboard see everyone, not just whoever played on
+   THIS device. Leave it as empty strings to keep everything local-only
+   (the app works fine either way).
+   Sound/music preferences are intentionally kept local-only either way —
+   that's a per-device preference, not player progress.
+   ========================================================================= */
+const firebaseConfig = {
+     apiKey: "AIza...",
+     authDomain: "explorers-guild-xxxxx.firebaseapp.com",
+     databaseURL: "https://explorers-guild-xxxxx-default-rtdb.firebaseio.com",
+     projectId: "explorers-guild-xxxxx",
+     storageBucket: "explorers-guild-xxxxx.appspot.com",
+     messagingSenderId: "123456789",
+     appId: "1:123456789:web:abc123"
+   };
+
+let firebaseDb = null;
+let firebaseReady = false;
+let firebaseInitError = null;
+function isFirebaseConfigured(){
+  return !!(FIREBASE_CONFIG.apiKey && FIREBASE_CONFIG.databaseURL);
+}
+function initFirebase(){
+  if(!isFirebaseConfigured()) return false;
+  if(typeof firebase === 'undefined'){ firebaseInitError = 'Firebase SDK did not load (check your internet connection).'; return false; }
+  try{
+    if(!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+    firebaseDb = firebase.database();
+    firebaseReady = true;
+    return true;
+  }catch(e){ firebaseInitError = e.message; return false; }
+}
+initFirebase();
+
+function firebaseHandlesKey(key){
+  return firebaseReady && (key==='playerIds' || key.indexOf('profile:')===0);
+}
+
 const Store = (function(){
   const hasClaudeStorage = (typeof window !== 'undefined' && window.storage && typeof window.storage.get === 'function');
   return {
-    mode: hasClaudeStorage ? 'claude-artifact' : 'local-browser',
+    mode: firebaseReady ? 'firebase-shared' : (hasClaudeStorage ? 'claude-artifact' : 'local-browser'),
     async get(key){
+      if(firebaseHandlesKey(key)){
+        try{
+          const snap = await firebaseDb.ref(key).once('value');
+          const val = snap.val();
+          if(val===null || val===undefined) return null;
+          return typeof val === 'string' ? val : JSON.stringify(val);
+        }catch(e){ /* fall through to local as a safety net */ }
+      }
       if(hasClaudeStorage){
         try{
           const res = await window.storage.get(key, false);
@@ -1403,6 +1461,9 @@ const Store = (function(){
       }
     },
     async set(key, value){
+      if(firebaseHandlesKey(key)){
+        try{ await firebaseDb.ref(key).set(value); return true; }catch(e){ /* fall through */ }
+      }
       if(hasClaudeStorage){
         try{ await window.storage.set(key, value, false); return true; }catch(e){ return false; }
       } else {
@@ -1410,6 +1471,9 @@ const Store = (function(){
       }
     },
     async delete(key){
+      if(firebaseHandlesKey(key)){
+        try{ await firebaseDb.ref(key).remove(); return true; }catch(e){ /* fall through */ }
+      }
       if(hasClaudeStorage){
         try{ await window.storage.delete(key, false); return true; }catch(e){ return false; }
       } else {
@@ -2490,7 +2554,17 @@ function startBattle(subjectKey){
   if(weighted!==null) startLevel = weighted;
 
   const bossMaxHp = scaledBossMaxHP(p);
-  const wrongDmg = scaledWrongDamage(p);
+  // Pace battles around explicit hit-count targets rather than letting combo
+  // streaks / tier multipliers swing the count unpredictably:
+  //  - defeating a boss should take about 6-10 correct hits
+  //  - going from full HP to 0 should take about 10-12 wrong answers
+  // A modest per-question difficulty multiplier (applied at hit-time, based
+  // on that question's tier) still makes harder questions hit harder, but
+  // only by roughly ±15%, so the overall hit counts stay close to target.
+  const targetHitsToWin = randInt(6, 10);
+  const targetHitsToLose = randInt(10, 12);
+  const correctDamageBase = bossMaxHp / targetHitsToWin;
+  const wrongDamageBase = PLAYER_MAX_HP / targetHitsToLose;
 
   state.battle = {
     subject: subjectKey,
@@ -2500,7 +2574,8 @@ function startBattle(subjectKey){
     correctStreak:0, wrongStreak:0,
     correctCount:0, answeredCount:0,
     xpEarned:0,
-    playerHP: startingHP, bossHP: bossMaxHp, bossMaxHp, wrongDmg,
+    playerHP: startingHP, bossHP: bossMaxHp, bossMaxHp,
+    correctDamageBase, wrongDamageBase, targetHitsToWin, targetHitsToLose,
     shrineTriggered:false, showShrine:false, matching:null,
     currentQ:null, awaitingNext:false, chosenIdx:null,
     timeLeft: SESSION_MINUTES*60,
@@ -2901,9 +2976,13 @@ function attachBattleEvents(){
       Sound.unlock();
       let comboBonus = 0;
       updateMomentum(p, s.subject, correct);
-      // Damage now scales with how hard the question was (its difficulty tier),
-      // not a flat amount every time — harder questions hit harder both ways.
-      const difficultyMult = 1 + s.levelIdx * 0.25;
+      // Damage is calibrated per-battle (see startBattle) so a boss reliably
+      // takes about 6-10 correct hits, and the hero reliably takes about
+      // 10-12 wrong hits to reach 0 HP. A modest tier-based multiplier still
+      // makes harder questions hit harder, without swinging those counts
+      // far outside that range. Combo streaks boost XP, not damage, to keep
+      // the hit counts predictable.
+      const tierMult = 0.85 + s.levelIdx * 0.1;
       if(correct){
         s.correctCount += 1; s.correctStreak += 1; s.wrongStreak = 0;
         p.correctBySubject[s.subject] += 1;
@@ -2911,7 +2990,7 @@ function attachBattleEvents(){
         const xpGain = 10 + s.levelIdx*5;
         comboBonus = s.correctStreak>=3 ? 5 * (s.correctStreak-2) : 0;
         s.xpEarned += xpGain + comboBonus;
-        const dmg = Math.round((CORRECT_DAMAGE + Math.min(15, comboBonus)) * difficultyMult);
+        const dmg = Math.max(1, Math.round(s.correctDamageBase * tierMult));
         s.bossHP = Math.max(0, s.bossHP - dmg);
         Sound.correct();
         Sound.hitVillain();
@@ -2919,7 +2998,7 @@ function attachBattleEvents(){
         if(s.correctStreak>0 && s.correctStreak%3===0){ fireConfetti(14); Sound.levelUp(); }
       } else {
         s.correctStreak = 0; s.wrongStreak += 1;
-        const dmgTaken = Math.round(s.wrongDmg * difficultyMult);
+        const dmgTaken = Math.max(1, Math.round(s.wrongDamageBase * tierMult));
         s.playerHP = Math.max(0, s.playerHP - dmgTaken);
         Sound.incorrect();
         Sound.hitPlayer();
@@ -2969,7 +3048,7 @@ function attachBattleEvents(){
         return;
       }
       // Mid-battle Wisdom Shrine opportunity (once per battle, when HP drops to half or below)
-      const offerShrine = !s.shrineTriggered && s.playerHP <= PLAYER_MAX_HP/2;
+      const offerShrine = !s.shrineTriggered && s.playerHP < 30;
       const nextLabel = offerShrine ? 'Rest at a Wisdom Shrine 🏕️' : 'Next Question →';
       document.getElementById('nextWrap').innerHTML = `<button class="btn" id="nextBtn">${nextLabel}</button>`;
       document.getElementById('nextBtn').addEventListener('click', ()=>{
@@ -3089,6 +3168,18 @@ function attachBattleResultEvents(){
    ========================================================================= */
 
 
+/* The Final Boss escalates over the whole summer: early on it's a normal
+   tough fight (~8 hits), but by ~day 60 of play it demands 50+ correct
+   hits — a genuine end-of-summer showdown. Boss HP is a fixed round number
+   (1000) for a satisfying "epic" display; how much each hit actually chips
+   off is derived from the target hit count for wherever the player is in
+   the summer, so the bar visibly crawls during the big late-summer fights. */
+const FINAL_BOSS_RAMP_DAYS = 60;
+function finalBossTargetHits(p){
+  const progress = Math.min(1, Math.max(0, ((p.totalDaysPlayed||1)-1) / (FINAL_BOSS_RAMP_DAYS-1)));
+  return Math.round(8 + progress*47); // day 1 → ~8 hits, day 60+ → ~55 hits
+}
+
 function startFinalBoss(){
   const p = getActiveProfile();
   if(currentFrontierIndex(p) < 5){ return; } // safety check — must clear all 5 realms first
@@ -3099,30 +3190,45 @@ function startFinalBoss(){
     return;
   }
   if(SETTINGS.musicOn){ Sound.unlock(); Sound.startAmbient(); }
-  const track = getActiveTrack();
-  const questions = SUBJECTS.map(s=>{
-    const levels = track.subjects[s.key].levels;
-    const toughest = levels[levels.length-1];
-    const avoidIds = getTodayAskedSet(p);
-    let candidates = toughest.filter(q=>!avoidIds.has(q._id));
-    if(candidates.length===0) candidates = toughest; // pool exhausted for today — allow a repeat rather than blocking play
-    const q = candidates[Math.floor(Math.random()*candidates.length)];
-    recordAskedToday(p, q._id);
-    return { subjectKey:s.key, subjectName:s.name, subjectIcon:s.icon, q };
-  });
-  const bossMaxHp = scaledBossMaxHP(p);
-  const correctDmg = bossMaxHp/4; // preserves "4 of 5 correct wins" regardless of day scaling
-  const wrongDmg = scaledWrongDamage(p);
+
+  const targetHits = finalBossTargetHits(p);
+  const bossMaxHp = 1000;
+  const correctDamageBase = bossMaxHp / targetHits;
+  const targetHitsToLose = randInt(10, 12); // same hero-survivability pacing as regular battles
+  const wrongDamageBase = PLAYER_MAX_HP / targetHitsToLose;
+  // Generous time budget that scales with how long the fight will realistically take
+  const timeLimit = Math.min(45*60, Math.max(8*60, Math.round(targetHits * 35)));
+
   state.finalBoss = {
-    questions: shuffle(questions),
-    idx:0, correctCount:0,
-    playerHP: startingHP, bossHP: bossMaxHp, bossMaxHp, correctDmg, wrongDmg,
-    timeLeft: 8*60, timerId:null,
-    awaitingNext:false, chosenIdx:null, result:null
+    bossHP: bossMaxHp, bossMaxHp, targetHits, correctDamageBase, targetHitsToLose, wrongDamageBase,
+    playerHP: startingHP,
+    correctCount: 0, answeredCount: 0,
+    usedQuestions: new Set(),
+    currentQ: null, currentSubject: null,
+    timeLeft: timeLimit, timerId: null,
+    awaitingNext: false, chosenIdx: null, result: null
   };
+  nextFinalBossQuestion();
   state.screen = 'finalboss';
   render();
   startFinalBossTimer();
+}
+
+function nextFinalBossQuestion(){
+  const bs = state.finalBoss;
+  const track = getActiveTrack();
+  const p = getActiveProfile();
+  const subj = SUBJECTS[Math.floor(Math.random()*SUBJECTS.length)];
+  const levels = track.subjects[subj.key].levels;
+  const toughestIdx = levels.length - 1;
+  const avoidIds = getTodayAskedSet(p);
+  const picked = pickNextUniqueQuestion(levels, toughestIdx, bs.usedQuestions, avoidIds);
+  bs.currentQ = picked.q;
+  bs.currentSubject = subj;
+  bs.usedQuestions.add(picked.q);
+  recordAskedToday(p, picked.q._id);
+  bs.awaitingNext = false;
+  bs.chosenIdx = null;
 }
 
 function startFinalBossTimer(){
@@ -3147,13 +3253,14 @@ function updateFinalBossTimerDisplay(){
 function renderFinalBoss(){
   const bs = state.finalBoss;
   const p = getActiveProfile();
-  const item = bs.questions[bs.idx];
+  const subj = bs.currentSubject;
   const m = Math.floor(bs.timeLeft/60), sec = bs.timeLeft%60;
+  const pct = Math.round(100*bs.bossHP/bs.bossMaxHp);
   return `
   ${renderHeader()}
   <div class="card" style="background:linear-gradient(180deg,#1C1533,#2A1B4D);color:#F2EFFF;">
     <div class="session-header">
-      <span class="level-chip" style="background:linear-gradient(135deg,#FF4D6D,#B14AFF);color:#2A0A14;">🐉 FINAL BOSS · ${item.subjectIcon} ${item.subjectName}</span>
+      <span class="level-chip" style="background:linear-gradient(135deg,#FF4D6D,#B14AFF);color:#2A0A14;">🐉 FINAL BOSS · ${subj.icon} ${subj.name}</span>
       <div class="timer" id="bossTimerWrap"><span id="bossTimerDisplay">${m}:${sec.toString().padStart(2,'0')}</span></div>
     </div>
     <div class="battle-arena dark">
@@ -3169,42 +3276,55 @@ function renderFinalBoss(){
         ${hpBarHTML(bs.bossHP, bs.bossMaxHp, 'fbBossHPBar', 'boss')}
       </div>
     </div>
-    <p style="font-weight:700;color:#D8CFFF;margin-top:0;">Question ${bs.idx+1} of ${bs.questions.length} · 🗓️ Day ${p.totalDaysPlayed||1} challenge</p>
+    <p style="font-weight:700;color:#D8CFFF;margin-top:0;">⚔️ ${bs.correctCount} hits landed · Boss at ${pct}% HP · 🗓️ Day ${p.totalDaysPlayed||1} of summer</p>
     <div class="q-card">
-      <div class="q-text" style="color:#F2EFFF;">${item.q.q}</div>
+      <div class="q-text" style="color:#F2EFFF;">${bs.currentQ.q}</div>
       <div id="bossChoicesWrap">
-        ${item.q.c.map((choice,i)=>`<button class="choice" data-idx="${i}">${choice}</button>`).join('')}
+        ${bs.currentQ.c.map((choice,i)=>`<button class="choice" data-idx="${i}">${choice}</button>`).join('')}
       </div>
       <div id="bossExplainWrap"></div>
       <div id="bossNextWrap" style="margin-top:16px;"></div>
     </div>
+    <div style="margin-top:10px;"><span class="back-link" id="fbRetreatBtn" style="color:#D8CFFF;">Retreat from battle</span></div>
   </div>`;
 }
 
 function attachFinalBossEvents(){
   updateFinalBossTimerDisplay();
   const bs = state.finalBoss;
+
+  const retreatBtn = document.getElementById('fbRetreatBtn');
+  if(retreatBtn) retreatBtn.addEventListener('click', ()=>{
+    const ok = window.confirm("Retreat from the Final Boss? Your hits so far still count for partial XP, but you won't defeat the boss today.");
+    if(!ok) return;
+    if(bs.timerId) clearInterval(bs.timerId);
+    bs.result = 'defeat';
+    endFinalBoss();
+  });
+
   app.querySelectorAll('#bossChoicesWrap .choice').forEach(btn=>{
     btn.addEventListener('click', ()=>{
       if(bs.awaitingNext) return;
       Sound.unlock();
       const idx = parseInt(btn.getAttribute('data-idx'));
       bs.awaitingNext = true; bs.chosenIdx = idx;
-      const item = bs.questions[bs.idx];
-      const q = item.q;
+      const q = bs.currentQ;
       const correct = idx === q.a;
+      bs.answeredCount += 1;
       const p = getActiveProfile();
       const log = todayLogEntry(p);
-      log.subjects[item.subjectKey].total += 1;
+      log.subjects[bs.currentSubject.key].total += 1;
 
       if(correct){
-        bs.correctCount += 1; log.subjects[item.subjectKey].correct += 1;
-        bs.bossHP = Math.max(0, bs.bossHP - bs.correctDmg);
+        bs.correctCount += 1; log.subjects[bs.currentSubject.key].correct += 1;
+        const dmg = Math.max(1, Math.round(bs.correctDamageBase));
+        bs.bossHP = Math.max(0, bs.bossHP - dmg);
         Sound.correct();
         Sound.hitVillain();
         animateAttack('fbPlayerIcon','fbBossIcon','attack-right');
       } else {
-        bs.playerHP = Math.max(0, bs.playerHP - bs.wrongDmg);
+        const dmgTaken = Math.max(1, Math.round(bs.wrongDamageBase));
+        bs.playerHP = Math.max(0, bs.playerHP - dmgTaken);
         Sound.incorrect();
         Sound.hitPlayer();
         animateAttack('fbBossIcon','fbPlayerIcon','attack-left');
@@ -3236,17 +3356,10 @@ function attachFinalBossEvents(){
         document.getElementById('bossNextBtn').addEventListener('click', ()=>{ if(bs.timerId) clearInterval(bs.timerId); bs.result='defeat'; endFinalBoss(); });
         return;
       }
-      const isLast = bs.idx >= bs.questions.length-1;
-      document.getElementById('bossNextWrap').innerHTML = `<button class="btn brass" id="bossNextBtn">${isLast?'See Results →':'Next Question →'}</button>`;
+      document.getElementById('bossNextWrap').innerHTML = `<button class="btn brass" id="bossNextBtn">Next Question →</button>`;
       document.getElementById('bossNextBtn').addEventListener('click', ()=>{
-        if(isLast){
-          if(bs.timerId) clearInterval(bs.timerId);
-          bs.result = bs.bossHP<=0 ? 'victory' : 'defeat';
-          endFinalBoss();
-        } else {
-          bs.idx += 1; bs.awaitingNext = false; bs.chosenIdx = null;
-          render();
-        }
+        nextFinalBossQuestion();
+        render();
       });
     });
   });
@@ -3261,7 +3374,9 @@ async function endFinalBoss(){
   const log = todayLogEntry(p);
   log.finalBossResult = won ? 'won' : 'lost';
   if(won) p.bossLastCompletedDate = today;
-  const xpEarned = won ? 100 : bs.correctCount * 15;
+  // XP scales with actual effort (hits landed), plus a completion bonus for winning —
+  // this matters a lot more now that a late-summer fight can be 50+ hits long.
+  const xpEarned = bs.correctCount * 6 + (won ? 100 : 0);
   p.xpTotal += xpEarned;
   log.xpEarned += xpEarned;
 
@@ -3289,8 +3404,9 @@ function renderFinalBossResult(){
   ${renderHeader()}
   <div class="card">
     <h2 class="display" style="margin-top:0;">${won? 'The Realm Overlord Falls! 👑' : (bs.result==='timeup' ? 'Time\'s Up! ⏳' : 'Retreat! 😵')}</h2>
-    <p>${won? 'Incredible work — you defeated the Final Boss and completed the whole realm today!' : 'Good effort! The Overlord is still standing — try again tomorrow.'}</p>
-    <div class="summary-stat"><span>Correct answers</span><strong>${bs.correctCount} / ${bs.questions.length}</strong></div>
+    <p>${won? `Incredible work — you landed ${bs.correctCount} hits and defeated the Final Boss!` : `Good effort! You landed ${bs.correctCount} hits, but the Overlord is still standing — try again tomorrow.`}</p>
+    <div class="summary-stat"><span>Hits landed</span><strong>${bs.correctCount} / ${bs.targetHits} needed today</strong></div>
+    <div class="summary-stat"><span>Questions answered</span><strong>${bs.answeredCount}</strong></div>
     <div class="summary-stat"><span>XP earned</span><strong>+${bs.xpEarned}</strong></div>
     <div class="summary-stat"><span>HP remaining</span><strong>You: ${Math.max(0,bs.playerHP)}/${PLAYER_MAX_HP} · Boss: ${Math.max(0,bs.bossHP)}/${bs.bossMaxHp}</strong></div>
     ${bs.dailyRewardsEarned && bs.dailyRewardsEarned.length ? bs.dailyRewardsEarned.map(r=>`
@@ -3314,6 +3430,7 @@ function attachFinalBossResultEvents(){
   if(bs.result==='victory'){ Sound.badge(); Sound.questComplete(); fireConfetti(40); }
   else { Sound.click(); }
 }
+
 
 /* =========================================================================
    SUMMER EARNINGS — a kid-facing ledger of "screen time" style rewards
@@ -3697,6 +3814,11 @@ function renderParentDashboard(){
     <span class="back-link" id="parentBackLink">← Back</span>
     <h2 class="display" style="margin-top:0;">👪 Parent Dashboard</h2>
     <p>A read-only overview of each explorer's progress — no login required, so use discretion about who sees this screen.</p>
+    ${(()=>{
+      if(Store.mode==='firebase-shared') return `<p style="margin:0;font-size:13px;font-weight:700;color:var(--teal);">☁️ Cloud Sync: Connected — data consolidates across every device.</p>`;
+      if(isFirebaseConfigured()) return `<p style="margin:0;font-size:13px;font-weight:700;color:var(--coral);">⚠️ Cloud Sync: Configured but not connected${firebaseInitError?' ('+firebaseInitError+')':''}. Data is local to this device only.</p>`;
+      return `<p style="margin:0;font-size:13px;font-weight:700;color:var(--text-dim);">💾 Cloud Sync: Not set up — each device's progress is separate. See the setup guide to consolidate across devices.</p>`;
+    })()}
   </div>
   ${state.playerIds.length===0 ? `<div class="card"><p style="color:var(--text-dim);text-align:center;">No explorers created yet.</p></div>` : cards}`;
 }
@@ -3741,6 +3863,7 @@ function renderLeaderboard(){
     <span class="back-link" id="leaderboardBackLink">← Back</span>
     <h2 class="display" style="margin-top:0;">🏆 Family Leaderboard</h2>
     <p>Ranked by total XP earned this summer — go for it!</p>
+    ${Store.mode!=='firebase-shared' ? `<p style="margin:0;font-size:12.5px;color:var(--coral);">⚠️ Not cloud-synced — this only shows players from this device. See Parent Dashboard for setup info.</p>` : ''}
   </div>
   <div class="card">${rowsHTML}</div>`;
 }
