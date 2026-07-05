@@ -891,7 +891,22 @@ const trackC = {
   }
 };
 
-const TRACKS = {A:trackA, B:trackB, C:trackC};
+const GRADE_TRACKS = {3: trackA, 4: trackB, 6: trackC};
+const GRADE_OPTIONS = [
+  {grade:3, label:'Rising 3rd Grade'},
+  {grade:4, label:'Rising 4th Grade'},
+  {grade:6, label:'Rising 6th Grade'}
+];
+// TRACKS now resolves dynamically per-player based on their chosen grade,
+// rather than being a fixed 3-slot object — this lets any number of players
+// be created, each independently picking grade 3, 4, or 6.
+const TRACKS = new Proxy({}, {
+  get(target, playerId){
+    const p = (typeof state !== 'undefined' && state.profiles) ? state.profiles[playerId] : null;
+    const grade = (p && p.grade) ? p.grade : 3;
+    return GRADE_TRACKS[grade] || GRADE_TRACKS[3];
+  }
+});
 
 /* =========================================================================
    PROCEDURAL MATH GENERATOR
@@ -1140,9 +1155,10 @@ expandMathContent(500);
 /* =========================================================================
    PERSISTENCE
    ========================================================================= */
-function defaultProfile(){
+function defaultProfile(grade){
   return {
     name:null, createdAt: new Date().toISOString(),
+    grade: grade || 3, // 3, 4, or 6 — determines which content bank (TRACKS proxy) applies
     avatarEmoji:null, avatarColor:null, bodyShape:null, weapon:null,
     xpTotal:0,
     levelBySubject:{math:1, science:1, history:1, reading:1, writing:0}, // start near middle
@@ -1160,7 +1176,8 @@ function defaultProfile(){
     reviewQueue:[], // spaced-repetition: [{id, subject, dueDate, missCount}]
     totalDaysPlayed:0, lastDayCounted:null, // drives day-over-day enemy scaling
     subjectMomentum:{math:0,science:0,history:0,reading:0,writing:0}, // recent performance, drives adaptive difficulty
-    hp:null, hpDate:null // persistent HP for the day, carries across battles until the date changes
+    hp:null, hpDate:null, // persistent HP for the day, carries across battles until the date changes
+    todayAskedIds:[], todayAskedDate:null // tracks which questions were shown today, so a daily reset doesn't repeat them
   };
 }
 
@@ -1210,6 +1227,23 @@ function registerDayPlayed(p){
     p.totalDaysPlayed = (p.totalDaysPlayed||0) + 1;
     p.lastDayCounted = today;
   }
+}
+
+/* Lets a player start today over: HP refills, today's boss completions and
+   daily-XP reward tiers reset so they can re-earn them — but total XP,
+   badges, and streak are untouched since that's real permanent progress.
+   Deliberately does NOT clear todayAskedIds/todayAskedDate, so the question
+   picker (see pickNextUniqueQuestion) keeps avoiding whatever was already
+   shown today, guaranteeing a fresh set of questions post-reset. */
+function resetToday(p){
+  const today = todayStr();
+  p.completedTodaySubjects = [];
+  if(p.bossLastCompletedDate === today) p.bossLastCompletedDate = null;
+  p.hp = PLAYER_MAX_HP; p.hpDate = today;
+  p.dailyLog[today] = {
+    subjects:{math:{correct:0,total:0},science:{correct:0,total:0},history:{correct:0,total:0},reading:{correct:0,total:0},writing:{correct:0,total:0}},
+    bossesDefeated:[], finalBossResult:null, xpEarned:0, rewardTiersClaimed:[]
+  };
 }
 const MAX_DIFFICULTY_DAY = 15; // difficulty ramps up until day 15, then holds steady
 function dayDifficultyFactor(p){
@@ -1379,18 +1413,57 @@ function deepMergeDefaults(saved, defaults){
   return result;
 }
 
-async function loadProfile(trackId){
-  const raw = await Store.get('profile:'+trackId);
+async function loadProfile(playerId){
+  const raw = await Store.get('profile:'+playerId);
   if(raw){
     try{
       const saved = JSON.parse(raw);
-      return deepMergeDefaults(saved, defaultProfile());
+      return deepMergeDefaults(saved, defaultProfile(saved.grade));
     }catch(e){ /* corrupted save — fall through to a fresh profile */ }
   }
   return defaultProfile();
 }
-async function saveProfile(trackId, profile){
-  await Store.set('profile:'+trackId, JSON.stringify(profile));
+async function saveProfile(playerId, profile){
+  await Store.set('profile:'+playerId, JSON.stringify(profile));
+}
+async function loadPlayerIds(){
+  const raw = await Store.get('playerIds');
+  if(raw){ try{ return JSON.parse(raw); }catch(e){} }
+  return null;
+}
+async function savePlayerIds(){
+  await Store.set('playerIds', JSON.stringify(state.playerIds));
+}
+
+/* One-time migration: earlier versions of this app had exactly three fixed
+   player slots ('A','B','C', one per grade). If someone's returning with
+   progress saved that way and hasn't been migrated to the new dynamic
+   player-list system yet, bring those three across as real players so
+   nobody loses their summer's progress. */
+async function migrateLegacyProfilesIfNeeded(){
+  const existingIds = await loadPlayerIds();
+  if(existingIds) return existingIds;
+  const legacyGrades = {A:3, B:4, C:6};
+  const ids = [];
+  for(const legacyId of ['A','B','C']){
+    const raw = await Store.get('profile:'+legacyId);
+    if(raw){
+      try{
+        const saved = JSON.parse(raw);
+        if(saved && saved.name){
+          saved.grade = legacyGrades[legacyId];
+          await Store.set('profile:'+legacyId, JSON.stringify(saved));
+          ids.push(legacyId);
+        }
+      }catch(e){}
+    }
+  }
+  await Store.set('playerIds', JSON.stringify(ids));
+  return ids;
+}
+
+function generatePlayerId(){
+  return 'p' + Date.now() + Math.floor(Math.random()*1000);
 }
 
 /* =========================================================================
@@ -1604,11 +1677,28 @@ function fireConfetti(count=26){
 }
 
 let state = {
-  screen:'loading', // loading | pick-track | dashboard | session | summary
-  activeTrackId: null,
-  profiles: {}, // trackId -> profile
+  screen:'loading', // loading | pick-track | pick-grade | dashboard | battle | ...
+  activePlayerId: null,
+  playerIds: [], // ordered list of player IDs (dynamic — any number of players)
+  profiles: {}, // playerId -> profile
   session: null // {subject, levelIdx, queueByLevel, timeLeft, timerId, correctCount, answeredCount, currentQ, awaitingNext, showStretch, xpEarned}
 };
+
+function getActiveProfile(){ return state.profiles[state.activePlayerId]; }
+function getActiveTrack(){ return TRACKS[state.activePlayerId]; } // Proxy resolves by the profile's own grade
+
+/* ---------- Avoid repeating today's questions (used by the daily reset) ---------- */
+function getTodayAskedSet(p){
+  const today = todayStr();
+  if(p.todayAskedDate !== today){ p.todayAskedIds = []; p.todayAskedDate = today; }
+  return new Set(p.todayAskedIds);
+}
+function recordAskedToday(p, id){
+  if(!id) return;
+  const today = todayStr();
+  if(p.todayAskedDate !== today){ p.todayAskedIds = []; p.todayAskedDate = today; }
+  if(!p.todayAskedIds.includes(id)) p.todayAskedIds.push(id);
+}
 
 function todayStr(){ return new Date().toISOString().slice(0,10); }
 function daysBetween(a,b){ return Math.round((new Date(b)-new Date(a))/86400000); }
@@ -1636,6 +1726,7 @@ const app = document.getElementById('app');
 function render(){
   if(state.screen==='loading'){ app.innerHTML = renderLoading(); return; }
   if(state.screen==='pick-track'){ app.innerHTML = renderPickTrack(); attachPickTrackEvents(); attachHeaderEvents(); return; }
+  if(state.screen==='pick-grade'){ app.innerHTML = renderPickGrade(); attachPickGradeEvents(); attachHeaderEvents(); return; }
   if(state.screen==='setup-name'){ app.innerHTML = renderSetupName(); attachSetupNameEvents(); attachHeaderEvents(); return; }
   if(state.screen==='dashboard'){ app.innerHTML = renderDashboard(); attachDashboardEvents(); attachHeaderEvents(); return; }
   if(state.screen==='battle'){ app.innerHTML = renderBattle(); attachBattleEvents(); attachHeaderEvents(); return; }
@@ -1692,9 +1783,9 @@ function attachHeaderEvents(){
     if(state.screen==='battle' || state.screen==='finalboss' || state.screen==='practice'){
       const ok = window.confirm('Leave now? Progress on the current activity will end.');
       if(!ok) return;
-      const p = state.profiles[state.activeTrackId];
-      if(state.screen==='battle' && state.battle){ setDailyHP(p, state.battle.playerHP); saveProfile(state.activeTrackId, p); }
-      if(state.screen==='finalboss' && state.finalBoss){ setDailyHP(p, state.finalBoss.playerHP); saveProfile(state.activeTrackId, p); }
+      const p = getActiveProfile();
+      if(state.screen==='battle' && state.battle){ setDailyHP(p, state.battle.playerHP); saveProfile(state.activePlayerId, p); }
+      if(state.screen==='finalboss' && state.finalBoss){ setDailyHP(p, state.finalBoss.playerHP); saveProfile(state.activePlayerId, p); }
       if(state.battle && state.battle.timerId) clearInterval(state.battle.timerId);
       if(state.finalBoss && state.finalBoss.timerId) clearInterval(state.finalBoss.timerId);
       if(state.practice && state.practice.timerId) clearInterval(state.practice.timerId);
@@ -1723,16 +1814,17 @@ function attachHeaderEvents(){
 
 function renderProfileTabs(){
   let html = `<div class="profile-tabs">`;
-  ['A','B','C'].forEach(tid=>{
-    const track = TRACKS[tid];
-    const p = state.profiles[tid];
-    const active = state.activeTrackId===tid ? 'active':'';
+  state.playerIds.forEach(pid=>{
+    const p = state.profiles[pid];
+    if(!p) return;
+    const track = TRACKS[pid];
+    const active = state.activePlayerId===pid ? 'active':'';
     const name = p && p.name ? p.name : track.label;
     const streak = p ? p.streak : 0;
     const avatar = p && p.avatarEmoji ? p.avatarEmoji : '🧭';
     const avatarColor = p && p.avatarColor ? p.avatarColor : 'var(--violet)';
     html += `
-    <div class="profile-tab ${active}" data-track="${tid}">
+    <div class="profile-tab ${active}" data-player="${pid}">
       <div style="display:flex;align-items:center;gap:10px;">
         <div style="width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;background:${avatarColor}33;border:2px solid ${avatarColor};flex-shrink:0;">${avatar}</div>
         <div>
@@ -1788,21 +1880,29 @@ function heroBannerSVG(){
 }
 
 function renderPickTrack(){
+  const playersHTML = state.playerIds.length===0
+    ? `<p style="color:var(--text-dim);text-align:center;margin:10px 0;">No explorers yet — create your first one below!</p>`
+    : state.playerIds.map(pid=>{
+        const p = state.profiles[pid];
+        if(!p) return '';
+        const grade = GRADE_TRACKS[p.grade] ? p.grade : 3;
+        const label = GRADE_OPTIONS.find(g=>g.grade===grade)?.label || 'Explorer';
+        const name = p.name ? p.name : '(setup incomplete)';
+        const avatar = p.avatarEmoji || '🧭';
+        return `<button class="btn ghost" style="justify-content:space-between;" data-select="${pid}">
+          <span>${avatar} <strong>${name}</strong> — ${label}</span><span>›</span>
+        </button>`;
+      }).join('');
+
   return `
   ${renderHeader()}
   ${heroBannerSVG()}
   <div class="card setup-card">
     <h2 class="display">Welcome, Guild Leader!</h2>
-    <p>Choose an explorer to begin, or set one up for the first time.</p>
+    <p>Choose an explorer to begin, or create a new one.</p>
     <div style="display:flex;flex-direction:column;gap:12px;margin-top:16px;">
-      ${['A','B','C'].map(tid=>{
-        const track = TRACKS[tid];
-        const p = state.profiles[tid];
-        const name = p && p.name ? p.name : '(not set up yet)';
-        return `<button class="btn ghost" style="justify-content:space-between;" data-select="${tid}">
-          <span><strong>${track.label}</strong> — ${name}</span><span>›</span>
-        </button>`;
-      }).join('')}
+      ${playersHTML}
+      <button class="btn brass" id="createPlayerBtn" style="justify-content:center;">+ Create New Player</button>
     </div>
   </div>
   <p style="text-align:center;margin-top:16px;display:flex;justify-content:center;gap:20px;"><span class="back-link" id="parentDashLink" style="margin-bottom:0;">👪 Parent Dashboard</span><span class="back-link" id="leaderboardLink" style="margin-bottom:0;">🏆 Leaderboard</span></p>`;
@@ -1811,17 +1911,53 @@ function renderPickTrack(){
 function attachPickTrackEvents(){
   app.querySelectorAll('[data-select]').forEach(btn=>{
     btn.addEventListener('click', async ()=>{
-      const tid = btn.getAttribute('data-select');
-      state.activeTrackId = tid;
-      const p = state.profiles[tid];
+      const pid = btn.getAttribute('data-select');
+      state.activePlayerId = pid;
+      const p = state.profiles[pid];
       if(!p.name){ state.screen='setup-name'; render(); }
       else { state.screen='dashboard'; render(); }
     });
+  });
+  const createBtn = document.getElementById('createPlayerBtn');
+  if(createBtn) createBtn.addEventListener('click', ()=>{
+    Sound.unlock(); Sound.click();
+    state.screen = 'pick-grade'; render();
   });
   const parentLink = document.getElementById('parentDashLink');
   if(parentLink) parentLink.addEventListener('click', ()=>{ state.screen='parent'; render(); });
   const leaderboardLink = document.getElementById('leaderboardLink');
   if(leaderboardLink) leaderboardLink.addEventListener('click', ()=>{ state.screen='leaderboard'; render(); });
+}
+
+/* ---------- New player creation: pick a grade, then design a character ---------- */
+function renderPickGrade(){
+  return `
+  ${renderHeader()}
+  <div class="card setup-card">
+    <span class="back-link" id="pickGradeBackLink">← Back</span>
+    <h2 class="display">New Explorer!</h2>
+    <p>Which grade are they going into this fall?</p>
+    <div style="display:flex;flex-direction:column;gap:12px;margin-top:16px;">
+      ${GRADE_OPTIONS.map(g=>`<button class="btn ghost" style="justify-content:space-between;" data-grade="${g.grade}">
+        <span><strong>${g.label}</strong></span><span>›</span>
+      </button>`).join('')}
+    </div>
+  </div>`;
+}
+function attachPickGradeEvents(){
+  document.getElementById('pickGradeBackLink').addEventListener('click', ()=>{ state.screen='pick-track'; render(); });
+  app.querySelectorAll('[data-grade]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      Sound.unlock(); Sound.click();
+      const grade = parseInt(btn.getAttribute('data-grade'));
+      const id = generatePlayerId();
+      state.profiles[id] = defaultProfile(grade);
+      state.playerIds.push(id);
+      state.activePlayerId = id;
+      state.screen = 'setup-name';
+      render();
+    });
+  });
 }
 
 const AVATAR_EMOJIS = ['🧑‍🚀','🦸','🧙','🥷','🧝','🦹','🧞','🐉','🦁','🦊','🐯','🦉','🐲','🌟','⚡','🎒'];
@@ -1841,7 +1977,7 @@ const WEAPONS = [
 ];
 
 function renderSetupName(){
-  const track = TRACKS[state.activeTrackId];
+  const track = getActiveTrack();
   if(!state.tempAvatar) state.tempAvatar = { emoji: AVATAR_EMOJIS[0], color: AVATAR_COLORS[0], bodyShape: BODY_SHAPES[1].id, weapon: WEAPONS[0].id };
   const ta = state.tempAvatar;
   const shape = BODY_SHAPES.find(b=>b.id===ta.bodyShape) || BODY_SHAPES[1];
@@ -1967,13 +2103,14 @@ function attachSetupNameEvents(){
   document.getElementById('saveNameBtn').addEventListener('click', async ()=>{
     const val = document.getElementById('nameInput').value.trim();
     if(!val) return;
-    state.profiles[state.activeTrackId].name = val;
-    state.profiles[state.activeTrackId].avatarEmoji = state.tempAvatar.emoji;
-    state.profiles[state.activeTrackId].avatarColor = state.tempAvatar.color;
-    state.profiles[state.activeTrackId].bodyShape = state.tempAvatar.bodyShape;
-    state.profiles[state.activeTrackId].weapon = state.tempAvatar.weapon;
+    getActiveProfile().name = val;
+    getActiveProfile().avatarEmoji = state.tempAvatar.emoji;
+    getActiveProfile().avatarColor = state.tempAvatar.color;
+    getActiveProfile().bodyShape = state.tempAvatar.bodyShape;
+    getActiveProfile().weapon = state.tempAvatar.weapon;
     state.tempAvatar = null;
-    await saveProfile(state.activeTrackId, state.profiles[state.activeTrackId]);
+    await saveProfile(state.activePlayerId, getActiveProfile());
+    await savePlayerIds();
     state.screen='dashboard'; render();
   });
 }
@@ -2119,8 +2256,8 @@ const BADGE_DEFS = [
 ];
 
 function renderDashboard(){
-  const track = TRACKS[state.activeTrackId];
-  const p = state.profiles[state.activeTrackId];
+  const track = getActiveTrack();
+  const p = getActiveProfile();
   const title = xpToTitle(p.xpTotal);
   const totalAnswered = Object.values(p.answeredBySubject).reduce((a,b)=>a+b,0);
   const totalCorrect = Object.values(p.correctBySubject).reduce((a,b)=>a+b,0);
@@ -2151,6 +2288,7 @@ function renderDashboard(){
   ${renderProfileTabs()}
   <div class="card">
     <span class="back-link" id="switchLink">↺ Switch explorer</span>
+    <span class="back-link" id="resetTodayBtn" style="margin-left:16px;">🔄 Reset Today</span>
     <h2 class="display" style="margin-top:0;">${p.avatarEmoji?p.avatarEmoji+' ':''}${p.name}'s Realm Map</h2>
     <p style="color:#5a5248;">${track.tagline} — currently ranked <strong>${title}</strong></p>
     ${renderTrailSVG(track, p)}
@@ -2217,6 +2355,25 @@ function renderDashboard(){
 
 function attachDashboardEvents(){
   document.getElementById('switchLink').addEventListener('click', ()=>{ state.screen='pick-track'; render(); });
+  app.querySelectorAll('[data-player]').forEach(tab=>{
+    tab.addEventListener('click', ()=>{
+      const pid = tab.getAttribute('data-player');
+      if(pid===state.activePlayerId) return;
+      Sound.unlock(); Sound.click();
+      state.activePlayerId = pid;
+      render();
+    });
+  });
+  const resetBtn = document.getElementById('resetTodayBtn');
+  if(resetBtn) resetBtn.addEventListener('click', async ()=>{
+    const ok = window.confirm("Reset today's progress? Your explorer's HP and today's boss battles will restart fresh (your total XP and badges stay). You'll get different questions than you saw before.");
+    if(!ok) return;
+    Sound.unlock(); Sound.click();
+    const p = getActiveProfile();
+    resetToday(p);
+    await saveProfile(state.activePlayerId, p);
+    render();
+  });
   app.querySelectorAll('[data-node]:not([disabled])').forEach(btn=>{
     btn.addEventListener('click', ()=>{
       const key = btn.getAttribute('data-node');
@@ -2256,8 +2413,8 @@ const PLAYER_MAX_HP = 100, BOSS_MAX_HP = 100;
 const CORRECT_DAMAGE = 20, WRONG_DAMAGE = 18;
 
 function startBattle(subjectKey){
-  const track = TRACKS[state.activeTrackId];
-  const p = state.profiles[state.activeTrackId];
+  const track = getActiveTrack();
+  const p = getActiveProfile();
   registerDayPlayed(p);
   const startingHP = getDailyHP(p);
   if(startingHP<=0){
@@ -2299,18 +2456,33 @@ function startBattle(subjectKey){
    current battle. Prefers the target difficulty tier, falls back to any tier
    with unused questions, and only allows a repeat once every question for
    that subject has already been asked this battle. */
-function pickNextUniqueQuestion(levels, targetLevelIdx, usedSet){
-  const inLevel = levels[targetLevelIdx].filter(q=>!usedSet.has(q));
+function pickNextUniqueQuestion(levels, targetLevelIdx, usedSet, avoidIds){
+  avoidIds = avoidIds || new Set();
+  // Preference 1: not used this battle AND not already asked today (covers the daily-reset case)
+  let inLevel = levels[targetLevelIdx].filter(q=>!usedSet.has(q) && !avoidIds.has(q._id));
   if(inLevel.length>0){
     return { q: inLevel[Math.floor(Math.random()*inLevel.length)], levelIdx: targetLevelIdx };
   }
-  const otherOptions = [];
+  let otherOptions = [];
+  levels.forEach((lvlQs, li)=>{
+    lvlQs.forEach(q=>{ if(!usedSet.has(q) && !avoidIds.has(q._id)) otherOptions.push({q, levelIdx:li}); });
+  });
+  if(otherOptions.length>0){
+    return otherOptions[Math.floor(Math.random()*otherOptions.length)];
+  }
+  // Preference 2: relax the today-avoidance (small subjects may not have enough content) — still avoid this battle's repeats
+  inLevel = levels[targetLevelIdx].filter(q=>!usedSet.has(q));
+  if(inLevel.length>0){
+    return { q: inLevel[Math.floor(Math.random()*inLevel.length)], levelIdx: targetLevelIdx };
+  }
+  otherOptions = [];
   levels.forEach((lvlQs, li)=>{
     lvlQs.forEach(q=>{ if(!usedSet.has(q)) otherOptions.push({q, levelIdx:li}); });
   });
   if(otherOptions.length>0){
     return otherOptions[Math.floor(Math.random()*otherOptions.length)];
   }
+  // Fully exhausted — start a fresh cycle for this battle
   usedSet.clear();
   const fresh = levels[targetLevelIdx];
   return { q: fresh[Math.floor(Math.random()*fresh.length)], levelIdx: targetLevelIdx };
@@ -2318,17 +2490,19 @@ function pickNextUniqueQuestion(levels, targetLevelIdx, usedSet){
 
 function nextBattleQuestion(){
   const s = state.battle;
-  const track = TRACKS[state.activeTrackId];
-  const p = state.profiles[state.activeTrackId];
+  const track = getActiveTrack();
+  const p = getActiveProfile();
   const levels = track.subjects[s.subject].levels;
   const weighted = pickWeightedLevel(track, s.subject, p);
   const targetLevel = weighted!==null ? weighted : s.levelIdx;
 
-  const picked = pickNextUniqueQuestion(levels, targetLevel, s.usedQuestions);
+  const avoidIds = getTodayAskedSet(p);
+  const picked = pickNextUniqueQuestion(levels, targetLevel, s.usedQuestions, avoidIds);
   s.currentQ = picked.q;
   s.levelIdx = picked.levelIdx;
   s.maxLevelReached = Math.max(s.maxLevelReached, picked.levelIdx);
   s.usedQuestions.add(picked.q);
+  recordAskedToday(p, picked.q._id);
   s.awaitingNext = false;
   s.chosenIdx = null;
 }
@@ -2495,8 +2669,8 @@ function bossMeta(subjectKey){
 
 function renderBattle(){
   const s = state.battle;
-  const track = TRACKS[state.activeTrackId];
-  const p = state.profiles[state.activeTrackId];
+  const track = getActiveTrack();
+  const p = getActiveProfile();
   const subjMeta = SUBJECTS.find(x=>x.key===s.subject);
   const boss = bossMeta(s.subject);
   const m = Math.floor(s.timeLeft/60), sec = s.timeLeft%60;
@@ -2651,8 +2825,8 @@ function attachBattleEvents(){
       const q = s.currentQ;
       const correct = idx === q.a;
       s.answeredCount += 1;
-      const track = TRACKS[state.activeTrackId];
-      const p = state.profiles[state.activeTrackId];
+      const track = getActiveTrack();
+      const p = getActiveProfile();
       p.answeredBySubject[s.subject] += 1;
       const log = todayLogEntry(p);
       log.subjects[s.subject].total += 1;
@@ -2748,8 +2922,8 @@ function attachBattleEvents(){
 
 async function endBattle(){
   const s = state.battle;
-  const track = TRACKS[state.activeTrackId];
-  const p = state.profiles[state.activeTrackId];
+  const track = getActiveTrack();
+  const p = getActiveProfile();
 
   setDailyHP(p, s.playerHP); // HP persists for the rest of the day, win or lose
 
@@ -2787,7 +2961,7 @@ async function endBattle(){
   dailyRewardsEarned = checkDailyXPRewards(p);
 
   pruneDailyLog(p);
-  await saveProfile(state.activeTrackId, p);
+  await saveProfile(state.activePlayerId, p);
 
   state.battle.newBadges = newBadges;
   state.battle.dailyRewardsEarned = dailyRewardsEarned;
@@ -2797,8 +2971,8 @@ async function endBattle(){
 
 function renderBattleResult(){
   const s = state.battle;
-  const track = TRACKS[state.activeTrackId];
-  const p = state.profiles[state.activeTrackId];
+  const track = getActiveTrack();
+  const p = getActiveProfile();
   const subjMeta = SUBJECTS.find(x=>x.key===s.subject);
   const boss = bossMeta(s.subject);
   const acc = s.answeredCount? Math.round(100*s.correctCount/s.answeredCount): 0;
@@ -2855,7 +3029,7 @@ function attachBattleResultEvents(){
 
 
 function startFinalBoss(){
-  const p = state.profiles[state.activeTrackId];
+  const p = getActiveProfile();
   if(currentFrontierIndex(p) < 5){ return; } // safety check — must clear all 5 realms first
   registerDayPlayed(p);
   const startingHP = getDailyHP(p);
@@ -2864,11 +3038,15 @@ function startFinalBoss(){
     return;
   }
   if(SETTINGS.musicOn){ Sound.unlock(); Sound.startAmbient(); }
-  const track = TRACKS[state.activeTrackId];
+  const track = getActiveTrack();
   const questions = SUBJECTS.map(s=>{
     const levels = track.subjects[s.key].levels;
     const toughest = levels[levels.length-1];
-    const q = toughest[Math.floor(Math.random()*toughest.length)];
+    const avoidIds = getTodayAskedSet(p);
+    let candidates = toughest.filter(q=>!avoidIds.has(q._id));
+    if(candidates.length===0) candidates = toughest; // pool exhausted for today — allow a repeat rather than blocking play
+    const q = candidates[Math.floor(Math.random()*candidates.length)];
+    recordAskedToday(p, q._id);
     return { subjectKey:s.key, subjectName:s.name, subjectIcon:s.icon, q };
   });
   const bossMaxHp = scaledBossMaxHP(p);
@@ -2907,7 +3085,7 @@ function updateFinalBossTimerDisplay(){
 
 function renderFinalBoss(){
   const bs = state.finalBoss;
-  const p = state.profiles[state.activeTrackId];
+  const p = getActiveProfile();
   const item = bs.questions[bs.idx];
   const m = Math.floor(bs.timeLeft/60), sec = bs.timeLeft%60;
   return `
@@ -2954,7 +3132,7 @@ function attachFinalBossEvents(){
       const item = bs.questions[bs.idx];
       const q = item.q;
       const correct = idx === q.a;
-      const p = state.profiles[state.activeTrackId];
+      const p = getActiveProfile();
       const log = todayLogEntry(p);
       log.subjects[item.subjectKey].total += 1;
 
@@ -3015,7 +3193,7 @@ function attachFinalBossEvents(){
 
 async function endFinalBoss(){
   const bs = state.finalBoss;
-  const p = state.profiles[state.activeTrackId];
+  const p = getActiveProfile();
   setDailyHP(p, bs.playerHP); // HP persists for the rest of the day
   const won = bs.result==='victory';
   const today = todayStr();
@@ -3034,7 +3212,7 @@ async function endFinalBoss(){
   }
   const dailyRewardsEarned = checkDailyXPRewards(p);
   pruneDailyLog(p);
-  await saveProfile(state.activeTrackId, p);
+  await saveProfile(state.activePlayerId, p);
 
   state.finalBoss.xpEarned = xpEarned;
   state.finalBoss.newBadges = newBadges;
@@ -3086,8 +3264,8 @@ function attachFinalBossResultEvents(){
    correctly and it's cleared; miss it again and it comes back tomorrow.
    ========================================================================= */
 function startReview(){
-  const track = TRACKS[state.activeTrackId];
-  const p = state.profiles[state.activeTrackId];
+  const track = getActiveTrack();
+  const p = getActiveProfile();
   const due = reviewsDueToday(p);
   const items = due.map(item=>{
     const found = findQuestionById(track, item.id);
@@ -3134,7 +3312,7 @@ function attachReviewEvents(){
       const item = rv.items[rv.idx];
       const q = item.q;
       const correct = idx === q.a;
-      const p = state.profiles[state.activeTrackId];
+      const p = getActiveProfile();
 
       app.querySelectorAll('#reviewChoicesWrap .choice').forEach((b,i)=>{
         b.disabled = true;
@@ -3160,7 +3338,7 @@ function attachReviewEvents(){
       document.getElementById('reviewNextBtn').addEventListener('click', async ()=>{
         if(isLast){
           p.xpTotal += rv.xpEarned;
-          await saveProfile(state.activeTrackId, p);
+          await saveProfile(state.activePlayerId, p);
           state.screen = 'review-result';
           render();
         } else {
@@ -3197,8 +3375,8 @@ function attachReviewResultEvents(){
    earnings. For a lower-pressure day, or extra reps on a tricky subject.
    ========================================================================= */
 function startPractice(subjectKey){
-  const track = TRACKS[state.activeTrackId];
-  const p = state.profiles[state.activeTrackId];
+  const track = getActiveTrack();
+  const p = getActiveProfile();
   const levels = track.subjects[subjectKey].levels;
   let startLevel = p.levelBySubject[subjectKey];
   startLevel = Math.max(0, Math.min(startLevel, levels.length-1));
@@ -3219,8 +3397,8 @@ function startPractice(subjectKey){
 }
 function nextPracticeQuestion(){
   const s = state.practice;
-  const track = TRACKS[state.activeTrackId];
-  const p = state.profiles[state.activeTrackId];
+  const track = getActiveTrack();
+  const p = getActiveProfile();
   const levels = track.subjects[s.subject].levels;
   const weighted = pickWeightedLevel(track, s.subject, p);
   const targetLevel = weighted!==null ? weighted : s.levelIdx;
@@ -3249,7 +3427,7 @@ function updatePracticeTimerDisplay(){
 }
 function renderPractice(){
   const s = state.practice;
-  const track = TRACKS[state.activeTrackId];
+  const track = getActiveTrack();
   const subjMeta = SUBJECTS.find(x=>x.key===s.subject);
   const q = s.currentQ;
   const m = Math.floor(s.timeLeft/60), sec = s.timeLeft%60;
@@ -3287,8 +3465,8 @@ function attachPracticeEvents(){
       const q = s.currentQ;
       const correct = idx === q.a;
       s.answeredCount += 1;
-      const track = TRACKS[state.activeTrackId];
-      const p = state.profiles[state.activeTrackId];
+      const track = getActiveTrack();
+      const p = getActiveProfile();
       p.answeredBySubject[s.subject] += 1;
       const log = todayLogEntry(p);
       log.subjects[s.subject].total += 1;
@@ -3330,10 +3508,10 @@ function attachPracticeEvents(){
 }
 async function endPractice(){
   const s = state.practice;
-  const p = state.profiles[state.activeTrackId];
+  const p = getActiveProfile();
   p.xpTotal += s.xpEarned;
   p.xpBySubject[s.subject] += s.xpEarned;
-  await saveProfile(state.activeTrackId, p);
+  await saveProfile(state.activePlayerId, p);
   state.screen = 'practice-result';
   render();
 }
@@ -3360,7 +3538,7 @@ function attachPracticeResultEvents(){
 }
 
 function renderEarnings(){
-  const p = state.profiles[state.activeTrackId];
+  const p = getActiveProfile();
   const total = p.earnings.ipad + p.earnings.tv + p.earnings.free;
   return `
   ${renderHeader()}
@@ -3387,11 +3565,11 @@ function attachEarningsEvents(){
   document.getElementById('earningsBackLink').addEventListener('click', ()=>{ state.screen='dashboard'; render(); });
   const redeemBtn = document.getElementById('redeemBtn');
   if(redeemBtn) redeemBtn.addEventListener('click', async ()=>{
-    const p = state.profiles[state.activeTrackId];
+    const p = getActiveProfile();
     const ok = window.confirm('Parent confirmation: mark all current earnings as redeemed and reset the counter to zero?');
     if(!ok) return;
     p.earnings = { ipad:0, tv:0, free:0 };
-    await saveProfile(state.activeTrackId, p);
+    await saveProfile(state.activePlayerId, p);
     render();
   });
 }
@@ -3403,10 +3581,11 @@ function attachEarningsEvents(){
    ========================================================================= */
 function renderParentDashboard(){
   const today = todayStr();
-  const cards = ['A','B','C'].map(tid=>{
-    const track = TRACKS[tid];
+  const cards = (state.playerIds.length===0 ? [] : state.playerIds).map(tid=>{
     const p = state.profiles[tid];
-    if(!p || !p.name){
+    if(!p) return '';
+    const track = TRACKS[tid];
+    if(!p.name){
       return `<div class="card"><h3 class="display" style="margin-top:0;">${track.label}</h3><p style="color:var(--text-dim);">Not set up yet.</p></div>`;
     }
     const todayLog = p.dailyLog[today];
@@ -3458,7 +3637,7 @@ function renderParentDashboard(){
     <h2 class="display" style="margin-top:0;">👪 Parent Dashboard</h2>
     <p>A read-only overview of each explorer's progress — no login required, so use discretion about who sees this screen.</p>
   </div>
-  ${cards}`;
+  ${state.playerIds.length===0 ? `<div class="card"><p style="color:var(--text-dim);text-align:center;">No explorers created yet.</p></div>` : cards}`;
 }
 function attachParentDashboardEvents(){
   document.getElementById('parentBackLink').addEventListener('click', ()=>{ state.screen='pick-track'; render(); });
@@ -3469,10 +3648,11 @@ function attachParentDashboardEvents(){
    by total XP (with badge count as a tiebreaker/secondary stat).
    ========================================================================= */
 function renderLeaderboard(){
-  const rows = ['A','B','C'].map(tid=>{
+  const rows = state.playerIds.map(tid=>{
     const p = state.profiles[tid];
+    if(!p) return null;
     const track = TRACKS[tid];
-    if(!p || !p.name) return null;
+    if(!p.name) return null;
     return { tid, name: p.name, avatar: p.avatarEmoji||'🧭', color: p.avatarColor||'#7C5CFF', xp: p.xpTotal, badges: p.badges.length, streak: p.streak, trackLabel: track.label };
   }).filter(Boolean).sort((a,b)=> b.xp - a.xp);
 
@@ -3512,8 +3692,11 @@ function attachLeaderboardEvents(){
    ========================================================================= */
 async function init(){
   addIdsToTrackQuestions(trackA); addIdsToTrackQuestions(trackB); addIdsToTrackQuestions(trackC);
-  const [pa, pb, pc, settings] = await Promise.all([loadProfile('A'), loadProfile('B'), loadProfile('C'), loadSettings()]);
-  state.profiles = {A:pa, B:pb, C:pc};
+  const [playerIds, settings] = await Promise.all([migrateLegacyProfilesIfNeeded(), loadSettings()]);
+  state.playerIds = playerIds;
+  const profiles = await Promise.all(playerIds.map(id=>loadProfile(id)));
+  state.profiles = {};
+  playerIds.forEach((id,i)=> state.profiles[id] = profiles[i]);
   SETTINGS = settings;
   state.screen = 'pick-track';
   render();
