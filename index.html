@@ -1177,6 +1177,7 @@ function defaultProfile(grade){
     totalDaysPlayed:0, lastDayCounted:null, // drives day-over-day enemy scaling
     subjectMomentum:{math:0,science:0,history:0,reading:0,writing:0}, // recent performance, drives adaptive difficulty
     hp:null, hpDate:null, // persistent HP for the day, carries across battles until the date changes
+    dayStartSnapshot:null, dayStartSnapshotDate:null, // captured fresh each day so "Reset Today" can fully undo the day's progress
     todayAskedIds:[], todayAskedDate:null // tracks which questions were shown today, so a daily reset doesn't repeat them
   };
 }
@@ -1227,23 +1228,51 @@ function registerDayPlayed(p){
     p.totalDaysPlayed = (p.totalDaysPlayed||0) + 1;
     p.lastDayCounted = today;
   }
+  // Capture a "start of day" snapshot the first time this player does
+  // anything today, before any of today's progress is applied. This is
+  // what "Reset Today" rolls back to, so it can undo EVERYTHING gained
+  // today (XP, badges, streak, stats) — not just HP/completions.
+  if(p.dayStartSnapshotDate !== today){
+    p.dayStartSnapshot = snapshotProfile(p);
+    p.dayStartSnapshotDate = today;
+  }
 }
 
-/* Lets a player start today over: HP refills, today's boss completions and
-   daily-XP reward tiers reset so they can re-earn them — but total XP,
-   badges, and streak are untouched since that's real permanent progress.
-   Deliberately does NOT clear todayAskedIds/todayAskedDate, so the question
-   picker (see pickNextUniqueQuestion) keeps avoiding whatever was already
-   shown today, guaranteeing a fresh set of questions post-reset. */
+// Fields deliberately left OUT of the snapshot/rollback: character identity
+// (name/avatar/etc. — editing your character shouldn't be undone by a daily
+// reset), and the today-asked-question tracker + HP (those are handled
+// separately by resetToday itself, with their own intended behavior).
+const SNAPSHOT_EXCLUDE = ['name','avatarEmoji','avatarColor','bodyShape','weapon','grade','createdAt',
+  'todayAskedIds','todayAskedDate','dayStartSnapshot','dayStartSnapshotDate','hp','hpDate'];
+function snapshotProfile(p){
+  const clone = JSON.parse(JSON.stringify(p));
+  SNAPSHOT_EXCLUDE.forEach(k=> delete clone[k]);
+  return clone;
+}
+
+/* Lets a player start today completely over: this fully reverts XP, badges,
+   streak, subject stats, earnings, and every other bit of progress made
+   today back to how things stood before they played — restoring the
+   start-of-day snapshot. Character identity (name/avatar/build/weapon) is
+   untouched. HP refills fresh. Deliberately does NOT clear
+   todayAskedIds/todayAskedDate, so the question picker keeps avoiding
+   whatever was already shown today, guaranteeing different questions. */
 function resetToday(p){
   const today = todayStr();
-  p.completedTodaySubjects = [];
-  if(p.bossLastCompletedDate === today) p.bossLastCompletedDate = null;
+  if(p.dayStartSnapshot && p.dayStartSnapshotDate === today){
+    const snap = p.dayStartSnapshot;
+    Object.keys(snap).forEach(k=>{ p[k] = snap[k]; });
+  } else {
+    // Fallback if no snapshot is available for some reason — still clear
+    // today's gating state so the day isn't stuck.
+    p.completedTodaySubjects = [];
+    if(p.bossLastCompletedDate === today) p.bossLastCompletedDate = null;
+    p.dailyLog[today] = {
+      subjects:{math:{correct:0,total:0},science:{correct:0,total:0},history:{correct:0,total:0},reading:{correct:0,total:0},writing:{correct:0,total:0}},
+      bossesDefeated:[], finalBossResult:null, xpEarned:0, rewardTiersClaimed:[]
+    };
+  }
   p.hp = PLAYER_MAX_HP; p.hpDate = today;
-  p.dailyLog[today] = {
-    subjects:{math:{correct:0,total:0},science:{correct:0,total:0},history:{correct:0,total:0},reading:{correct:0,total:0},writing:{correct:0,total:0}},
-    bossesDefeated:[], finalBossResult:null, xpEarned:0, rewardTiersClaimed:[]
-  };
 }
 const MAX_DIFFICULTY_DAY = 15; // difficulty ramps up until day 15, then holds steady
 function dayDifficultyFactor(p){
@@ -1996,18 +2025,20 @@ const WEAPONS = [
 
 function renderSetupName(){
   const track = getActiveTrack();
+  const editing = !!state.editingExistingPlayer;
   if(!state.tempAvatar) state.tempAvatar = { emoji: AVATAR_EMOJIS[0], color: AVATAR_COLORS[0], bodyShape: BODY_SHAPES[1].id, weapon: WEAPONS[0].id };
   const ta = state.tempAvatar;
   const shape = BODY_SHAPES.find(b=>b.id===ta.bodyShape) || BODY_SHAPES[1];
   const weapon = WEAPONS.find(w=>w.id===ta.weapon) || WEAPONS[0];
+  const existingName = editing ? (getActiveProfile().name || '') : '';
   return `
   ${renderHeader()}
   <div class="card setup-card">
     <span class="back-link" id="backLink">← Back</span>
-    <h2 class="display">Set up: ${track.label}</h2>
-    <p>${track.tagline}</p>
+    <h2 class="display">${editing ? 'Edit Your Character' : 'Set up: '+track.label}</h2>
+    <p>${editing ? 'Update your look and loadout any time — your progress is untouched.' : track.tagline}</p>
     <label for="nameInput" style="font-weight:700;font-size:14px;">Explorer's name</label>
-    <input id="nameInput" type="text" placeholder="Enter name..." maxlength="20">
+    <input id="nameInput" type="text" placeholder="Enter name..." maxlength="20" value="${existingName.replace(/"/g,'&quot;')}">
 
     <div style="margin-top:22px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
       <div style="position:relative;width:84px;height:84px;">
@@ -2072,12 +2103,18 @@ function renderSetupName(){
     </div>
 
     <div style="margin-top:22px;">
-      <button class="btn brass" id="saveNameBtn">Begin the Quest 🧭</button>
+      <button class="btn brass" id="saveNameBtn">${editing ? 'Save Changes ✅' : 'Begin the Quest 🧭'}</button>
     </div>
   </div>`;
 }
 function attachSetupNameEvents(){
-  document.getElementById('backLink').addEventListener('click', ()=>{ state.tempAvatar=null; state.screen='pick-track'; render(); });
+  const editing = !!state.editingExistingPlayer;
+  document.getElementById('backLink').addEventListener('click', ()=>{
+    state.tempAvatar=null;
+    state.editingExistingPlayer=false;
+    state.screen = editing ? 'dashboard' : 'pick-track';
+    render();
+  });
   app.querySelectorAll('.avatar-choice').forEach(btn=>{
     btn.addEventListener('click', ()=>{
       Sound.unlock(); Sound.click();
@@ -2127,6 +2164,7 @@ function attachSetupNameEvents(){
     getActiveProfile().bodyShape = state.tempAvatar.bodyShape;
     getActiveProfile().weapon = state.tempAvatar.weapon;
     state.tempAvatar = null;
+    state.editingExistingPlayer = false;
     await saveProfile(state.activePlayerId, getActiveProfile());
     await savePlayerIds();
     state.screen='dashboard'; render();
@@ -2285,30 +2323,16 @@ function renderDashboard(){
   const dailyHP = getDailyHP(p);
   const outOfHP = dailyHP<=0;
 
-  const rowFor = (key, icon, label)=>{
-    const defeated = key==='boss' ? isFinalBossDefeatedToday(p) : isSubjectDefeatedToday(p, key);
-    // Subjects can be tackled in any order the player likes; only the Final Boss
-    // requires all 5 realms cleared first.
-    const unlocked = key==='boss' ? (frontier>=5) : true;
-    let btnLabel, btnClass, disabled=false;
-    if(defeated){ btnLabel = '✅ Defeated today'; btnClass='ghost'; disabled=true; }
-    else if(!unlocked){ btnLabel = '🔒 Locked'; btnClass='ghost'; disabled=true; }
-    else if(outOfHP){ btnLabel = '💤 Out of HP'; btnClass='ghost'; disabled=true; }
-    else { btnLabel = key==='boss' ? '🐉 Face the Final Boss' : '⚔️ Battle!'; btnClass='brass'; }
-    return `<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;background:${key==='boss'?'linear-gradient(135deg,#2A1B4D,#1C1533)':'var(--panel-tint)'};border-radius:14px;padding:12px 16px;margin-bottom:10px;">
-      <span style="font-weight:700;${key==='boss'?'color:#F2EFFF;':''}">${icon} ${label}</span>
-      <button class="btn ${btnClass}" data-node="${key}" ${disabled?'disabled':''} style="min-width:170px;">${btnLabel}</button>
-    </div>`;
-  };
-
   return `
   ${renderHeader()}
   ${renderProfileTabs()}
   <div class="card">
     <span class="back-link" id="switchLink">↺ Switch explorer</span>
     <span class="back-link" id="resetTodayBtn" style="margin-left:16px;">🔄 Reset Today</span>
+    <span class="back-link" id="editCharacterBtn" style="margin-left:16px;">✏️ Edit Character</span>
     <h2 class="display" style="margin-top:0;">${p.avatarEmoji?p.avatarEmoji+' ':''}${p.name}'s Realm Map</h2>
     <p style="color:#5a5248;">${track.tagline} — currently ranked <strong>${title}</strong></p>
+    <p style="color:#5a5248;font-size:13px;margin-top:-6px;">Tap a realm on the map to battle its boss — in any order you like. Beat all 5, then take on the Final Boss!</p>
     ${renderTrailSVG(track, p)}
   </div>
 
@@ -2320,14 +2344,7 @@ function renderDashboard(){
     <div class="stat-pill"><div class="num">${p.badges.length}</div><div class="lbl">Badges Earned</div></div>
   </div>
   ${outOfHP ? `<div class="card" style="background:linear-gradient(135deg,#3a1a1a,#2a1010);color:#F5EDED;text-align:center;margin-bottom:14px;"><p style="margin:0;font-weight:700;">💤 Out of HP for today! Rest up and come back tomorrow — or head to the Review Realm or Practice Zone below, which don't use HP.</p></div>` : ''}
-
-  <div class="section-title">⚔️ Today's Battles</div>
-  <p style="color:#B7B4D6;font-size:13.5px;margin-top:-6px;">Defeat each realm's boss in order to reach the Final Boss. Beat 5 bosses today, then the big one!</p>
-  <div style="margin-top:12px;">
-    ${SUBJECTS.map(s=> rowFor(s.key, s.icon, s.name)).join('')}
-    ${rowFor('boss','🐉','FINAL BOSS')}
-  </div>
-  ${allDoneToday? `<div class="card" style="background:linear-gradient(135deg,#1C1533,#2A1B4D);color:#F2EFFF;text-align:center;margin-top:14px;"><p style="margin:0;font-weight:700;">🏆 All bosses defeated today! Come back tomorrow for a fresh challenge.</p></div>` : ''}
+  ${allDoneToday? `<div class="card" style="background:linear-gradient(135deg,#1C1533,#2A1B4D);color:#F2EFFF;text-align:center;margin-bottom:14px;"><p style="margin:0;font-weight:700;">🏆 All bosses defeated today! Come back tomorrow for a fresh challenge.</p></div>` : ''}
 
   ${(()=>{
     const dueCount = reviewsDueToday(p).length;
@@ -2390,7 +2407,7 @@ function attachDashboardEvents(){
   });
   const resetBtn = document.getElementById('resetTodayBtn');
   if(resetBtn) resetBtn.addEventListener('click', async ()=>{
-    const ok = window.confirm("Reset today's progress? Your explorer's HP and today's boss battles will restart fresh (your total XP and badges stay). You'll get different questions than you saw before.");
+    const ok = window.confirm("Reset today's progress? Any XP, badges, or other progress earned TODAY will be lost, and HP/boss battles restart fresh. Progress from previous days is safe. You'll get different questions than you saw before.");
     if(!ok) return;
     Sound.unlock(); Sound.click();
     const p = getActiveProfile();
@@ -2410,14 +2427,22 @@ function attachDashboardEvents(){
     state.screen = 'pick-track';
     render();
   });
-  app.querySelectorAll('[data-node]:not([disabled])').forEach(btn=>{
-    btn.addEventListener('click', ()=>{
-      const key = btn.getAttribute('data-node');
+  const editBtn = document.getElementById('editCharacterBtn');
+  if(editBtn) editBtn.addEventListener('click', ()=>{
+    Sound.unlock(); Sound.click();
+    const p = getActiveProfile();
+    state.tempAvatar = { emoji: p.avatarEmoji, color: p.avatarColor, bodyShape: p.bodyShape, weapon: p.weapon };
+    state.editingExistingPlayer = true;
+    state.screen = 'setup-name';
+    render();
+  });
+  // The map is the single source of navigation for battles now — every node
+  // (including the Final Boss) carries data-subject, routed correctly here.
+  app.querySelectorAll('[data-subject]').forEach(node=>{
+    node.addEventListener('click', ()=>{
+      const key = node.getAttribute('data-subject');
       if(key==='boss') startFinalBoss(); else startBattle(key);
     });
-  });
-  app.querySelectorAll('[data-subject]').forEach(node=>{
-    node.addEventListener('click', ()=> startBattle(node.getAttribute('data-subject')));
   });
   const earningsBtn = document.getElementById('earningsBtn');
   if(earningsBtn) earningsBtn.addEventListener('click', ()=>{ state.screen='earnings'; render(); });
