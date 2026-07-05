@@ -1379,6 +1379,13 @@ const Store = (function(){
       } else {
         try{ window.localStorage.setItem('segw:'+key, value); return true; }catch(e){ return false; }
       }
+    },
+    async delete(key){
+      if(hasClaudeStorage){
+        try{ await window.storage.delete(key, false); return true; }catch(e){ return false; }
+      } else {
+        try{ window.localStorage.removeItem('segw:'+key); return true; }catch(e){ return false; }
+      }
     }
   };
 })();
@@ -1464,6 +1471,17 @@ async function migrateLegacyProfilesIfNeeded(){
 
 function generatePlayerId(){
   return 'p' + Date.now() + Math.floor(Math.random()*1000);
+}
+
+/* Permanently erases one explorer's entire history (XP, badges, streaks,
+   earnings — everything), as opposed to resetToday() which only restarts
+   the current day. This is the "full reset" for a character. */
+async function deletePlayer(playerId){
+  delete state.profiles[playerId];
+  state.playerIds = state.playerIds.filter(id=>id!==playerId);
+  await Store.delete('profile:'+playerId);
+  await savePlayerIds();
+  if(state.activePlayerId===playerId) state.activePlayerId = null;
 }
 
 /* =========================================================================
@@ -2350,6 +2368,12 @@ function renderDashboard(){
       return `<div class="stamp ${earned?'':'locked'}"><div class="emoji">${b.emoji}</div>${b.label}</div>`;
     }).join('')}
   </div>
+
+  <div class="section-title" style="color:var(--coral);">⚠️ Danger Zone</div>
+  <div class="card" style="border:2px solid var(--coral);background:#FFF5F5;">
+    <p style="margin:0 0 10px;font-size:13.5px;color:var(--text-dim);">This permanently erases <strong>${p.name}'s</strong> entire history — all XP, badges, streaks, and unredeemed rewards. This cannot be undone.</p>
+    <button class="btn ghost" id="deletePlayerBtn" style="border-color:var(--coral);color:var(--coral);">🗑️ Delete This Player</button>
+  </div>
   `;
 }
 
@@ -2372,6 +2396,18 @@ function attachDashboardEvents(){
     const p = getActiveProfile();
     resetToday(p);
     await saveProfile(state.activePlayerId, p);
+    render();
+  });
+  const deleteBtn = document.getElementById('deletePlayerBtn');
+  if(deleteBtn) deleteBtn.addEventListener('click', async ()=>{
+    const p = getActiveProfile();
+    const ok1 = window.confirm(`Permanently delete ${p.name}? This erases ALL progress — XP, badges, streaks, everything. This cannot be undone.`);
+    if(!ok1) return;
+    const ok2 = window.confirm(`Are you absolutely sure? Type-of-confirm: this will delete ${p.name} forever with no way to recover their progress.`);
+    if(!ok2) return;
+    Sound.unlock(); Sound.click();
+    await deletePlayer(state.activePlayerId);
+    state.screen = 'pick-track';
     render();
   });
   app.querySelectorAll('[data-node]:not([disabled])').forEach(btn=>{
