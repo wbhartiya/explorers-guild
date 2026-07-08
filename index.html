@@ -188,6 +188,13 @@
 
   /* ---------- Badges / passport ---------- */
   .passport{display:flex;flex-wrap:wrap;gap:12px;}
+  .relic-reveal{background:linear-gradient(135deg,#F1EDFF,#E4DCFF);border:2px solid var(--violet);}
+  .relic-reveal.shiny{background:linear-gradient(135deg,#FFF7DD,#FFECAD);border:2px solid #FFD166;box-shadow:0 0 24px rgba(255,209,102,0.5);}
+  .relic-shiny-ring{animation:shinyRingPulse 1.6s ease-in-out infinite;}
+  @keyframes shinyRingPulse{0%,100%{opacity:0.4;r:15;}50%{opacity:0.9;r:15.8;}}
+  .relic-slot{display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 10px;border-radius:14px;background:var(--panel-tint);text-align:center;}
+  .relic-slot.locked{opacity:0.45;}
+  .relic-slot.shiny{background:linear-gradient(135deg,#FFF7DD,#FFECAD);border:2px solid #FFD166;}
   .stamp{
     width:90px;height:90px;border-radius:50%;
     display:flex;align-items:center;justify-content:center;flex-direction:column;
@@ -230,22 +237,30 @@
   .battle-arena{
     display:flex;align-items:center;gap:14px;margin:14px 0 18px;
     background:var(--panel-tint);border-radius:16px;padding:16px;
+    position:relative; overflow:hidden; z-index:1;
   }
   .battle-arena.dark{background:rgba(255,255,255,0.06);}
-  .combatant{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:8px;}
-  .combatant-label{font-weight:800;font-size:13.5px;color:var(--text-dark);text-align:center;}
+  .battle-backdrop{
+    position:absolute; inset:0; width:100%; height:100%; z-index:-1;
+    opacity:0.9; border-radius:16px;
+  }
+  .combatant{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:8px;position:relative;z-index:1;}
+  .combatant-label{font-weight:800;font-size:13.5px;color:var(--text-dark);text-align:center;text-shadow:0 1px 3px rgba(0,0,0,0.4);}
   .battle-arena.dark .combatant-label{color:#EDE6FF;}
   .combatant-icon{
     display:inline-flex;align-items:center;justify-content:center;border-radius:50%;position:relative;
   }
-  .player-portrait{width:64px;height:64px;border:3px solid #7C5CFF;background:#7C5CFF33;}
-  .player-emoji-badge{font-size:32px;}
-  .weapon-badge{position:absolute;bottom:-4px;right:-4px;font-size:16px;background:#1C1533;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;border:1.5px solid rgba(255,255,255,0.3);}
-  .boss-portrait{width:104px;height:104px;filter:drop-shadow(0 0 16px rgba(255,45,99,0.5));}
-  .boss-emoji-badge{position:absolute;font-size:46px;}
+  .player-portrait{width:76px;height:76px;}
+  .player-aura{animation:playerAuraPulse 2.4s ease-in-out infinite;}
+  @keyframes playerAuraPulse{0%,100%{opacity:.25;}50%{opacity:.5;}}
+  .player-emoji-badge{position:absolute;font-size:34px;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.4));}
+  .boss-portrait{width:118px;height:118px;filter:drop-shadow(0 0 18px rgba(255,45,99,0.55));}
+  .boss-emoji-badge{position:absolute;font-size:40px;bottom:-2px;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.5));}
   .boss-aura{animation:bossAuraPulse 2s ease-in-out infinite;}
-  @keyframes bossAuraPulse{0%,100%{opacity:.3;}50%{opacity:.6;}}
-  .vs-badge{font-family:'Baloo 2',sans-serif;font-weight:800;font-size:15px;color:var(--coral);flex-shrink:0;}
+  .boss-aura-ring{animation:bossRingPulse 2.4s ease-in-out infinite;}
+  @keyframes bossAuraPulse{0%,100%{opacity:.28;}50%{opacity:.58;}}
+  @keyframes bossRingPulse{0%,100%{opacity:.3;transform:scale(1);}50%{opacity:.7;transform:scale(1.06);}}
+  .vs-badge{font-family:'Baloo 2',sans-serif;font-weight:800;font-size:15px;color:var(--coral);flex-shrink:0;text-shadow:0 1px 3px rgba(0,0,0,0.4);}
   .hp-wrap{display:flex;flex-direction:column;gap:4px;width:100%;}
   .hp-bar-bg{height:16px;border-radius:999px;background:rgba(0,0,0,0.12);overflow:hidden;}
   .hp-bar-fill{height:100%;border-radius:999px;transition:width .4s ease;}
@@ -263,6 +278,28 @@
     animation:impactPop .5s ease forwards;
   }
   @keyframes impactPop{0%{transform:scale(0.3) rotate(0deg);opacity:1;}100%{transform:scale(1.6) rotate(30deg);opacity:0;}}
+  .impact-particle{
+    position:absolute; top:50%; left:50%; font-size:15px; pointer-events:none; z-index:5;
+    animation:particleFly .55s ease-out forwards;
+  }
+  @keyframes particleFly{
+    0%{ transform:translate(-50%,-50%) scale(0.6); opacity:1; }
+    100%{ transform:translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(1.15); opacity:0; }
+  }
+  @keyframes arenaShake{
+    0%,100%{ transform:translateX(0); }
+    20%{ transform:translateX(-5px); }
+    40%{ transform:translateX(5px); }
+    60%{ transform:translateX(-3px); }
+    80%{ transform:translateX(3px); }
+  }
+  .battle-arena.arena-shake{ animation: arenaShake 0.35s ease-in-out; }
+  .battle-arena.low-hp::after{
+    content:''; position:absolute; inset:0; border-radius:16px; pointer-events:none; z-index:2;
+    box-shadow: inset 0 0 40px 10px rgba(255,45,99,0.55);
+    animation: lowHpPulse 1.1s ease-in-out infinite;
+  }
+  @keyframes lowHpPulse{0%,100%{opacity:0.4;}50%{opacity:0.9;}}
   .hp-text{font-size:11.5px;font-weight:700;color:var(--text-dim);}
   .battle-arena.dark .hp-text{color:#D8CFFF;}
   .node-disabled{cursor:default;}
@@ -896,11 +933,144 @@ const trackC = {
   }
 };
 
-const GRADE_TRACKS = {3: trackA, 4: trackB, 6: trackC};
+/* =========================================================================
+   ADULT TRACK — trivia-style content for parents to play alongside their
+   kids (Trivial Pursuit / game-show inspired categories, not curriculum).
+   This is purely ADDITIVE: it introduces a new grade code (99) without
+   touching the existing 3/4/6 mappings, so no existing player's progress,
+   grade assignment, or content bank is affected in any way.
+   ========================================================================= */
+const trackAdult = {
+  id:'Adult', label:'Adult Mode', tagline:'Parents, put your own trivia knowledge to the test!',
+  subjects:{
+    math:{ levels:[
+      [ // Easy
+        Q('What is 15% of 200?',['20','30','40','50'],1,'15% of 200 = 0.15 × 200 = 30.'),
+        Q('How many degrees are in a right angle?',['45','90','180','360'],1,'A right angle measures exactly 90 degrees.'),
+        Q('What is the value of pi rounded to two decimal places?',['3.14','3.41','3.12','3.16'],0,'Pi rounds to 3.14 at two decimal places.'),
+        Q('How many sides does a hexagon have?',['5','6','7','8'],1,'A hexagon has 6 sides.'),
+        Q('What is the square root of 81?',['7','8','9','10'],2,'9 × 9 = 81.')
+      ],
+      [ // Medium
+        Q('What is 7 factorial (7!)?',['720','5040','42','49'],1,'7! = 7×6×5×4×3×2×1 = 5040.'),
+        Q('In a standard deck of cards, how many total cards are there?',['50','52','54','48'],1,'A standard deck has 52 cards.'),
+        Q('What is the next prime number after 17?',['18','19','21','23'],1,'19 is prime; 18, 20, and 21 are not.'),
+        Q('If a train travels 60 mph for 2.5 hours, how far does it go?',['120 miles','150 miles','100 miles','180 miles'],1,'60 × 2.5 = 150 miles.'),
+        Q('What is the Roman numeral for 40?',['XL','XC','LX','IX'],0,'XL represents 40 (50 minus 10).')
+      ],
+      [ // Hard
+        Q('What is the sum of the interior angles of a hexagon?',['540°','720°','900°','360°'],1,'A hexagon\'s interior angles sum to (6-2)×180° = 720°.'),
+        Q('What is $1000 at 5% annual compound interest worth after 2 years (rounded)?',['$1100','$1102.50','$1050','$1000'],1,'$1000 × 1.05² = $1102.50.'),
+        Q('In binary, what does the decimal number 10 look like?',['1000','1010','1100','1001'],1,'10 in decimal is 1010 in binary (8+0+2+0).'),
+        Q('What is the only even prime number?',['1','2','3','9'],1,'2 is the only even number that is also prime.'),
+        Q('What is 12 squared?',['124','144','132','156'],1,'12 × 12 = 144.')
+      ]
+    ], stretch:{prompt:'Think of a real situation this week where you used percentages, estimation, or basic math without a calculator. How did it help you decide something?', guidance:['Everyday math is often invisible until you notice it.','Bonus: could you have made a faster or better decision with a quick mental-math trick?']}},
+
+    science:{ levels:[
+      [ // Easy
+        Q('What planet is known as the Red Planet?',['Venus','Mars','Jupiter','Saturn'],1,'Mars appears red due to iron oxide on its surface.'),
+        Q('What gas do humans need to breathe to survive?',['Nitrogen','Oxygen','Carbon Dioxide','Helium'],1,'Humans need oxygen for cellular respiration.'),
+        Q('What is the boiling point of water in Celsius at sea level?',['90','100','110','120'],1,'Water boils at 100°C at sea level.'),
+        Q('What is the largest organ in the human body?',['Heart','Liver','Skin','Lungs'],2,'The skin is the body\'s largest organ.'),
+        Q('How many legs does a spider have?',['6','8','10','12'],1,'Spiders have 8 legs, distinguishing them from insects.')
+      ],
+      [ // Medium
+        Q('What is the chemical symbol for gold?',['Ag','Au','Gd','Go'],1,'Gold\'s symbol, Au, comes from the Latin "aurum."'),
+        Q('What force keeps planets in orbit around the sun?',['Magnetism','Gravity','Friction','Inertia'],1,'Gravity keeps planets in their orbits.'),
+        Q('What is often called the "powerhouse of the cell"?',['Nucleus','Ribosome','Mitochondria','Golgi body'],2,'Mitochondria produce most of a cell\'s energy (ATP).'),
+        Q('What is the closest star to Earth?',['Proxima Centauri','The Sun','Sirius','Betelgeuse'],1,'The Sun is by far the closest star to Earth.'),
+        Q('What type of animal is a Komodo dragon?',['Snake','Lizard','Crocodile','Amphibian'],1,'The Komodo dragon is the largest living lizard species.')
+      ],
+      [ // Hard
+        Q('What is the approximate speed of light in a vacuum?',['300,000 km/s','150,000 km/s','500,000 km/s','1,000,000 km/s'],0,'Light travels at approximately 300,000 kilometers per second.'),
+        Q('What element has the atomic number 1?',['Helium','Hydrogen','Lithium','Oxygen'],1,'Hydrogen, with one proton, has atomic number 1.'),
+        Q('What is the leading scientific theory describing the origin of the universe?',['Big Bang','String Theory','Steady State','Multiverse'],0,'The Big Bang theory describes the universe\'s expansion from a hot, dense initial state.'),
+        Q('What part of an atom carries a negative charge?',['Proton','Neutron','Electron','Nucleus'],2,'Electrons carry a negative electric charge.'),
+        Q('What is the process by which plants make their own food called?',['Respiration','Photosynthesis','Fermentation','Digestion'],1,'Photosynthesis converts light energy into chemical energy in plants.')
+      ]
+    ], stretch:{prompt:'Pick one scientific concept you learned or were reminded of today. How would you explain it to a curious 10-year-old in one or two sentences?', guidance:['Simplifying a concept for someone else is a great test of how well you actually understand it.','Bonus: what everyday example would make it click for a kid?']}},
+
+    history:{ levels:[
+      [ // Easy
+        Q('Who was the first President of the United States?',['John Adams','George Washington','Thomas Jefferson','Benjamin Franklin'],1,'George Washington served as the first U.S. President (1789-1797).'),
+        Q('In what year did World War II end?',['1943','1945','1947','1950'],1,'World War II ended in 1945.'),
+        Q('Which ancient civilization built the pyramids of Giza?',['Romans','Greeks','Egyptians','Mayans'],2,'The ancient Egyptians built the pyramids of Giza.'),
+        Q('What wall divided a European city during the Cold War?',['Berlin Wall','Great Wall','Hadrian\'s Wall','Wall Street'],0,'The Berlin Wall divided East and West Berlin from 1961 to 1989.'),
+        Q('Which country gifted the Statue of Liberty to the United States?',['England','France','Spain','Italy'],1,'France gave the Statue of Liberty to the U.S. in 1886.')
+      ],
+      [ // Medium
+        Q('Who is credited as the primary author of the Declaration of Independence?',['Thomas Jefferson','Benjamin Franklin','John Adams','George Washington'],0,'Thomas Jefferson was the principal author of the Declaration.'),
+        Q('The Renaissance began in which country?',['France','Italy','Germany','Spain'],1,'The Renaissance began in Italy in the 14th century.'),
+        Q('Julius Caesar was a ruler of which empire?',['Greek','Roman','Persian','Ottoman'],1,'Julius Caesar was a leader of the Roman Republic/Empire.'),
+        Q('What year did the Titanic sink?',['1905','1912','1920','1931'],1,'The Titanic sank in April 1912.'),
+        Q('Who led the Soviet Union for most of World War II?',['Lenin','Stalin','Khrushchev','Trotsky'],1,'Joseph Stalin led the Soviet Union during World War II.')
+      ],
+      [ // Hard
+        Q('The Treaty of Versailles formally ended which war?',['World War I','World War II','The Cold War','The Napoleonic Wars'],0,'The Treaty of Versailles (1919) ended World War I.'),
+        Q('Who was the British Prime Minister for most of World War II?',['Neville Chamberlain','Winston Churchill','Margaret Thatcher','Tony Blair'],1,'Winston Churchill led Britain through most of WWII.'),
+        Q('The Magna Carta was signed in which country?',['France','England','Spain','Germany'],1,'The Magna Carta was signed in England in 1215.'),
+        Q('Which empire was historically called "the empire on which the sun never set"?',['Roman Empire','British Empire','Ottoman Empire','Spanish Empire'],1,'The British Empire spanned so many time zones the sun was always shining on some part of it.'),
+        Q('In what year did the Berlin Wall fall?',['1985','1987','1989','1991'],2,'The Berlin Wall fell in 1989.')
+      ]
+    ], stretch:{prompt:'Pick a historical event you find genuinely interesting. What is one parallel you can draw between it and something happening in the world today?', guidance:['Good historical thinking looks for patterns, not just dates.','Bonus: what would you want a kid to understand about why this event still matters?']}},
+
+    reading:{ levels:[
+      [ // Easy
+        Q('Who wrote "Romeo and Juliet"?',['Charles Dickens','William Shakespeare','Mark Twain','Jane Austen'],1,'William Shakespeare wrote "Romeo and Juliet."'),
+        Q('What is the name of the young wizard in J.K. Rowling\'s series?',['Harry Potter','Percy Jackson','Frodo Baggins','Peter Pan'],0,'Harry Potter is the title character of Rowling\'s series.'),
+        Q('Which children\'s book features a caterpillar eating through various foods?',['The Very Hungry Caterpillar','Charlotte\'s Web','The Cat in the Hat','Goodnight Moon'],0,'"The Very Hungry Caterpillar" by Eric Carle follows this premise.'),
+        Q('In "The Wizard of Oz," what state does Dorothy want to get home to?',['Kansas','Ohio','Texas','California'],0,'Dorothy is from Kansas.'),
+        Q('Who wrote "Pride and Prejudice"?',['Jane Austen','Charlotte Bronte','Emily Dickinson','Mary Shelley'],0,'Jane Austen wrote "Pride and Prejudice" in 1813.')
+      ],
+      [ // Medium
+        Q('In Greek mythology, who is the king of the gods?',['Poseidon','Zeus','Hades','Apollo'],1,'Zeus is the king of the Greek gods.'),
+        Q('What is the name of the fictional school in Harry Potter?',['Hogwarts','Hogsmeade','Durmstrang','Beauxbatons'],0,'Hogwarts School of Witchcraft and Wizardry.'),
+        Q('Which novel begins with the line "Call me Ishmael"?',['Moby-Dick','The Great Gatsby','1984','War and Peace'],0,'"Moby-Dick" by Herman Melville opens with this famous line.'),
+        Q('Who wrote the novel "1984"?',['George Orwell','Aldous Huxley','Ray Bradbury','H.G. Wells'],0,'George Orwell wrote "1984," published in 1949.'),
+        Q('What term describes a story that uses animals to represent human traits?',['Fable','Sonnet','Memoir','Epic'],0,'A fable typically uses animal characters to teach a moral lesson.')
+      ],
+      [ // Hard
+        Q('Who wrote "One Hundred Years of Solitude"?',['Gabriel Garcia Marquez','Pablo Neruda','Jorge Luis Borges','Isabel Allende'],0,'Gabriel Garcia Marquez wrote this landmark novel of magical realism.'),
+        Q('In literature, what is a "protagonist"?',['The villain','The main character','The setting','The narrator only'],1,'The protagonist is the central character of a story.'),
+        Q('What literary device gives human traits to non-human things?',['Simile','Personification','Alliteration','Hyperbole'],1,'Personification attributes human qualities to non-human things.'),
+        Q('Which Shakespeare play features the line "To be or not to be"?',['Macbeth','Hamlet','Othello','King Lear'],1,'This famous line is from "Hamlet."'),
+        Q('Who wrote the dystopian novel "Brave New World"?',['George Orwell','Aldous Huxley','Kurt Vonnegut','Margaret Atwood'],1,'Aldous Huxley wrote "Brave New World," published in 1932.')
+      ]
+    ], stretch:{prompt:'Think of a book, article, or story that changed how you think about something. What specifically shifted your perspective?', guidance:['Good reading reflection connects the text to your own thinking, not just the plot.','Bonus: what would you recommend a kid read for a similar experience?']}},
+
+    writing:{ levels:[
+      [ // Easy
+        Q('Which part of speech describes an action?',['Noun','Verb','Adjective','Adverb'],1,'Verbs describe actions or states of being.'),
+        Q('What punctuation mark ends a question?',['Period','Question mark','Exclamation point','Comma'],1,'Questions end with a question mark.'),
+        Q('What do we call a word that means the same as another word?',['Antonym','Synonym','Homophone','Acronym'],1,'A synonym shares a similar meaning with another word.'),
+        Q('Complete the idiom: "It\'s raining cats and ___."',['Dogs','Frogs','Mice','Birds'],0,'The idiom is "raining cats and dogs," meaning heavy rain.'),
+        Q('What is the plural of "child"?',['Childs','Children','Childes','Childrens'],1,'"Children" is the irregular plural of "child."')
+      ],
+      [ // Medium
+        Q('What figure of speech compares two things using "like" or "as"?',['Metaphor','Simile','Onomatopoeia','Irony'],1,'A simile makes comparisons using "like" or "as."'),
+        Q('What is the term for the main argument of an essay?',['Thesis','Abstract','Preface','Epilogue'],0,'A thesis statement presents an essay\'s central argument.'),
+        Q('Which word is spelled correctly?',['Recieve','Receive','Receeve','Receve'],1,'"Receive" follows "i before e except after c" correctly.'),
+        Q('What do we call a group of words that expresses a complete thought?',['Phrase','Clause','Sentence','Fragment'],2,'A sentence expresses a complete thought.'),
+        Q('Complete the famous quote: "I think, therefore I ___."',['Am','Exist','Live','Think'],0,'This is Descartes\' famous phrase, "I think, therefore I am."')
+      ],
+      [ // Hard
+        Q('What term describes words that sound alike but differ in meaning and spelling?',['Synonyms','Antonyms','Homophones','Palindromes'],2,'Homophones sound the same but have different meanings/spellings (e.g., "there/their").'),
+        Q('What is an oxymoron?',['A figure of speech combining contradictory terms','A type of poem','A grammatical error','A long sentence'],0,'An oxymoron pairs contradictory terms, like "deafening silence."'),
+        Q('In grammar, what is a "gerund"?',['A verb form ending in -ing used as a noun','A type of pronoun','A punctuation mark','A type of conjunction'],0,'A gerund is a verb form ending in "-ing" functioning as a noun.'),
+        Q('What do we call a hint about something that will happen later in a story?',['Foreshadowing','Flashback','Symbolism','Irony'],0,'Foreshadowing hints at future events in a narrative.'),
+        Q('What is the term for a word\'s literal dictionary meaning (as opposed to its emotional association)?',['Connotation','Denotation','Context','Diction'],1,'Denotation is a word\'s literal, dictionary meaning.')
+      ]
+    ], stretch:{prompt:'Write 2-3 sentences giving feedback on something you read or wrote recently — what worked, and what would you change?', guidance:['Precise, specific feedback is a skill worth practicing at any age.','Bonus: how would you phrase that feedback differently for a child\'s writing versus an adult\'s?']}}
+  }
+};
+
+const GRADE_TRACKS = {3: trackA, 4: trackB, 6: trackC, 99: trackAdult};
 const GRADE_OPTIONS = [
   {grade:3, label:'Rising 3rd Grade'},
   {grade:4, label:'Rising 4th Grade'},
-  {grade:6, label:'Rising 6th Grade'}
+  {grade:6, label:'Rising 6th Grade'},
+  {grade:99, label:'Adult (Parent Mode!)'}
 ];
 // TRACKS now resolves dynamically per-player based on their chosen grade,
 // rather than being a fixed 3-slot object — this lets any number of players
@@ -927,8 +1097,12 @@ function choose(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
 function buildMCQ(correctLabel, distractorLabels){
   correctLabel = String(correctLabel);
   const uniqueDistractors = [...new Set(distractorLabels.map(String))].filter(d=>d!==correctLabel).slice(0,3);
-  let filler=0;
-  while(uniqueDistractors.length<3){ uniqueDistractors.push(correctLabel+'_'+(filler++)); }
+  // Some fact categories genuinely only have 2 or 3 total possible values
+  // (e.g. state of matter: solid/liquid/gas), so 3 real distractors aren't
+  // always available. Rather than fabricate a fake placeholder option like
+  // "label_0" (which looks broken to a kid), just return a smaller but
+  // fully legitimate set of choices — a clean 2 or 3-choice question beats
+  // a 4-choice question with one nonsense answer.
   const options = shuffle([correctLabel, ...uniqueDistractors]);
   return { c: options, a: options.indexOf(correctLabel) };
 }
@@ -1104,6 +1278,561 @@ function genSupplementaryFind(){
   return Q(`Two angles are supplementary. If one angle measures ${a}°, what is the measure of the other angle?`, c, ai, `Supplementary angles sum to 180°, so 180 − ${a} = ${ans}°.`);
 }
 
+function G(fn, concept){ return {fn, concept}; }
+
+/* =========================================================================
+   PROCEDURAL WRITING GENERATOR
+   Unlike science/history facts (which are curriculum-bound and don't scale
+   without diluting grade-appropriateness), grammar and vocabulary skills
+   genuinely parametrize well — the same way math does — so this reuses the
+   fillMathLevelToTarget() engine (it's fully generic despite the name) to
+   expand Writing content the same honest way Math was expanded.
+   ========================================================================= */
+const SYNONYM_PAIRS = [
+  ['happy','joyful'],['sad','unhappy'],['big','large'],['small','tiny'],['fast','quick'],
+  ['angry','furious'],['smart','intelligent'],['tired','exhausted'],['scared','frightened'],['pretty','beautiful'],
+  ['loud','noisy'],['quiet','silent'],['funny','hilarious'],['difficult','challenging'],['easy','simple'],
+  ['begin','start'],['end','finish'],['big','huge'],['small','little'],['happy','glad'],
+  ['brave','courageous'],['clever','smart'],['kind','gentle'],['strong','powerful'],['weak','feeble'],
+  ['old','ancient'],['new','modern'],['rich','wealthy'],['poor','needy'],['bright','vivid'],
+  ['dark','dim'],['clean','spotless'],['dirty','filthy'],['calm','peaceful'],['wild','untamed'],
+  ['polite','courteous'],['rude','impolite'],['honest','truthful'],['brave','fearless'],['shy','timid'],
+  ['generous','giving'],['stingy','selfish'],['ancient','old'],['tiny','minuscule'],['enormous','gigantic'],
+  ['quick','speedy'],['slow','sluggish'],['nice','pleasant'],['mean','unkind'],['odd','strange'],
+  ['common','ordinary'],['rare','uncommon'],['simple','plain'],['complex','complicated'],['careful','cautious'],
+  ['careless','sloppy'],['gloomy','dreary'],['cheerful','upbeat'],['proud','confident'],['humble','modest'],
+  ['curious','inquisitive'],['bored','uninterested'],['excited','eager'],['nervous','anxious'],['relaxed','calm'],
+  ['tough','sturdy'],['fragile','delicate'],['huge','massive'],['tiny','miniature'],['ancient','archaic']
+];
+const ANTONYM_PAIRS = [
+  ['hot','cold'],['big','small'],['fast','slow'],['happy','sad'],['light','dark'],
+  ['up','down'],['open','closed'],['loud','quiet'],['wet','dry'],['full','empty'],
+  ['old','new'],['hard','soft'],['heavy','light'],['near','far'],['clean','dirty'],
+  ['brave','cowardly'],['strong','weak'],['rich','poor'],['smooth','rough'],['wide','narrow'],
+  ['thick','thin'],['early','late'],['begin','end'],['win','lose'],['buy','sell'],
+  ['love','hate'],['accept','reject'],['ancient','modern'],['polite','rude'],['generous','stingy'],
+  ['true','false'],['difficult','easy'],['plentiful','scarce'],['expand','shrink'],['ascend','descend']
+];
+const PROPER_NAMES = ['Maria','James','Aisha','Noah','Priya','Liam','Sofia','Ethan','Mei','Carlos','Olivia','Kenji','Zara','Lucas','Fatima','Anna','David','Yuki','Elena','Marcus','Nadia','Felix','Ingrid','Omar','Clara','Victor','Leila','Simon','Tara','Miguel'];
+const PROPER_PLACES = ['Paris','Tokyo','the Grand Canyon','Chicago','Mount Everest','London','the Amazon River','Texas','Egypt','California','Rome','Sydney','the Sahara Desert','Berlin','Yellowstone Park','Iceland','Kenya','Peru','Norway','Vietnam'];
+const HOMOPHONE_SENTENCES = [
+  {sentence:'I am going ___ the store.', correct:'to', wrong:['too','two']},
+  {sentence:'___ many people came to the party.', correct:'Too', wrong:['To','Two']},
+  {sentence:'She has ___ cats at home.', correct:'two', wrong:['to','too']},
+  {sentence:'___ going to the game tonight?', correct:"They're", wrong:['Their','There']},
+  {sentence:'___ house is on the corner.', correct:'Their', wrong:["They're",'There']},
+  {sentence:'Put the book over ___.', correct:'there', wrong:['their',"they're"]},
+  {sentence:'___ going to be late if we don\'t hurry.', correct:"We're", wrong:['Were','Where']},
+  {sentence:'___ did you put my keys?', correct:'Where', wrong:["We're",'Were']},
+  {sentence:'They ___ happy about the news.', correct:'were', wrong:['where',"we're"]},
+  {sentence:'The dog wagged ___ tail.', correct:'its', wrong:["it's"]},
+  {sentence:'___ raining outside right now.', correct:"It's", wrong:['Its']},
+  {sentence:'Please ___ me your notebook.', correct:'pass', wrong:['past']},
+  {sentence:'That happened in the ___.', correct:'past', wrong:['pass']},
+  {sentence:'I can ___ the mountains from here.', correct:'see', wrong:['sea']},
+  {sentence:'We swam in the ___ all afternoon.', correct:'sea', wrong:['see']},
+  {sentence:'Please ___ the door on your way out.', correct:'close', wrong:['clothes']},
+  {sentence:'She bought new ___ for school.', correct:'clothes', wrong:['close']},
+  {sentence:'He wrote a letter with a ___.', correct:'pen', wrong:['pin']},
+  {sentence:'She used a ___ to hold her hair back.', correct:'pin', wrong:['pen']},
+  {sentence:'The knight rode a white ___.', correct:'horse', wrong:['hoarse']},
+  {sentence:'His voice was ___ from yelling.', correct:'hoarse', wrong:['horse']},
+  {sentence:'Please ___ down the volume.', correct:'turn', wrong:[]},
+  {sentence:'The wind made the flag ___.', correct:'wave', wrong:[]},
+  {sentence:'I ___ to finish my homework first.', correct:'need', wrong:['knead']},
+  {sentence:'Bakers ___ the dough before baking.', correct:'knead', wrong:['need']}
+].filter(h=>h.wrong.length>0);
+
+function genSynonym(){
+  const [word, syn] = choose(SYNONYM_PAIRS);
+  const distractorPool = SYNONYM_PAIRS.filter(p=>p[0]!==word).map(p=>p[1]);
+  const d1 = choose(distractorPool), d2 = choose(distractorPool.filter(x=>x!==d1));
+  const phrasing = choose([
+    `Which word means almost the same as "${word}"?`,
+    `Choose the best synonym for "${word}".`,
+    `Which word is closest in meaning to "${word}"?`,
+    `Pick the word that is a synonym for "${word}".`
+  ]);
+  const {c,a} = buildMCQ(syn, [d1,d2,word+'ish']);
+  return Q(phrasing, c, a, `"${syn}" means nearly the same as "${word}."`);
+}
+function genAntonym(){
+  const [word, ant] = choose(ANTONYM_PAIRS);
+  const distractorPool = ANTONYM_PAIRS.filter(p=>p[0]!==word).map(p=>p[1]);
+  const d1 = choose(distractorPool), d2 = choose(distractorPool.filter(x=>x!==d1));
+  const phrasing = choose([
+    `What is the opposite (antonym) of "${word}"?`,
+    `Which word means the opposite of "${word}"?`,
+    `Choose the best antonym for "${word}".`,
+    `Pick the word that is an antonym for "${word}".`
+  ]);
+  const {c,a} = buildMCQ(ant, [d1,d2,word]);
+  return Q(phrasing, c, a, `"${ant}" is the opposite of "${word}."`);
+}
+function cap(s){ return s.charAt(0).toUpperCase()+s.slice(1); }
+function genCapitalization(){
+  const name = choose(PROPER_NAMES), place = choose(PROPER_PLACES);
+  const nameLower = name.toLowerCase(), placeLower = place.toLowerCase();
+  const templates = [
+    { correct:`${name} visited ${place} last summer.`, wrong:[`${nameLower} visited ${placeLower} last summer.`, `${name} visited ${place} Last Summer.`, `${nameLower} Visited ${place} last summer.`] },
+    { correct:`My friend ${name} lives near ${place}.`, wrong:[`My friend ${nameLower} lives near ${placeLower}.`, `my friend ${name} lives near ${place}.`, `My friend ${name} Lives near ${place}.`] }
+  ];
+  const t = choose(templates);
+  const {c,a} = buildMCQ(t.correct, t.wrong);
+  // The name/place are embedded in the question stem itself (not just the
+  // choices) so each combination generates a genuinely distinct question —
+  // otherwise every instance would look identical to the uniqueness check.
+  return Q(`Which sentence about ${name} and ${place} uses capitalization correctly?`, c, a, 'Proper nouns (names and places) and the first word of a sentence should be capitalized.');
+}
+function genPunctuationList(){
+  const itemBank = ['apples','bananas','grapes','carrots','pretzels','sandwiches','cookies','oranges','crackers','pears','muffins','berries','peaches','nuts','raisins'];
+  const items = shuffle(itemBank).slice(0,3);
+  const correct = `I packed ${items[0]}, ${items[1]}, and ${items[2]} for the trip.`;
+  const wrong1 = `I packed ${items[0]} ${items[1]} and ${items[2]} for the trip.`;
+  const wrong2 = `I packed ${items[0]}, ${items[1]} and, ${items[2]} for the trip.`;
+  const wrong3 = `I packed ${items[0]} ${items[1]} ${items[2]} for the trip.`;
+  const {c,a} = buildMCQ(correct, [wrong1, wrong2, wrong3]);
+  return Q(`Which sentence about packing ${items[0]}, ${items[1]}, and ${items[2]} uses commas correctly?`, c, a, 'Items in a list are separated by commas, including before "and."');
+}
+function genHomophone(){
+  const item = choose(HOMOPHONE_SENTENCES);
+  const {c,a} = buildMCQ(item.correct, item.wrong);
+  return Q(`Which word correctly completes the sentence: "${item.sentence}"`, c, a, `"${item.correct}" is the correct word for this sentence.`);
+}
+function genSubjectVerbAgreement(){
+  const singularSubjects = ['The dog','My teacher','She','He','The bird','A student','The chef','My neighbor','The artist','The doctor','My cousin','The pilot','The farmer','My uncle','The coach'];
+  const pluralSubjects = ['The dogs','My teachers','They','We','The birds','The students','The chefs','My neighbors','The artists','The doctors','My cousins','The pilots','The farmers','My uncles','The coaches'];
+  const verbPairs = [['runs','run'],['jumps','jump'],['sings','sing'],['reads','read'],['writes','write'],['plays','play'],['cooks','cook'],['paints','paint'],['travels','travel'],['teaches','teach'],['builds','build'],['dances','dance']];
+  const usePlural = Math.random()<0.5;
+  const idx = Math.floor(Math.random()*singularSubjects.length);
+  const subject = usePlural ? pluralSubjects[idx] : singularSubjects[idx];
+  const [singularVerb, pluralVerb] = choose(verbPairs);
+  const correctVerb = usePlural ? pluralVerb : singularVerb;
+  const wrongVerb = usePlural ? singularVerb : pluralVerb;
+  const correct = `${subject} ${correctVerb} every day.`;
+  const wrong = `${subject} ${wrongVerb} every day.`;
+  const {c,a} = buildMCQ(correct, [wrong]);
+  return Q(`Which sentence uses correct subject-verb agreement for "${subject}" with the verb "${singularVerb.replace(/s$/,'')}"?`, c, a, `"${subject}" requires the verb form "${correctVerb}."`);
+}
+
+function expandWritingContent(target){
+  const writingGenerators = [
+    G(()=>genSynonym(),'synonym'), G(()=>genAntonym(),'antonym'), G(()=>genCapitalization(),'capitalization'),
+    G(()=>genPunctuationList(),'punctuation'), G(()=>genHomophone(),'homophone'), G(()=>genSubjectVerbAgreement(),'grammar')
+  ];
+  [trackA, trackB, trackC, trackAdult].forEach(track=>{
+    track.subjects.writing.levels.forEach(levelArr=>{
+      fillMathLevelToTarget(levelArr, writingGenerators, target);
+    });
+  });
+}
+expandWritingContent(500);
+
+/* =========================================================================
+   PROCEDURAL SCIENCE GENERATOR
+   Built from verified static fact tables (not computed values) so
+   correctness risk is low — each template just looks up a pre-checked
+   fact rather than calculating anything. Multiple phrasings per fact-type
+   provide the entropy needed to reach volume.
+   ========================================================================= */
+const ANIMAL_CLASS_TABLE = [
+  ['dog','mammal'],['cat','mammal'],['elephant','mammal'],['whale','mammal'],['bat','mammal'],['kangaroo','mammal'],['dolphin','mammal'],['horse','mammal'],['lion','mammal'],['bear','mammal'],['tiger','mammal'],['zebra','mammal'],['giraffe','mammal'],['monkey','mammal'],['rabbit','mammal'],['squirrel','mammal'],['wolf','mammal'],['fox','mammal'],
+  ['eagle','bird'],['penguin','bird'],['owl','bird'],['sparrow','bird'],['ostrich','bird'],['parrot','bird'],['flamingo','bird'],['hawk','bird'],['robin','bird'],['peacock','bird'],['woodpecker','bird'],['pelican','bird'],
+  ['snake','reptile'],['lizard','reptile'],['turtle','reptile'],['crocodile','reptile'],['iguana','reptile'],['chameleon','reptile'],['gecko','reptile'],['alligator','reptile'],['tortoise','reptile'],
+  ['salmon','fish'],['shark','fish'],['goldfish','fish'],['tuna','fish'],['catfish','fish'],['trout','fish'],['clownfish','fish'],['eel','fish'],['swordfish','fish'],
+  ['frog','amphibian'],['toad','amphibian'],['salamander','amphibian'],['newt','amphibian'],['tree frog','amphibian'],
+  ['ant','insect'],['bee','insect'],['butterfly','insect'],['beetle','insect'],['grasshopper','insect'],['dragonfly','insect'],['ladybug','insect'],['moth','insect'],['cricket','insect']
+];
+const MATTER_TABLE = [
+  ['ice','solid'],['a rock','solid'],['a wooden chair','solid'],['a book','solid'],['a metal spoon','solid'],['a glass cup','solid'],['a brick','solid'],['a rubber ball','solid'],['a plastic toy','solid'],['a coin','solid'],
+  ['water','liquid'],['milk','liquid'],['juice','liquid'],['oil','liquid'],['melted butter','liquid'],['honey','liquid'],['soup','liquid'],['shampoo','liquid'],['rain','liquid'],['syrup','liquid'],
+  ['the air we breathe','gas'],['steam','gas'],['helium in a balloon','gas'],['carbon dioxide','gas'],['oxygen','gas'],['the smell of perfume spreading in a room','gas'],['natural gas used for cooking','gas'],['water vapor','gas']
+];
+const SIMPLE_MACHINE_TABLE = [
+  ['a seesaw','lever'],['a crowbar','lever'],['a pair of scissors','lever'],['a wheelbarrow','lever'],['a bottle opener','lever'],['a broom','lever'],['tweezers','lever'],['a fishing rod','lever'],
+  ['a doorknob','wheel and axle'],['a bicycle wheel','wheel and axle'],['a steering wheel','wheel and axle'],['a ferris wheel','wheel and axle'],['a pencil sharpener crank','wheel and axle'],['a water wheel','wheel and axle'],
+  ['a flagpole rope system','pulley'],['a window blind cord','pulley'],['a crane at a construction site','pulley'],['an elevator','pulley'],['a sailboat\'s rigging','pulley'],['a well bucket system','pulley'],
+  ['a wheelchair ramp','inclined plane'],['a slide at the playground','inclined plane'],['a loading ramp for a truck','inclined plane'],['a mountain road that zigzags','inclined plane'],['a ramp into a moving truck','inclined plane'],
+  ['a screw','screw'],['a jar lid','screw'],['a spiral staircase','screw'],['a drill bit','screw'],['a light bulb base','screw'],
+  ['an axe','wedge'],['a doorstop','wedge'],['a knife','wedge'],['a nail','wedge'],['a fork\'s tines','wedge'],['a plow blade','wedge']
+];
+const ORGANISM_ROLE_TABLE = [
+  ['an oak tree','producer'],['grass','producer'],['a sunflower','producer'],['algae','producer'],['a fern','producer'],['a cactus','producer'],['seaweed','producer'],['a rose bush','producer'],['a corn plant','producer'],['moss','producer'],
+  ['a rabbit','consumer'],['a deer','consumer'],['a lion','consumer'],['a hawk','consumer'],['a grasshopper','consumer'],['a human','consumer'],['a wolf','consumer'],['a shark','consumer'],['a mouse','consumer'],['a frog','consumer'],['an owl','consumer'],['a caterpillar','consumer'],
+  ['a mushroom','decomposer'],['bacteria in soil','decomposer'],['a worm','decomposer'],['mold','decomposer'],['a fungus','decomposer'],['a millipede','decomposer']
+];
+const BODY_SYSTEM_TABLE = [
+  ['the heart','circulatory system'],['blood vessels','circulatory system'],['veins','circulatory system'],['arteries','circulatory system'],['red blood cells','circulatory system'],
+  ['the lungs','respiratory system'],['the trachea','respiratory system'],['the diaphragm','respiratory system'],['the bronchi','respiratory system'],
+  ['the stomach','digestive system'],['the intestines','digestive system'],['the esophagus','digestive system'],['the liver','digestive system'],['the pancreas','digestive system'],
+  ['the brain','nervous system'],['nerves','nervous system'],['the spinal cord','nervous system'],['the optic nerve','nervous system'],
+  ['bones','skeletal system'],['the skull','skeletal system'],['the ribs','skeletal system'],['the spine','skeletal system'],['the femur','skeletal system'],
+  ['muscles','muscular system'],['tendons','muscular system'],['the biceps','muscular system']
+];
+const ROCK_TABLE = [
+  ['granite','igneous'],['obsidian','igneous'],['basalt','igneous'],['pumice','igneous'],['andesite','igneous'],['rhyolite','igneous'],['diorite','igneous'],['scoria','igneous'],
+  ['sandstone','sedimentary'],['limestone','sedimentary'],['shale','sedimentary'],['coal','sedimentary'],['conglomerate','sedimentary'],['chalk','sedimentary'],['rock salt','sedimentary'],['flint','sedimentary'],
+  ['marble','metamorphic'],['slate','metamorphic'],['gneiss','metamorphic'],['quartzite','metamorphic'],['schist','metamorphic'],['soapstone','metamorphic']
+];
+const WEATHER_TABLE = [
+  ['cumulus clouds','fluffy, white, and often signal fair weather'],
+  ['cirrus clouds','thin, wispy clouds high in the sky'],
+  ['stratus clouds','flat, gray clouds that often cover the whole sky'],
+  ['cumulonimbus clouds','tall, dark clouds that can bring thunderstorms'],
+  ['fog','a cloud that forms at ground level'],
+  ['sleet','a form of precipitation made of small ice pellets'],
+  ['hail','round pellets of ice that fall during storms'],
+  ['a hurricane','a powerful rotating storm that forms over warm ocean water'],
+  ['a tornado','a violently rotating column of air touching the ground'],
+  ['a blizzard','a severe snowstorm with strong winds and low visibility'],
+  ['a drought','a long period with very little or no rainfall'],
+  ['humidity','the amount of water vapor in the air'],
+  ['a thermometer','a tool used to measure temperature'],
+  ['a barometer','a tool used to measure air pressure'],
+  ['an anemometer','a tool used to measure wind speed']
+];
+function genWeatherFact(){
+  const [term, desc] = choose(WEATHER_TABLE);
+  const distractors = shuffle(WEATHER_TABLE.filter(x=>x[0]!==term)).slice(0,3).map(x=>x[0]);
+  const {c,a} = buildMCQ(term, distractors);
+  return Q(`What weather term describes something that is ${desc}?`, c, a, `${cap(term)} is ${desc}.`);
+}
+const PLANET_TABLE = [
+  {name:'Mercury', order:1, fact:'the closest planet to the Sun'},
+  {name:'Venus', order:2, fact:'the hottest planet in the solar system'},
+  {name:'Earth', order:3, fact:'the only known planet with life'},
+  {name:'Mars', order:4, fact:'known as the Red Planet'},
+  {name:'Jupiter', order:5, fact:'the largest planet in the solar system'},
+  {name:'Saturn', order:6, fact:'famous for its large ring system'},
+  {name:'Uranus', order:7, fact:'a planet that rotates on its side'},
+  {name:'Neptune', order:8, fact:'the farthest planet from the Sun'}
+];
+
+function genAnimalClass(){
+  const [animal, cls] = choose(ANIMAL_CLASS_TABLE);
+  const distractorPool = [...new Set(ANIMAL_CLASS_TABLE.map(p=>p[1]).filter(c=>c!==cls))];
+  const [d1,d2,d3] = shuffle(distractorPool).slice(0,3);
+  const phrasing = choose([
+    `What class of animal is ${animal}?`,
+    `Which animal group does ${animal} belong to?`,
+    `Is ${animal} a mammal, bird, reptile, fish, amphibian, or insect?`
+  ]);
+  const {c,a} = buildMCQ(cls, [d1,d2,d3]);
+  return Q(phrasing, c, a, `A ${animal.replace(/^(a|an) /,'')} is classified as a ${cls}.`);
+}
+function genStateOfMatter(){
+  const [substance, state] = choose(MATTER_TABLE);
+  const distractorPool = ['solid','liquid','gas'].filter(s=>s!==state);
+  const phrasing = choose([
+    `What state of matter is ${substance} at room temperature?`,
+    `Is ${substance} normally a solid, liquid, or gas?`,
+    `Which state of matter best describes ${substance}?`
+  ]);
+  const {c,a} = buildMCQ(state, distractorPool);
+  return Q(phrasing, c, a, `${cap(substance)} is normally a ${state} at room temperature.`);
+}
+function genSimpleMachine(){
+  const [tool, machine] = choose(SIMPLE_MACHINE_TABLE);
+  const distractorPool = [...new Set(SIMPLE_MACHINE_TABLE.map(p=>p[1]).filter(m=>m!==machine))];
+  const [d1,d2,d3] = shuffle(distractorPool).slice(0,3);
+  const phrasing = choose([
+    `Which simple machine is ${tool}?`,
+    `${cap(tool)} is an example of which simple machine?`,
+    `What type of simple machine does ${tool} represent?`
+  ]);
+  const {c,a} = buildMCQ(machine, [d1,d2,d3]);
+  return Q(phrasing, c, a, `${cap(tool)} is an example of a ${machine}.`);
+}
+function genPlanetFact(){
+  const p = choose(PLANET_TABLE);
+  const mode = choose(['byFact','byOrder']);
+  if(mode==='byFact'){
+    const distractors = shuffle(PLANET_TABLE.filter(x=>x.name!==p.name)).slice(0,3).map(x=>x.name);
+    const {c,a} = buildMCQ(p.name, distractors);
+    return Q(`Which planet is ${p.fact}?`, c, a, `${p.name} is ${p.fact}.`);
+  } else {
+    const ordinal = ['first','second','third','fourth','fifth','sixth','seventh','eighth'][p.order-1];
+    const distractors = shuffle(PLANET_TABLE.filter(x=>x.name!==p.name)).slice(0,3).map(x=>x.name);
+    const {c,a} = buildMCQ(p.name, distractors);
+    return Q(`Which planet is the ${ordinal} planet from the Sun?`, c, a, `${p.name} is the ${ordinal} planet from the Sun.`);
+  }
+}
+function genFoodChainRole(){
+  const [organism, role] = choose(ORGANISM_ROLE_TABLE);
+  const distractorPool = ['producer','consumer','decomposer'].filter(r=>r!==role);
+  const phrasing = choose([
+    `In an ecosystem, what role does ${organism} play?`,
+    `Is ${organism} a producer, consumer, or decomposer?`
+  ]);
+  const {c,a} = buildMCQ(role, distractorPool);
+  return Q(phrasing, c, a, `${cap(organism)} is a ${role} in its ecosystem.`);
+}
+function genBodySystem(){
+  const [part, system] = choose(BODY_SYSTEM_TABLE);
+  const distractorPool = [...new Set(BODY_SYSTEM_TABLE.map(p=>p[1]).filter(s=>s!==system))];
+  const [d1,d2,d3] = shuffle(distractorPool).slice(0,3);
+  const {c,a} = buildMCQ(system, [d1,d2,d3]);
+  return Q(`Which body system does ${part} belong to?`, c, a, `${cap(part)} is part of the ${system}.`);
+}
+function genRockType(){
+  const [rock, type] = choose(ROCK_TABLE);
+  const distractorPool = ['igneous','sedimentary','metamorphic'].filter(t=>t!==type);
+  const {c,a} = buildMCQ(type, distractorPool);
+  return Q(`What type of rock is ${rock}?`, c, a, `${cap(rock)} is a ${type} rock.`);
+}
+
+function expandScienceContent(target){
+  const scienceGenerators = [
+    G(()=>genAnimalClass(),'animal-class'), G(()=>genStateOfMatter(),'matter'), G(()=>genSimpleMachine(),'simple-machine'),
+    G(()=>genPlanetFact(),'planets'), G(()=>genFoodChainRole(),'food-chain'), G(()=>genBodySystem(),'body-system'), G(()=>genRockType(),'rocks'),
+    G(()=>genWeatherFact(),'weather')
+  ];
+  [trackA, trackB, trackC, trackAdult].forEach(track=>{
+    track.subjects.science.levels.forEach(levelArr=>{
+      fillMathLevelToTarget(levelArr, scienceGenerators, target);
+    });
+  });
+}
+expandScienceContent(500);
+
+/* =========================================================================
+   PROCEDURAL HISTORY GENERATOR — verified static fact tables (state
+   capitals, historical figures, presidents, world capitals), same
+   low-risk lookup-based approach as Science.
+   ========================================================================= */
+const STATE_CAPITAL_TABLE = [
+  ['Alabama','Montgomery'],['Alaska','Juneau'],['Arizona','Phoenix'],['Arkansas','Little Rock'],['California','Sacramento'],
+  ['Colorado','Denver'],['Connecticut','Hartford'],['Delaware','Dover'],['Florida','Tallahassee'],['Georgia','Atlanta'],
+  ['Hawaii','Honolulu'],['Idaho','Boise'],['Illinois','Springfield'],['Indiana','Indianapolis'],['Iowa','Des Moines'],
+  ['Kansas','Topeka'],['Kentucky','Frankfort'],['Louisiana','Baton Rouge'],['Maine','Augusta'],['Maryland','Annapolis'],
+  ['Massachusetts','Boston'],['Michigan','Lansing'],['Minnesota','Saint Paul'],['Mississippi','Jackson'],['Missouri','Jefferson City'],
+  ['Montana','Helena'],['Nebraska','Lincoln'],['Nevada','Carson City'],['New Hampshire','Concord'],['New Jersey','Trenton'],
+  ['New Mexico','Santa Fe'],['New York','Albany'],['North Carolina','Raleigh'],['North Dakota','Bismarck'],['Ohio','Columbus'],
+  ['Oklahoma','Oklahoma City'],['Oregon','Salem'],['Pennsylvania','Harrisburg'],['Rhode Island','Providence'],['South Carolina','Columbia'],
+  ['South Dakota','Pierre'],['Tennessee','Nashville'],['Texas','Austin'],['Utah','Salt Lake City'],['Vermont','Montpelier'],
+  ['Virginia','Richmond'],['Washington','Olympia'],['West Virginia','Charleston'],['Wisconsin','Madison'],['Wyoming','Cheyenne']
+];
+const WORLD_CAPITAL_TABLE = [
+  ['France','Paris'],['Japan','Tokyo'],['Egypt','Cairo'],['Italy','Rome'],['Germany','Berlin'],
+  ['Spain','Madrid'],['Russia','Moscow'],['China','Beijing'],['Canada','Ottawa'],['Brazil','Brasilia'],
+  ['India','New Delhi'],['Australia','Canberra'],['Mexico','Mexico City'],['South Korea','Seoul'],['Greece','Athens'],
+  ['Kenya','Nairobi'],['Argentina','Buenos Aires'],['Norway','Oslo'],['Sweden','Stockholm'],['Portugal','Lisbon'],
+  ['Peru','Lima'],['Turkey','Ankara'],['Thailand','Bangkok'],['Poland','Warsaw'],['the Netherlands','Amsterdam'],
+  ['Ireland','Dublin'],['Switzerland','Bern'],['Austria','Vienna'],['Belgium','Brussels'],['Denmark','Copenhagen'],
+  ['Finland','Helsinki'],['New Zealand','Wellington'],['South Africa','Pretoria'],['Vietnam','Hanoi'],['the Philippines','Manila'],
+  ['Chile','Santiago'],['Colombia','Bogota'],['Israel','Jerusalem'],['Saudi Arabia','Riyadh'],['Indonesia','Jakarta']
+];
+const HISTORICAL_FIGURE_TABLE = [
+  ['Alexander Graham Bell','inventing the telephone'],['Thomas Edison','inventing the light bulb'],['the Wright Brothers','inventing the first successful airplane'],
+  ['Benjamin Franklin','conducting famous experiments with electricity and lightning'],['Neil Armstrong','being the first person to walk on the Moon'],
+  ['Martin Luther King Jr.','leading the Civil Rights Movement'],['Rosa Parks','refusing to give up her bus seat, sparking the Montgomery Bus Boycott'],
+  ['Susan B. Anthony','fighting for women\'s right to vote'],['Amelia Earhart','being a pioneering female aviator'],
+  ['Christopher Columbus','sailing across the Atlantic Ocean in 1492'],['Marco Polo','traveling the Silk Road to Asia'],
+  ['Leonardo da Vinci','painting the Mona Lisa'],['William Shakespeare','writing many famous plays and sonnets'],
+  ['Albert Einstein','developing the theory of relativity'],['Isaac Newton','describing the laws of motion and gravity'],
+  ['Marie Curie','pioneering research on radioactivity'],['Nelson Mandela','leading the fight against apartheid in South Africa'],
+  ['Mahatma Gandhi','leading India\'s independence movement through nonviolent protest'],
+  ['Abraham Lincoln','leading the U.S. through the Civil War and signing the Emancipation Proclamation'],
+  ['Harriet Tubman','helping enslaved people escape to freedom via the Underground Railroad'],
+  ['Johannes Gutenberg','inventing the printing press'],['Galileo Galilei','improving the telescope and supporting a sun-centered solar system'],
+  ['Charles Darwin','developing the theory of evolution'],['Henry Ford','pioneering the assembly line for car manufacturing'],
+  ['Alexander Fleming','discovering penicillin'],['Jane Goodall','pioneering research on chimpanzees'],
+  ['Frederick Douglass','escaping slavery and becoming a leading abolitionist writer and speaker'],
+  ['Eleanor Roosevelt','advocating for human rights as a First Lady and diplomat'],
+  ['Cleopatra','ruling ancient Egypt as one of its final pharaohs'],['Julius Caesar','leading Rome and expanding its empire'],
+  ['Genghis Khan','founding the largest contiguous land empire in history'],['Queen Elizabeth I','ruling England during a period known as a golden age']
+];
+const PRESIDENT_ORDER_TABLE = [
+  ['George Washington',1],['John Adams',2],['Thomas Jefferson',3],['James Madison',4],['James Monroe',5],
+  ['Andrew Jackson',7],['Abraham Lincoln',16],['Ulysses S. Grant',18],['Theodore Roosevelt',26],['William Howard Taft',27],
+  ['Woodrow Wilson',28],['Calvin Coolidge',30],['Herbert Hoover',31],['Franklin D. Roosevelt',32],
+  ['Harry Truman',33],['Dwight Eisenhower',34],['John F. Kennedy',35],['Lyndon B. Johnson',36],['Richard Nixon',37],
+  ['Gerald Ford',38],['Jimmy Carter',39],['Ronald Reagan',40],['George H.W. Bush',41],['Bill Clinton',42],
+  ['George W. Bush',43],['Barack Obama',44],['Donald Trump',45],['Joe Biden',46]
+];
+
+function ordinalSuffix(n){
+  const j = n%10, k = n%100;
+  if(j===1 && k!==11) return n+'st';
+  if(j===2 && k!==12) return n+'nd';
+  if(j===3 && k!==13) return n+'rd';
+  return n+'th';
+}
+const STATE_REGION_TABLE = [
+  ['Maine','Northeast'],['New Hampshire','Northeast'],['Vermont','Northeast'],['Massachusetts','Northeast'],['Rhode Island','Northeast'],['Connecticut','Northeast'],['New York','Northeast'],['New Jersey','Northeast'],['Pennsylvania','Northeast'],
+  ['Ohio','Midwest'],['Michigan','Midwest'],['Indiana','Midwest'],['Illinois','Midwest'],['Wisconsin','Midwest'],['Minnesota','Midwest'],['Iowa','Midwest'],['Missouri','Midwest'],['Kansas','Midwest'],['Nebraska','Midwest'],
+  ['Virginia','South'],['West Virginia','South'],['Kentucky','South'],['Tennessee','South'],['North Carolina','South'],['South Carolina','South'],['Georgia','South'],['Florida','South'],['Alabama','South'],['Mississippi','South'],['Texas','South'],
+  ['California','West'],['Oregon','West'],['Washington','West'],['Nevada','West'],['Arizona','West'],['Colorado','West'],['Utah','West'],['Idaho','West'],['Montana','West'],['Wyoming','West']
+];
+function genStateRegion(){
+  const [state, region] = choose(STATE_REGION_TABLE);
+  const distractors = [...new Set(STATE_REGION_TABLE.map(x=>x[1]).filter(r=>r!==region))];
+  const phrasing = choose([
+    `Which U.S. region is ${state} located in?`,
+    `${state} is part of which region of the United States?`
+  ]);
+  const {c,a} = buildMCQ(region, distractors);
+  return Q(phrasing, c, a, `${state} is located in the ${region} region of the United States.`);
+}
+function genStateCapital(){
+  const [state, capital] = choose(STATE_CAPITAL_TABLE);
+  const distractors = shuffle(STATE_CAPITAL_TABLE.filter(x=>x[0]!==state)).slice(0,3).map(x=>x[1]);
+  const phrasing = choose([
+    `What is the capital of ${state}?`,
+    `Which city is the capital of ${state}?`,
+    `${state}'s state capital is which city?`
+  ]);
+  const {c,a} = buildMCQ(capital, distractors);
+  return Q(phrasing, c, a, `${capital} is the capital of ${state}.`);
+}
+function genWorldCapital(){
+  const [country, capital] = choose(WORLD_CAPITAL_TABLE);
+  const distractors = shuffle(WORLD_CAPITAL_TABLE.filter(x=>x[0]!==country)).slice(0,3).map(x=>x[1]);
+  const phrasing = choose([
+    `What is the capital of ${country}?`,
+    `Which city is the capital of ${country}?`,
+    `${cap(country)}'s capital city is which of these?`
+  ]);
+  const {c,a} = buildMCQ(capital, distractors);
+  return Q(phrasing, c, a, `${capital} is the capital of ${country}.`);
+}
+function genHistoricalFigure(){
+  const [figure, achievement] = choose(HISTORICAL_FIGURE_TABLE);
+  const distractors = shuffle(HISTORICAL_FIGURE_TABLE.filter(x=>x[0]!==figure)).slice(0,3).map(x=>x[0]);
+  const phrasing = choose([
+    `Who is known for ${achievement}?`,
+    `Which historical figure is credited with ${achievement}?`,
+    `History remembers which person for ${achievement}?`
+  ]);
+  const {c,a} = buildMCQ(figure, distractors);
+  return Q(phrasing, c, a, `${figure} is known for ${achievement}.`);
+}
+function genPresidentOrder(){
+  const [name, order] = choose(PRESIDENT_ORDER_TABLE);
+  const mode = choose(['byName','byOrder']);
+  if(mode==='byName'){
+    const distractors = shuffle(PRESIDENT_ORDER_TABLE.filter(x=>x[0]!==name)).slice(0,3).map(x=>ordinalSuffix(x[1]));
+    const {c,a} = buildMCQ(ordinalSuffix(order), distractors);
+    return Q(`${name} was the which president of the United States?`, c, a, `${name} was the ${ordinalSuffix(order)} U.S. President.`);
+  } else {
+    const distractors = shuffle(PRESIDENT_ORDER_TABLE.filter(x=>x[0]!==name)).slice(0,3).map(x=>x[0]);
+    const {c,a} = buildMCQ(name, distractors);
+    return Q(`Who was the ${ordinalSuffix(order)} President of the United States?`, c, a, `${name} was the ${ordinalSuffix(order)} U.S. President.`);
+  }
+}
+
+function expandHistoryContent(target){
+  const historyGenerators = [
+    G(()=>genStateCapital(),'state-capitals'), G(()=>genWorldCapital(),'world-capitals'),
+    G(()=>genHistoricalFigure(),'historical-figures'), G(()=>genPresidentOrder(),'presidents'), G(()=>genStateRegion(),'state-regions')
+  ];
+  [trackA, trackB, trackC, trackAdult].forEach(track=>{
+    track.subjects.history.levels.forEach(levelArr=>{
+      fillMathLevelToTarget(levelArr, historyGenerators, target);
+    });
+  });
+}
+expandHistoryContent(500);
+
+/* =========================================================================
+   PROCEDURAL READING GENERATOR
+   True comprehension (main idea, inference from a full passage) cannot be
+   templated — it requires real hand-written text, which is why Reading's
+   passage-based content stays hand-authored. What CAN be templated
+   honestly are specific reading sub-skills: using context clues to
+   determine word meaning, and recognizing text-structure patterns from a
+   short example — both real, teachable reading skills.
+   ========================================================================= */
+const CONTEXT_CLUE_TABLE = [
+  {sentence:'The ___ animal hid under the rocks because it was afraid of everything.', answer:'timid', distractors:['bold','loud','friendly']},
+  {sentence:'After running the marathon, she felt completely ___ and could barely stand.', answer:'exhausted', distractors:['energetic','excited','hungry']},
+  {sentence:'The classroom was ___ ; you could hear a pin drop.', answer:'silent', distractors:['noisy','crowded','colorful']},
+  {sentence:'His ___ remarks made everyone in the room feel welcome and appreciated.', answer:'kind', distractors:['rude','confusing','boring']},
+  {sentence:'The ___ storm knocked down trees and power lines across the town.', answer:'violent', distractors:['gentle','quiet','tiny']},
+  {sentence:'She was ___ about the surprise party and could not stop smiling.', answer:'thrilled', distractors:['annoyed','bored','confused']},
+  {sentence:'The ___ path was overgrown with weeds and hadn\'t been used in years.', answer:'abandoned', distractors:['popular','clean','new']},
+  {sentence:'His explanation was so ___ that nobody understood what he meant.', answer:'confusing', distractors:['clear','simple','short']},
+  {sentence:'The chef prepared a ___ meal using only the freshest ingredients.', answer:'delicious', distractors:['spoiled','bland','burnt']},
+  {sentence:'The ___ crowd cheered loudly as the team scored the winning goal.', answer:'enthusiastic', distractors:['silent','sleepy','angry']},
+  {sentence:'Even though the test was difficult, she remained ___ and kept trying.', answer:'determined', distractors:['careless','distracted','hopeless']},
+  {sentence:'The old house looked ___ with broken windows and a collapsing roof.', answer:'dilapidated', distractors:['brand-new','sturdy','modern']},
+  {sentence:'His ___ behavior at the meeting embarrassed his coworkers.', answer:'inappropriate', distractors:['professional','polite','helpful']},
+  {sentence:'The scientist made a ___ discovery that changed how we understand the universe.', answer:'groundbreaking', distractors:['ordinary','forgettable','minor']},
+  {sentence:'The puppy was so ___ that it could not sit still for even a minute.', answer:'energetic', distractors:['exhausted','calm','sleepy']},
+  {sentence:'Her ___ answer showed that she hadn\'t studied for the exam at all.', answer:'careless', distractors:['thoughtful','detailed','accurate']},
+  {sentence:'The ___ hikers pressed on even after the trail became dangerously steep.', answer:'persistent', distractors:['fearful','lazy','confused']},
+  {sentence:'The movie was so ___ that half the audience fell asleep.', answer:'tedious', distractors:['thrilling','hilarious','short']},
+  {sentence:'The ___ negotiator managed to satisfy both sides of the disagreement.', answer:'skillful', distractors:['clumsy','careless','rude']},
+  {sentence:'The children were ___ after opening their presents on the holiday morning.', answer:'delighted', distractors:['furious','bored','worried']},
+  {sentence:'A ___ silence fell over the courtroom as the verdict was read.', answer:'tense', distractors:['relaxed','cheerful','noisy']},
+  {sentence:'The recipe called for a ___ amount of sugar — just a small pinch.', answer:'minimal', distractors:['enormous','excessive','unlimited']},
+  {sentence:'His ___ attitude made it hard for the team to stay positive.', answer:'pessimistic', distractors:['optimistic','cheerful','energetic']},
+  {sentence:'The detective noticed a ___ clue that everyone else had overlooked.', answer:'subtle', distractors:['obvious','loud','enormous']},
+  {sentence:'The ___ traveler had visited over fifty countries by the age of thirty.', answer:'seasoned', distractors:['inexperienced','reluctant','frightened']},
+  {sentence:'The teacher gave a ___ explanation that helped everyone understand the lesson.', answer:'clear', distractors:['confusing','vague','pointless']},
+  {sentence:'The ___ smell coming from the kitchen made everyone hungry.', answer:'delightful', distractors:['disgusting','faint','ordinary']},
+  {sentence:'His ___ excuse for being late convinced no one.', answer:'flimsy', distractors:['solid','honest','detailed']},
+  {sentence:'The ___ mountain climber reached the summit despite the harsh weather.', answer:'determined', distractors:['careless','hesitant','fearful']},
+  {sentence:'The ___ river carried the small boat far downstream in seconds.', answer:'swift', distractors:['calm','shallow','frozen']},
+  {sentence:'Her ___ smile put everyone in the room at ease.', answer:'warm', distractors:['cold','fake','nervous']},
+  {sentence:'The ___ instructions left the new employees more confused than before.', answer:'unclear', distractors:['simple','detailed','helpful']},
+  {sentence:'The ___ crowd waited eagerly for the concert to begin.', answer:'restless', distractors:['sleepy','calm','bored']}
+];
+const TEXT_STRUCTURE_TABLE = [
+  {sentence:'First, mix the flour and sugar. Next, add the eggs. Finally, bake for twenty minutes.', structure:'Sequence'},
+  {sentence:'Unlike cats, dogs are usually eager to please their owners and enjoy group activities.', structure:'Compare and contrast'},
+  {sentence:'Because the bridge was closed for repairs, traffic backed up for miles every morning.', structure:'Cause and effect'},
+  {sentence:'The city faced a severe water shortage, so officials introduced strict new conservation rules.', structure:'Problem and solution'},
+  {sentence:'The old lighthouse stood on a rocky cliff, its white paint peeling in the salty wind.', structure:'Description'},
+  {sentence:'After waking up, she brushed her teeth, ate breakfast, and then left for school.', structure:'Sequence'},
+  {sentence:'While basketball emphasizes speed and teamwork, golf rewards patience and precision.', structure:'Compare and contrast'},
+  {sentence:'Since the factory began dumping waste into the river, fish populations have dropped sharply.', structure:'Cause and effect'},
+  {sentence:'Traffic accidents near the school were increasing, so the town installed a new crosswalk and signal.', structure:'Problem and solution'},
+  {sentence:'The garden was full of bright red tulips, buzzing bees, and the smell of fresh-cut grass.', structure:'Description'},
+  {sentence:'To assemble the shelf, first attach the side panels, then screw in the back, and finally add the shelves.', structure:'Sequence'},
+  {sentence:'Both the novel and the movie tell the same story, but the book includes far more detail.', structure:'Compare and contrast'},
+  {sentence:'Because she practiced piano every day, she was able to perform the difficult piece flawlessly.', structure:'Cause and effect'},
+  {sentence:'Many students were struggling with math, so the school added a free tutoring program after school.', structure:'Problem and solution'},
+  {sentence:'The ancient castle had tall stone towers, narrow windows, and a deep moat surrounding its walls.', structure:'Description'}
+];
+
+function genContextClue(){
+  const item = choose(CONTEXT_CLUE_TABLE);
+  const phrasing = choose([
+    `Based on context clues, which word best completes the sentence: "${item.sentence}"`,
+    `Which word makes the most sense in this sentence: "${item.sentence}"`
+  ]);
+  const {c,a} = buildMCQ(item.answer, item.distractors);
+  return Q(phrasing, c, a, `The rest of the sentence gives clues that "${item.answer}" is the best fit.`);
+}
+function genTextStructure(){
+  const item = choose(TEXT_STRUCTURE_TABLE);
+  const allStructures = ['Sequence','Compare and contrast','Cause and effect','Problem and solution','Description'];
+  const distractors = shuffle(allStructures.filter(s=>s!==item.structure)).slice(0,3);
+  const phrasing = choose([
+    `Which text structure does this passage use: "${item.sentence}"`,
+    `How is this passage organized: "${item.sentence}"`
+  ]);
+  const {c,a} = buildMCQ(item.structure, distractors);
+  return Q(phrasing, c, a, `This passage is organized using ${item.structure.toLowerCase()} structure.`);
+}
+
+function expandReadingContent(target){
+  const readingGenerators = [
+    G(()=>genContextClue(),'context-clue'), G(()=>genTextStructure(),'text-structure'),
+    G(()=>genSynonym(),'synonym'), G(()=>genAntonym(),'antonym')
+  ];
+  [trackA, trackB, trackC, trackAdult].forEach(track=>{
+    track.subjects.reading.levels.forEach(levelArr=>{
+      fillMathLevelToTarget(levelArr, readingGenerators, target);
+    });
+  });
+}
+expandReadingContent(500);
+
+
+
+
 function fillMathLevelToTarget(levelArr, generators, target){
   const seen = new Set(levelArr.map(q=>q.q));
   let attempts=0;
@@ -1111,8 +1840,9 @@ function fillMathLevelToTarget(levelArr, generators, target){
     attempts++;
     const gen = choose(generators);
     let q;
-    try{ q = gen(); }catch(e){ continue; }
+    try{ q = gen.fn(); }catch(e){ continue; }
     if(!q || seen.has(q.q)) continue;
+    q._concept = gen.concept;
     seen.add(q.q);
     levelArr.push(q);
   }
@@ -1121,38 +1851,49 @@ function fillMathLevelToTarget(levelArr, generators, target){
 function expandMathContent(target){
   // Track A — 2nd review / 3rd+SOL / 4th Q1-Q2 (heavier 4th-grade weighting)
   fillMathLevelToTarget(trackA.subjects.math.levels[0], [
-    ()=>genAddition(15,70,15,40), ()=>genSubtraction(40,99,10,60), ()=>genCompare(100,999), ()=>genSkipCounting(5,1,30)
+    G(()=>genAddition(15,70,15,40),'addition'), G(()=>genSubtraction(40,99,10,60),'subtraction'), G(()=>genCompare(100,999),'compare'), G(()=>genSkipCounting(5,1,30),'skip-counting')
   ], target);
   fillMathLevelToTarget(trackA.subjects.math.levels[1], [
-    ()=>genAreaRect(3,30), ()=>genPerimeterSquare(3,80), ()=>genMultiplication(2,9,2,9), ()=>genFractionEquivalence()
+    G(()=>genAreaRect(3,30),'area'), G(()=>genPerimeterSquare(3,80),'perimeter'), G(()=>genMultiplication(2,9,2,9),'multiplication'), G(()=>genFractionEquivalence(),'fractions')
   ], target);
   fillMathLevelToTarget(trackA.subjects.math.levels[2], [
-    ()=>genMultiplication(11,49,2,9), ()=>genDivision(2,9,6,25), ()=>genFractionAddSameDenom(), ()=>genDecimalTenths()
+    G(()=>genMultiplication(11,49,2,9),'multiplication'), G(()=>genDivision(2,9,6,25),'division'), G(()=>genFractionAddSameDenom(),'fractions'), G(()=>genDecimalTenths(),'decimals')
   ], target);
 
   // Track B — foundational review / 3rd mastery / 4th Q1-Q2 standard pace
   fillMathLevelToTarget(trackB.subjects.math.levels[0], [
-    ()=>genMultiplication(2,9,2,9), ()=>genCompare(100,999), ()=>genDivision(2,9,3,12), ()=>genAddition(50,300,50,300)
+    G(()=>genMultiplication(2,9,2,9),'multiplication'), G(()=>genCompare(100,999),'compare'), G(()=>genDivision(2,9,3,12),'division'), G(()=>genAddition(50,300,50,300),'addition')
   ], target);
   fillMathLevelToTarget(trackB.subjects.math.levels[1], [
-    ()=>genAreaRect(3,30), ()=>genPerimeterRect(3,30), ()=>genFractionEquivalence(), ()=>genMultiplication(2,9,2,9)
+    G(()=>genAreaRect(3,30),'area'), G(()=>genPerimeterRect(3,30),'perimeter'), G(()=>genFractionEquivalence(),'fractions'), G(()=>genMultiplication(2,9,2,9),'multiplication')
   ], target);
   fillMathLevelToTarget(trackB.subjects.math.levels[2], [
-    ()=>genMultiplication(11,29,2,9), ()=>genFractionAddSameDenom(), ()=>genDivision(2,9,6,20), ()=>genDecimalTenths()
+    G(()=>genMultiplication(11,29,2,9),'multiplication'), G(()=>genFractionAddSameDenom(),'fractions'), G(()=>genDivision(2,9,6,20),'division'), G(()=>genDecimalTenths(),'decimals')
   ], target);
 
   // Track C — 5th review / 6th Q1-Q2 / Algebra I prep / Geometry prep
   fillMathLevelToTarget(trackC.subjects.math.levels[0], [
-    ()=>genDecimalAdd(), ()=>genVolume(), ()=>genDivision(2,9,6,30), ()=>genOrderOfOps()
+    G(()=>genDecimalAdd(),'decimals'), G(()=>genVolume(),'volume'), G(()=>genDivision(2,9,6,30),'division'), G(()=>genOrderOfOps(),'order-of-ops')
   ], target);
   fillMathLevelToTarget(trackC.subjects.math.levels[1], [
-    ()=>genRatioScale(), ()=>genIntegerAdd(15), ()=>genIntegerMultiply(9), ()=>genMean(4,9)
+    G(()=>genRatioScale(),'ratios'), G(()=>genIntegerAdd(15),'integers'), G(()=>genIntegerMultiply(9),'integers'), G(()=>genMean(4,9),'statistics')
   ], target);
   fillMathLevelToTarget(trackC.subjects.math.levels[2], [
-    ()=>genLinearEquation(), ()=>genSlope(), ()=>genFunctionEval(), ()=>genDistribute()
+    G(()=>genLinearEquation(),'equations'), G(()=>genSlope(),'slope'), G(()=>genFunctionEval(),'functions'), G(()=>genDistribute(),'expressions')
   ], target);
   fillMathLevelToTarget(trackC.subjects.math.levels[3], [
-    ()=>genTriangleArea(), ()=>genComplementaryFind(), ()=>genSupplementaryFind(), ()=>genVolume()
+    G(()=>genTriangleArea(),'triangle-area'), G(()=>genComplementaryFind(),'angles'), G(()=>genSupplementaryFind(),'angles'), G(()=>genVolume(),'volume')
+  ], target);
+
+  // Adult — mixed general-numeracy trivia across all three tiers
+  fillMathLevelToTarget(trackAdult.subjects.math.levels[0], [
+    G(()=>genAddition(20,300,20,300),'addition'), G(()=>genMultiplication(2,12,2,12),'multiplication'), G(()=>genCompare(100,9999),'compare'), G(()=>genDecimalAdd(),'decimals')
+  ], target);
+  fillMathLevelToTarget(trackAdult.subjects.math.levels[1], [
+    G(()=>genRatioScale(),'ratios'), G(()=>genMean(4,12),'statistics'), G(()=>genDivision(2,12,6,40),'division'), G(()=>genVolume(),'volume')
+  ], target);
+  fillMathLevelToTarget(trackAdult.subjects.math.levels[2], [
+    G(()=>genLinearEquation(),'equations'), G(()=>genSlope(),'slope'), G(()=>genFunctionEval(),'functions'), G(()=>genTriangleArea(),'triangle-area')
   ], target);
 }
 expandMathContent(500);
@@ -1183,7 +1924,8 @@ function defaultProfile(grade){
     subjectMomentum:{math:0,science:0,history:0,reading:0,writing:0}, // recent performance, drives adaptive difficulty
     hp:null, hpDate:null, // persistent HP for the day, carries across battles until the date changes
     dayStartSnapshot:null, dayStartSnapshotDate:null, // captured fresh each day so "Reset Today" can fully undo the day's progress
-    todayAskedIds:[], todayAskedDate:null // tracks which questions were shown today, so a daily reset doesn't repeat them
+    todayAskedIds:[], todayAskedDate:null, // tracks which questions were shown today, so a daily reset doesn't repeat them
+    relics:{math:null, science:null, history:null, reading:null, writing:null} // null | 'normal' | 'shiny' — first-time boss-defeat rewards
   };
 }
 
@@ -1375,6 +2117,23 @@ function nextXPRewardTier(p){
   const log = todayLogEntry(p);
   return XP_REWARD_TIERS.find(t=>!log.rewardTiersClaimed.includes(t.xp)) || null;
 }
+
+const DAILY_XP_CAP = 1000;
+/* All XP gains funnel through here so the 1000/day cap is enforced in
+   exactly one place, no matter which activity (battle, Final Boss, Review,
+   Practice) earned it. Returns the amount actually awarded (may be less
+   than requested, or 0, if the day's cap has already been reached) so
+   callers can show a "hit your daily cap" message if they want to. */
+function awardXP(p, amount){
+  if(amount<=0) return 0;
+  const log = todayLogEntry(p);
+  const remaining = Math.max(0, DAILY_XP_CAP - log.xpEarned);
+  const granted = Math.min(amount, remaining);
+  p.xpTotal += granted;
+  log.xpEarned += granted;
+  return granted;
+}
+
 function checkDailyXPRewards(p){
   const log = todayLogEntry(p);
   const earned = [];
@@ -1738,6 +2497,27 @@ const Sound = (function(){
     noiseHit(0.08, 0.35, 0.13, 2500);
     [523.25,659.25,783.99,1046.5].forEach((f,i)=> tone(f, 0.42+i*0.08, 0.32, 'triangle', 0.14));
   }
+  function comboHit(){
+    if(!SETTINGS.sfxOn) return;
+    // punchier, brighter than a normal hit — a little reward sting for streaks
+    [880,1108.73,1318.51].forEach((f,i)=> tone(f, i*0.06, 0.14, 'square', 0.11));
+    noiseHit(0, 0.05, 0.08, 9000);
+  }
+  function heartbeat(){
+    if(!SETTINGS.sfxOn) return;
+    // low urgent thud-thud, used sparingly when HP is critically low
+    tone(90, 0, 0.11, 'sine', 0.15, 55);
+    tone(90, 0.18, 0.11, 'sine', 0.12, 50);
+  }
+  function relicFound(shiny){
+    if(!SETTINGS.sfxOn) return;
+    if(shiny){
+      // extra sparkly ascending run for the rare version
+      [523.25,659.25,783.99,1046.5,1318.51].forEach((f,i)=> tone(f, i*0.09, 0.3, 'triangle', 0.13));
+    } else {
+      [523.25,783.99,1046.5].forEach((f,i)=> tone(f, i*0.1, 0.28, 'triangle', 0.14));
+    }
+  }
 
   /* Energetic looping background beat: steady kick/hi-hat pulse + a bouncy
      arpeggiated synth riff on top, scheduled at 128 BPM. All synthesized —
@@ -1758,7 +2538,9 @@ const Sound = (function(){
       if(beatInBar===0 || beatInBar===4) kick(0, 0.16);
       if(beatInBar%2===1) noiseHit(0, 0.04, 0.045, 7000);
       tone(riff[beatInBar], 0, stepDur*0.92, 'triangle', 0.06);
-      if(beatInBar===0) tone(riff[beatInBar]/2, 0, stepDur*1.8, 'sine', 0.05);
+      // Rolling bass layer — a sustained low note every 2 beats (not just
+      // once per bar) gives the loop a fuller, less thin sound throughout.
+      if(beatInBar%2===0) tone(riff[0]/2, 0, stepDur*1.9, 'sine', 0.055);
       musicStep++;
       musicSchedulerId = setTimeout(scheduleStep, stepDur*1000);
     }
@@ -1769,8 +2551,22 @@ const Sound = (function(){
     musicSchedulerId = null;
   }
 
-  return { unlock, click, correct, incorrect, levelUp, badge, questComplete, tick, startAmbient, stopAmbient, hitVillain, hitPlayer, villainDefeated };
+  return { unlock, click, correct, incorrect, levelUp, badge, questComplete, tick, startAmbient, stopAmbient, hitVillain, hitPlayer, villainDefeated, comboHit, heartbeat, relicFound };
 })();
+
+// Battles can now run up to 45 minutes (Final Boss) — without this, the same
+// 8-note loop would repeat for the whole fight, which is what made the music
+// feel like it "never changes." This rotates to a fresh random track every
+// ~90 seconds while a battle is actually in progress.
+let musicRotationInterval = null;
+function startMusicRotation(){
+  stopMusicRotation();
+  musicRotationInterval = setInterval(()=>{ if(SETTINGS.musicOn) Sound.startAmbient(); }, 90000);
+}
+function stopMusicRotation(){
+  if(musicRotationInterval) clearInterval(musicRotationInterval);
+  musicRotationInterval = null;
+}
 
 function fireConfetti(count=26){
   const colors = ['#7C5CFF','#00D9C0','#FF4D6D','#FFB020','#4D8DFF','#B14AFF'];
@@ -1847,6 +2643,7 @@ function render(){
   if(state.screen==='earnings'){ app.innerHTML = renderEarnings(); attachEarningsEvents(); attachHeaderEvents(); return; }
   if(state.screen==='parent'){ app.innerHTML = renderParentDashboard(); attachParentDashboardEvents(); attachHeaderEvents(); return; }
   if(state.screen==='leaderboard'){ app.innerHTML = renderLeaderboard(); attachLeaderboardEvents(); attachHeaderEvents(); return; }
+  if(state.screen==='collection'){ app.innerHTML = renderCollection(); attachCollectionEvents(); attachHeaderEvents(); return; }
   if(state.screen==='review'){ app.innerHTML = renderReview(); attachReviewEvents(); attachHeaderEvents(); return; }
   if(state.screen==='review-result'){ app.innerHTML = renderReviewResult(); attachReviewResultEvents(); attachHeaderEvents(); return; }
   if(state.screen==='practice'){ app.innerHTML = renderPractice(); attachPracticeEvents(); attachHeaderEvents(); return; }
@@ -1901,6 +2698,7 @@ function attachHeaderEvents(){
       if(state.finalBoss && state.finalBoss.timerId) clearInterval(state.finalBoss.timerId);
       if(state.practice && state.practice.timerId) clearInterval(state.practice.timerId);
       Sound.stopAmbient();
+      stopMusicRotation();
     }
     state.tempAvatar = null;
     state.screen = 'pick-track';
@@ -1910,7 +2708,12 @@ function attachHeaderEvents(){
   const sfxBtn = document.getElementById('sfxToggleBtn');
   if(musicBtn) musicBtn.addEventListener('click', async ()=>{
     SETTINGS.musicOn = !SETTINGS.musicOn;
-    if(SETTINGS.musicOn){ Sound.unlock(); Sound.startAmbient(); } else { Sound.stopAmbient(); }
+    if(SETTINGS.musicOn){
+      Sound.unlock(); Sound.startAmbient();
+      if(state.screen==='battle' || state.screen==='finalboss') startMusicRotation();
+    } else {
+      Sound.stopAmbient(); stopMusicRotation();
+    }
     await saveSettings();
     render();
   });
@@ -2361,6 +3164,43 @@ function renderTrailSVG(track, profile){
   </div>`;
 }
 
+/* =========================================================================
+   LOOT / RELIC SYSTEM
+   Defeating a subject boss for the FIRST TIME EVER (not daily — this is a
+   permanent, one-time-per-subject reward) drops a themed relic. There's a
+   small chance it's a rare "shiny" version instead of the normal one.
+   ========================================================================= */
+const SHINY_CHANCE = 0.12;
+const RELIC_DEFS = {
+  math: { name:'Compass of Numbers', flavor:'Always points toward the correct answer... probably.', color:'#FF9F1C' },
+  science: { name:'Beaker of Discovery', flavor:'Bubbles mysteriously when you\'re close to a breakthrough.', color:'#00D9C0' },
+  history: { name:'Medallion of Ages', flavor:'Engraved with the names of a thousand summers past.', color:'#FF4D6D' },
+  reading: { name:'Quill of Storytelling', flavor:'Once belonged to a legendary tale-weaver.', color:'#4D8DFF' },
+  writing: { name:'Inkwell of Ideas', flavor:'Never runs dry, no matter how much you write.', color:'#B14AFF' }
+};
+function relicIconSVG(subjectKey, shiny, size){
+  const def = RELIC_DEFS[subjectKey];
+  const color = shiny ? '#FFD166' : def.color;
+  const shapes = {
+    math: `<circle r="14" fill="none" stroke="${color}" stroke-width="2.5"/><line x1="0" y1="-14" x2="0" y2="14" stroke="${color}" stroke-width="2"/><polygon points="0,-9 4,0 0,9 -4,0" fill="${color}"/>`,
+    science: `<path d="M-7,-13 h14 v9 l9,17 a4,4 0 0 1 -4,6 h-24 a4,4 0 0 1 -4,-6 l9,-17 z" fill="${color}"/><circle cx="-3" cy="6" r="2.4" fill="#fff" opacity="0.6"/>`,
+    history: `<circle r="14" fill="${color}" opacity="0.9"/><polygon points="0,-8 2.4,-2.4 8,-2.4 3.2,1.6 5,8 0,4 -5,8 -3.2,1.6 -8,-2.4 -2.4,-2.4" fill="#fff" opacity="0.85"/>`,
+    reading: `<path d="M0,14 C-2,4 -12,2 -12,-10 C-6,-13 0,-9 0,-2 C0,-9 6,-13 12,-10 C12,2 2,4 0,14 Z" fill="${color}"/>`,
+    writing: `<path d="M-8,10 C-8,-4 -3,-14 6,-14 C6,-2 2,6 -8,10 Z" fill="${color}"/><circle cy="10" r="9" fill="${color}" opacity="0.3"/>`
+  };
+  const s = size || 44;
+  return `<svg viewBox="-16 -16 32 32" width="${s}" height="${s}">
+    ${shiny ? `<circle r="15" fill="none" stroke="#FFD166" stroke-width="1.5" opacity="0.7" class="relic-shiny-ring"/>` : ''}
+    ${shapes[subjectKey] || shapes.math}
+  </svg>`;
+}
+function grantRelic(p, subjectKey){
+  if(p.relics[subjectKey] !== null) return null; // already earned — permanent, one-time reward
+  const shiny = Math.random() < SHINY_CHANCE;
+  p.relics[subjectKey] = shiny ? 'shiny' : 'normal';
+  return p.relics[subjectKey];
+}
+
 const BADGE_DEFS = [
   {id:'streak3', emoji:'🔥', label:'3-Day Streak'},
   {id:'streak7', emoji:'🌟', label:'7-Day Streak'},
@@ -2450,6 +3290,20 @@ function renderDashboard(){
     }).join('')}
   </div>
 
+  <div class="section-title">🎁 Relic Collection</div>
+  <div class="card" style="cursor:pointer;" id="collectionPreviewCard">
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <div style="display:flex;gap:8px;">
+        ${SUBJECT_ORDER.map(key=>{
+          const r = p.relics[key];
+          return `<div style="width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:${r?'var(--panel-tint)':'#eee'};opacity:${r?1:0.35};">${r ? relicIconSVG(key, r==='shiny', 30) : '🔒'}</div>`;
+        }).join('')}
+      </div>
+      <span class="btn ghost" style="min-width:auto;">View Collection →</span>
+    </div>
+    <p style="margin:8px 0 0;font-size:12.5px;color:var(--text-dim);">${Object.values(p.relics).filter(Boolean).length} / 5 relics found — defeat each realm's boss for the first time to earn one.</p>
+  </div>
+
   <div class="section-title" style="color:var(--coral);">⚠️ Danger Zone</div>
   <div class="card" style="border:2px solid var(--coral);background:#FFF5F5;">
     <p style="margin:0 0 10px;font-size:13.5px;color:var(--text-dim);">This permanently erases <strong>${p.name}'s</strong> entire history — all XP, badges, streaks, and unredeemed rewards. This cannot be undone.</p>
@@ -2500,6 +3354,12 @@ function attachDashboardEvents(){
     state.screen = 'setup-name';
     render();
   });
+  const collectionCard = document.getElementById('collectionPreviewCard');
+  if(collectionCard) collectionCard.addEventListener('click', ()=>{
+    Sound.unlock(); Sound.click();
+    state.screen = 'collection';
+    render();
+  });
   // The map is the single source of navigation for battles now — every node
   // (including the Final Boss) carries data-subject, routed correctly here.
   app.querySelectorAll('[data-subject]').forEach(node=>{
@@ -2546,7 +3406,7 @@ function startBattle(subjectKey){
     window.alert("You're out of HP for today! Rest up and come back tomorrow, or visit the Review Realm / Practice Zone in the meantime.");
     return;
   }
-  if(SETTINGS.musicOn){ Sound.unlock(); Sound.startAmbient(); }
+  if(SETTINGS.musicOn){ Sound.unlock(); Sound.startAmbient(); startMusicRotation(); }
   const levels = track.subjects[subjectKey].levels;
   let startLevel = p.levelBySubject[subjectKey];
   startLevel = Math.max(0, Math.min(startLevel, levels.length-1));
@@ -2561,7 +3421,7 @@ function startBattle(subjectKey){
   // A modest per-question difficulty multiplier (applied at hit-time, based
   // on that question's tier) still makes harder questions hit harder, but
   // only by roughly ±15%, so the overall hit counts stay close to target.
-  const targetHitsToWin = randInt(6, 10);
+  const targetHitsToWin = randInt(10, 12);
   const targetHitsToLose = randInt(10, 12);
   const correctDamageBase = bossMaxHp / targetHitsToWin;
   const wrongDamageBase = PLAYER_MAX_HP / targetHitsToLose;
@@ -2592,11 +3452,30 @@ function startBattle(subjectKey){
    current battle. Prefers the target difficulty tier, falls back to any tier
    with unused questions, and only allows a repeat once every question for
    that subject has already been asked this battle. */
-function pickNextUniqueQuestion(levels, targetLevelIdx, usedSet, avoidIds){
+// Prefers candidates whose _concept tag differs from whatever was just asked
+// (recentConcepts = last 1-2 concepts used in this battle). Questions without
+// a _concept tag (most hand-authored ones, for now) are unaffected and just
+// pass through — this currently sharpens variety most for Math, since every
+// procedurally-generated math question carries a concept label.
+function preferDifferentConcept(pool, recentConcepts){
+  if(!recentConcepts || recentConcepts.length===0) return pool;
+  const filtered = pool.filter(item=>{
+    // Distinguish a wrapped {q, levelIdx} entry from a raw Q object — raw Q
+    // objects have their OWN field literally named "q" (the question text),
+    // so a naive `item.q || item` check would always grab that string
+    // instead of the real question object, silently defeating this filter.
+    const q = ('levelIdx' in item) ? item.q : item;
+    return !q._concept || !recentConcepts.includes(q._concept);
+  });
+  return filtered.length>0 ? filtered : pool;
+}
+
+function pickNextUniqueQuestion(levels, targetLevelIdx, usedSet, avoidIds, recentConcepts){
   avoidIds = avoidIds || new Set();
   // Preference 1: not used this battle AND not already asked today (covers the daily-reset case)
   let inLevel = levels[targetLevelIdx].filter(q=>!usedSet.has(q) && !avoidIds.has(q._id));
   if(inLevel.length>0){
+    inLevel = preferDifferentConcept(inLevel, recentConcepts);
     return { q: inLevel[Math.floor(Math.random()*inLevel.length)], levelIdx: targetLevelIdx };
   }
   let otherOptions = [];
@@ -2604,11 +3483,13 @@ function pickNextUniqueQuestion(levels, targetLevelIdx, usedSet, avoidIds){
     lvlQs.forEach(q=>{ if(!usedSet.has(q) && !avoidIds.has(q._id)) otherOptions.push({q, levelIdx:li}); });
   });
   if(otherOptions.length>0){
+    otherOptions = preferDifferentConcept(otherOptions, recentConcepts);
     return otherOptions[Math.floor(Math.random()*otherOptions.length)];
   }
   // Preference 2: relax the today-avoidance (small subjects may not have enough content) — still avoid this battle's repeats
   inLevel = levels[targetLevelIdx].filter(q=>!usedSet.has(q));
   if(inLevel.length>0){
+    inLevel = preferDifferentConcept(inLevel, recentConcepts);
     return { q: inLevel[Math.floor(Math.random()*inLevel.length)], levelIdx: targetLevelIdx };
   }
   otherOptions = [];
@@ -2616,6 +3497,7 @@ function pickNextUniqueQuestion(levels, targetLevelIdx, usedSet, avoidIds){
     lvlQs.forEach(q=>{ if(!usedSet.has(q)) otherOptions.push({q, levelIdx:li}); });
   });
   if(otherOptions.length>0){
+    otherOptions = preferDifferentConcept(otherOptions, recentConcepts);
     return otherOptions[Math.floor(Math.random()*otherOptions.length)];
   }
   // Fully exhausted — start a fresh cycle for this battle
@@ -2633,12 +3515,17 @@ function nextBattleQuestion(){
   const targetLevel = weighted!==null ? weighted : s.levelIdx;
 
   const avoidIds = getTodayAskedSet(p);
-  const picked = pickNextUniqueQuestion(levels, targetLevel, s.usedQuestions, avoidIds);
+  if(!s.recentConcepts) s.recentConcepts = [];
+  const picked = pickNextUniqueQuestion(levels, targetLevel, s.usedQuestions, avoidIds, s.recentConcepts);
   s.currentQ = picked.q;
   s.levelIdx = picked.levelIdx;
   s.maxLevelReached = Math.max(s.maxLevelReached, picked.levelIdx);
   s.usedQuestions.add(picked.q);
   recordAskedToday(p, picked.q._id);
+  if(picked.q._concept){
+    s.recentConcepts.push(picked.q._concept);
+    if(s.recentConcepts.length>2) s.recentConcepts.shift();
+  }
   s.awaitingNext = false;
   s.chosenIdx = null;
 }
@@ -2678,26 +3565,117 @@ function renderQuestionBody(q){
 /* Large villain portrait for battles — an illustrated badge (reusing the
    map's subject artwork) with a big emoji overlay and a menacing pulsing
    aura, much larger than the old inline icon. */
+/* Detailed villain creature silhouettes — one per subject, plus the dragon
+   Realm Overlord for the Final Boss. Each is built from multiple layered
+   shapes with gradient shading rather than a single flat icon, for a much
+   richer "actual illustrated character" feel. */
+function villainCreature(subjectKey, gradId){
+  const creatures = {
+    math: `
+      <polygon points="0,-34 22,-10 16,26 -16,26 -22,-10" fill="url(#${gradId})"/>
+      <polygon points="0,-34 10,-14 -2,-14" fill="#fff" opacity="0.25"/>
+      <polygon points="-16,26 -6,4 4,26" fill="#000" opacity="0.18"/>
+      <circle cx="-8" cy="-4" r="4" fill="#180d28"/>
+      <circle cx="8" cy="-4" r="4" fill="#180d28"/>
+      <circle cx="-8" cy="-4" r="1.6" fill="#fff"/>
+      <circle cx="8" cy="-4" r="1.6" fill="#fff"/>
+      <path d="M-9,10 Q0,4 9,10" stroke="#180d28" stroke-width="2" fill="none"/>`,
+    science: `
+      <path d="M-11,-32 h22 v16 l16,32 a7,7 0 0 1 -7,10 h-40 a7,7 0 0 1 -7,-10 l16,-32 z" fill="url(#${gradId})"/>
+      <rect x="-11" y="-32" width="22" height="7" fill="#fff" opacity="0.3"/>
+      <circle cx="-6" cy="8" r="4" fill="#fff" opacity="0.55"/>
+      <circle cx="7" cy="18" r="3" fill="#fff" opacity="0.4"/>
+      <circle cx="2" cy="0" r="2.4" fill="#fff" opacity="0.5"/>
+      <circle cx="-7" cy="-8" r="3.4" fill="#180d28"/>
+      <circle cx="7" cy="-8" r="3.4" fill="#180d28"/>
+      <circle cx="-7" cy="-8" r="1.3" fill="#fff"/>
+      <circle cx="7" cy="-8" r="1.3" fill="#fff"/>`,
+    history: `
+      <polygon points="-26,26 26,26 26,18 -26,18" fill="url(#${gradId})"/>
+      <rect x="-22" y="-12" width="6" height="30" fill="url(#${gradId})"/>
+      <rect x="-8" y="-16" width="6" height="34" fill="url(#${gradId})"/>
+      <rect x="6" y="-16" width="6" height="34" fill="url(#${gradId})"/>
+      <rect x="20" y="-12" width="6" height="30" fill="url(#${gradId})"/>
+      <polygon points="-28,-14 28,-14 0,-34" fill="url(#${gradId})"/>
+      <polygon points="-28,-14 0,-34 0,-14" fill="#fff" opacity="0.2"/>
+      <circle cx="-5" cy="-20" r="3" fill="#180d28"/>
+      <circle cx="5" cy="-20" r="3" fill="#180d28"/>`,
+    reading: `
+      <path d="M-30,20 Q-10,4 0,10 Q10,4 30,20 L30,-6 Q10,-18 0,-10 Q-10,-18 -30,-6 Z" fill="url(#${gradId})"/>
+      <path d="M0,-10 V10" stroke="#fff" stroke-opacity="0.4" stroke-width="2"/>
+      <path d="M-22,-4 Q-12,-12 -2,-6" stroke="#fff" stroke-opacity="0.3" stroke-width="1.5" fill="none"/>
+      <path d="M2,-6 Q12,-12 22,-4" stroke="#fff" stroke-opacity="0.3" stroke-width="1.5" fill="none"/>
+      <circle cx="-10" cy="-2" r="3" fill="#180d28"/>
+      <circle cx="10" cy="-2" r="3" fill="#180d28"/>`,
+    writing: `
+      <ellipse cx="0" cy="28" rx="30" ry="7" fill="url(#${gradId})" opacity="0.5"/>
+      <path d="M0,30 C-10,0 4,-22 26,-32 C16,-8 10,14 0,30 Z" fill="url(#${gradId})"/>
+      <path d="M6,8 C14,-10 20,-22 26,-32" stroke="#fff" stroke-opacity="0.35" stroke-width="1.6" fill="none"/>
+      <circle cx="-4" cy="6" r="3" fill="#180d28"/>
+      <circle cx="6" cy="-2" r="2.4" fill="#180d28"/>`,
+    boss: `
+      <path d="M0,-38 C16,-30 26,-14 22,4 C30,2 36,10 32,18 C26,16 20,20 18,28 C10,24 -10,24 -18,28 C-20,20 -26,16 -32,18 C-36,10 -30,2 -22,4 C-26,-14 -16,-30 0,-38 Z" fill="url(#${gradId})"/>
+      <polygon points="-22,4 -34,-4 -22,-6" fill="url(#${gradId})" opacity="0.85"/>
+      <polygon points="22,4 34,-4 22,-6" fill="url(#${gradId})" opacity="0.85"/>
+      <polygon points="0,-38 -6,-46 6,-46" fill="url(#${gradId})"/>
+      <circle cx="-8" cy="-10" r="3.6" fill="#FFD166"/>
+      <circle cx="8" cy="-10" r="3.6" fill="#FFD166"/>
+      <circle cx="-8" cy="-10" r="1.4" fill="#180d28"/>
+      <circle cx="8" cy="-10" r="1.4" fill="#180d28"/>
+      <path d="M-10,6 Q0,14 10,6" stroke="#180d28" stroke-width="2.4" fill="none"/>`
+  };
+  return creatures[subjectKey] || creatures.boss;
+}
+
 function bossPortraitHTML(subjectKey, idAttr){
   const hexColors = {math:'#FF9F1C', science:'#00D9C0', history:'#FF4D6D', reading:'#4D8DFF', writing:'#B14AFF', boss:'#FF2E63'};
+  const darkColors = {math:'#B8630A', science:'#00877A', history:'#B8203D', reading:'#2A56A8', writing:'#7A2FA0', boss:'#A80F3D'};
   const emojis = {math:'⛰️',science:'🔬',history:'🏛️',reading:'📖',writing:'✍️',boss:'🐉'};
   const color = hexColors[subjectKey] || '#FF2E63';
+  const dark = darkColors[subjectKey] || '#A80F3D';
   const emoji = emojis[subjectKey] || '🐉';
+  const gradId = 'grad-'+idAttr;
   return `<div id="${idAttr}" class="combatant-icon boss-portrait">
-    <svg viewBox="-42 -42 84 84" width="100%" height="100%">
-      <circle r="40" fill="${color}" opacity="0.35" class="boss-aura"/>
-      <circle r="34" fill="#180d28"/>
-      <g>${nodeIllustration(subjectKey, color)}</g>
+    <svg viewBox="-50 -54 100 108" width="100%" height="100%">
+      <defs>
+        <linearGradient id="${gradId}" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="${color}"/>
+          <stop offset="100%" stop-color="${dark}"/>
+        </linearGradient>
+      </defs>
+      <circle cy="4" r="48" fill="${color}" opacity="0.28" class="boss-aura"/>
+      <circle cy="4" r="48" fill="none" stroke="${color}" stroke-width="1.5" opacity="0.5" class="boss-aura-ring"/>
+      <circle cy="4" r="40" fill="#150a26"/>
+      <g transform="translate(0,10)">${villainCreature(subjectKey, gradId)}</g>
     </svg>
     <span class="boss-emoji-badge">${emoji}</span>
   </div>`;
 }
+
+/* Weapon icons, drawn as small SVGs rather than emoji, so they read clearly
+   at any size and match the app's illustrated art style. */
+function weaponIconSVG(weaponId, color){
+  const icons = {
+    sword: `<rect x="-2" y="-16" width="4" height="20" fill="#D8D8E0"/><polygon points="-2,-16 0,-20 2,-16" fill="#D8D8E0"/><rect x="-6" y="3" width="12" height="3" fill="${color}"/><rect x="-2" y="6" width="4" height="8" fill="#5A4630"/>`,
+    bow: `<path d="M-2,-16 Q10,0 -2,16" stroke="#8A5A2B" stroke-width="2.5" fill="none"/><line x1="-2" y1="-16" x2="-2" y2="16" stroke="#EDE6D6" stroke-width="1"/>`,
+    mace: `<rect x="-2" y="-4" width="4" height="18" fill="#8A5A2B"/><circle r="7" fill="${color}"/><circle cx="-3" cy="-3" r="1.6" fill="#180d28"/><circle cx="3" cy="-3" r="1.6" fill="#180d28"/><circle cx="0" cy="4" r="1.6" fill="#180d28"/>`,
+    staff: `<rect x="-1.5" y="-18" width="3" height="30" fill="#8A5A2B"/><circle cy="-18" r="5" fill="${color}" opacity="0.85"/>`,
+    dagger: `<rect x="-1.5" y="-10" width="3" height="14" fill="#D8D8E0"/><polygon points="-1.5,-10 0,-14 1.5,-10" fill="#D8D8E0"/><rect x="-4" y="4" width="8" height="2.4" fill="${color}"/>`
+  };
+  return icons[weaponId] || icons.sword;
+}
+
 function playerPortraitHTML(emoji, color, idAttr, bodyShapeId, weaponId){
   const shape = BODY_SHAPES.find(b=>b.id===bodyShapeId) || BODY_SHAPES[1];
   const weapon = WEAPONS.find(w=>w.id===weaponId) || WEAPONS[0];
-  return `<div id="${idAttr}" class="combatant-icon player-portrait" style="background:${color||'#7C5CFF'}33;border-color:${color||'#7C5CFF'};transform:scaleX(${shape.scaleX}) scaleY(${shape.scaleY});">
+  const c = color || '#7C5CFF';
+  return `<div id="${idAttr}" class="combatant-icon player-portrait" style="transform:scaleX(${shape.scaleX}) scaleY(${shape.scaleY});">
+    <svg viewBox="-40 -40 80 80" width="100%" height="100%">
+      <circle r="38" fill="${c}" opacity="0.3" class="player-aura"/>
+      <circle r="32" fill="${c}22" stroke="${c}" stroke-width="2.5"/>
+      <g transform="translate(20,-14) rotate(20)">${weaponIconSVG(weapon.id, c)}</g>
+    </svg>
     <span class="player-emoji-badge">${emoji||'🧑‍🚀'}</span>
-    <span class="weapon-badge">${weapon.emoji}</span>
   </div>`;
 }
 
@@ -2707,6 +3685,28 @@ function hpBarHTML(current, max, id, colorClass){
     <div class="hp-bar-bg"><div id="${id}" class="hp-bar-fill ${colorClass}" style="width:${pct}%"></div></div>
     <span id="${id}Text" class="hp-text">${Math.max(0,current)}/${max} HP</span>
   </div>`;
+}
+
+/* Full-width themed backdrop behind the battle arena, matched to whichever
+   realm is being fought — this is the single biggest driver of "does this
+   look like a real illustrated battle" vs. a plain quiz screen. */
+function battleBackdropSVG(subjectKey){
+  const themes = {
+    math: {sky:['#3a2a5c','#1c1440'], deco:`<polygon points="0,140 90,60 180,140" fill="#FF9F1C" opacity="0.18"/><polygon points="140,140 260,40 380,140" fill="#FF9F1C" opacity="0.14"/><polygon points="330,140 430,70 560,140" fill="#FF9F1C" opacity="0.18"/>`},
+    science: {sky:['#0f3d3a','#0a1f2e'], deco:`<circle cx="90" cy="60" r="30" fill="#00D9C0" opacity="0.14"/><circle cx="260" cy="90" r="18" fill="#00D9C0" opacity="0.18"/><circle cx="460" cy="50" r="24" fill="#00D9C0" opacity="0.12"/>`},
+    history: {sky:['#4a1f2c','#241018'], deco:`<rect x="60" y="70" width="14" height="70" fill="#FF4D6D" opacity="0.16"/><rect x="140" y="50" width="14" height="90" fill="#FF4D6D" opacity="0.16"/><rect x="380" y="60" width="14" height="80" fill="#FF4D6D" opacity="0.16"/><rect x="470" y="45" width="14" height="95" fill="#FF4D6D" opacity="0.16"/>`},
+    reading: {sky:['#1c2f5c','#0e1730'], deco:`<ellipse cx="120" cy="100" rx="60" ry="34" fill="#4D8DFF" opacity="0.12"/><ellipse cx="420" cy="80" rx="70" ry="30" fill="#4D8DFF" opacity="0.14"/>`},
+    writing: {sky:['#3a1c52','#1c0e30'], deco:`<path d="M40,140 Q120,20 200,140" stroke="#B14AFF" stroke-width="10" fill="none" opacity="0.14"/><path d="M340,140 Q420,30 500,140" stroke="#B14AFF" stroke-width="10" fill="none" opacity="0.14"/>`},
+    boss: {sky:['#3a0a1a','#12040c'], deco:`<polygon points="0,140 60,60 120,140" fill="#FF2E63" opacity="0.16"/><polygon points="90,140 170,30 250,140" fill="#FF2E63" opacity="0.2"/><polygon points="220,140 300,50 380,140" fill="#FF2E63" opacity="0.16"/><polygon points="350,140 440,40 530,140" fill="#FF2E63" opacity="0.2"/><circle cx="480" cy="40" r="26" fill="#FFD166" opacity="0.15"/>`}
+  };
+  const t = themes[subjectKey] || themes.math;
+  return `<svg class="battle-backdrop" viewBox="0 0 600 160" preserveAspectRatio="none">
+    <defs><linearGradient id="bgGrad-${subjectKey}" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="${t.sky[0]}"/><stop offset="100%" stop-color="${t.sky[1]}"/>
+    </linearGradient></defs>
+    <rect width="600" height="160" fill="url(#bgGrad-${subjectKey})"/>
+    ${t.deco}
+  </svg>`;
 }
 
 /* =========================================================================
@@ -2860,7 +3860,8 @@ function renderBattle(){
     </div>
     <p style="margin:0 0 4px;font-size:12px;font-weight:700;color:var(--violet);">🗓️ Day ${p.totalDaysPlayed||1} challenge — enemies get tougher the more days you play!</p>
 
-    <div class="battle-arena">
+    <div class="battle-arena ${s.playerHP>0 && s.playerHP<30 ? 'low-hp':''}">
+      ${battleBackdropSVG(s.subject)}
       <div class="combatant">
         ${playerPortraitHTML(p.avatarEmoji, p.avatarColor, 'playerIcon', p.bodyShape, p.weapon)}
         <div class="combatant-label">You</div>
@@ -2896,17 +3897,35 @@ function scoreRowHTML(s){
   return `<span class="score-badge">✅ ${s.correctCount} correct</span><span class="score-badge alt">📝 ${s.answeredCount} answered</span>${streakFlames}`;
 }
 
+function spawnParticleBurst(defender){
+  const emojis = ['💥','⭐','✨','💫'];
+  const count = 6;
+  for(let i=0;i<count;i++){
+    const p = document.createElement('span');
+    p.className = 'impact-particle';
+    p.textContent = emojis[Math.floor(Math.random()*emojis.length)];
+    const angle = (Math.PI*2*i/count) + (Math.random()*0.6-0.3);
+    const dist = 28 + Math.random()*20;
+    p.style.setProperty('--dx', Math.cos(angle)*dist+'px');
+    p.style.setProperty('--dy', Math.sin(angle)*dist+'px');
+    defender.appendChild(p);
+    setTimeout(()=>p.remove(), 560);
+  }
+}
+
 function animateAttack(attackerId, defenderId, lungeClass){
   const attacker = document.getElementById(attackerId);
   const defender = document.getElementById(defenderId);
   if(attacker){ attacker.classList.add(lungeClass); setTimeout(()=>attacker.classList.remove(lungeClass), 450); }
   if(defender){
     defender.classList.add('hit-shake');
-    const star = document.createElement('span');
-    star.className = 'impact-star';
-    star.textContent = Math.random()<0.5 ? '💥' : '⭐';
-    defender.appendChild(star);
-    setTimeout(()=>{ defender.classList.remove('hit-shake'); star.remove(); }, 500);
+    spawnParticleBurst(defender);
+    setTimeout(()=>defender.classList.remove('hit-shake'), 500);
+    const arena = defender.closest('.battle-arena');
+    if(arena){
+      arena.classList.add('arena-shake');
+      setTimeout(()=>arena.classList.remove('arena-shake'), 350);
+    }
   }
 }
 
@@ -2995,13 +4014,14 @@ function attachBattleEvents(){
         Sound.correct();
         Sound.hitVillain();
         animateAttack('playerIcon','bossIcon','attack-right');
-        if(s.correctStreak>0 && s.correctStreak%3===0){ fireConfetti(14); Sound.levelUp(); }
+        if(s.correctStreak>0 && s.correctStreak%3===0){ fireConfetti(14); Sound.comboHit(); }
       } else {
         s.correctStreak = 0; s.wrongStreak += 1;
         const dmgTaken = Math.max(1, Math.round(s.wrongDamageBase * tierMult));
         s.playerHP = Math.max(0, s.playerHP - dmgTaken);
         Sound.incorrect();
         Sound.hitPlayer();
+        if(s.playerHP>0 && s.playerHP<30) Sound.heartbeat();
         animateAttack('bossIcon','playerIcon','attack-left');
         recordMiss(p, track, s.subject, q);
       }
@@ -3064,17 +4084,17 @@ async function endBattle(){
   const s = state.battle;
   const track = getActiveTrack();
   const p = getActiveProfile();
+  stopMusicRotation();
 
   setDailyHP(p, s.playerHP); // HP persists for the rest of the day, win or lose
 
-  p.xpTotal += s.xpEarned;
-  p.xpBySubject[s.subject] += s.xpEarned;
+  const xpAwarded = awardXP(p, s.xpEarned);
+  p.xpBySubject[s.subject] += xpAwarded;
   p.levelBySubject[s.subject] = track.mixWeights ? s.maxLevelReached : s.levelIdx;
   const log = todayLogEntry(p);
-  log.xpEarned += s.xpEarned;
-
   const newBadges = [];
   let dailyRewardsEarned = [];
+  let relicGranted = null;
 
   if(s.result==='victory'){
     // streak + daily-reset handling only happens on an actual win
@@ -3096,6 +4116,7 @@ async function endBattle(){
     const maxLevel = track.subjects[s.subject].levels.length - 1;
     const masteryId = s.subject+'-master';
     if(p.levelBySubject[s.subject]>=maxLevel && !p.badges.includes(masteryId)){ p.badges.push(masteryId); newBadges.push(masteryId); }
+    relicGranted = grantRelic(p, s.subject);
   }
 
   dailyRewardsEarned = checkDailyXPRewards(p);
@@ -3103,7 +4124,9 @@ async function endBattle(){
   pruneDailyLog(p);
   await saveProfile(state.activePlayerId, p);
 
+  state.battle.xpAwarded = xpAwarded;
   state.battle.newBadges = newBadges;
+  state.battle.relicGranted = relicGranted;
   state.battle.dailyRewardsEarned = dailyRewardsEarned;
   state.screen = 'battle-result';
   render();
@@ -3130,12 +4153,20 @@ function renderBattleResult(){
     <p>${message}</p>
     <div class="summary-stat"><span>Questions answered</span><strong>${s.answeredCount}</strong></div>
     <div class="summary-stat"><span>Correct</span><strong>${s.correctCount} (${acc}%)</strong></div>
-    <div class="summary-stat"><span>XP earned</span><strong>+${s.xpEarned}</strong></div>
+    <div class="summary-stat"><span>XP earned</span><strong>+${s.xpAwarded}</strong></div>
     <div class="summary-stat"><span>HP remaining</span><strong>You: ${Math.max(0,s.playerHP)}/${PLAYER_MAX_HP} · Boss: ${Math.max(0,s.bossHP)}/${s.bossMaxHp}</strong></div>
-    <div class="summary-stat"><span>Today's total XP</span><strong>${todayLogEntry(p).xpEarned}</strong></div>
+    <div class="summary-stat"><span>Today's total XP</span><strong>${todayLogEntry(p).xpEarned} / ${DAILY_XP_CAP}</strong></div>
+    ${s.xpAwarded < s.xpEarned ? `<div class="card" style="background:linear-gradient(135deg,#FFF3D6,#FFE7A8);text-align:center;margin:10px 0;"><p style="margin:0;font-weight:700;">🎯 You hit today's XP cap (${DAILY_XP_CAP})! Extra XP from great performances doesn't carry over — but your total is safe for tomorrow.</p></div>` : ''}
     ${s.dailyRewardsEarned && s.dailyRewardsEarned.length ? s.dailyRewardsEarned.map(r=>`
       <div class="summary-stat"><span>🎉 Daily XP reward (${r.xp} XP)</span><strong>${r.type.emoji} +${r.minutes} min ${r.type.label}</strong></div>
     `).join('') : ''}
+    ${s.relicGranted ? `
+      <div class="card relic-reveal ${s.relicGranted==='shiny'?'shiny':''}" style="text-align:center;margin:16px 0;">
+        <p style="margin:0 0 6px;font-weight:800;font-size:13px;letter-spacing:0.5px;text-transform:uppercase;color:${s.relicGranted==='shiny'?'#B8860B':'var(--violet)'};">${s.relicGranted==='shiny' ? '✨ Shiny Relic Found! ✨' : '🎁 New Relic Found!'}</p>
+        <div style="margin:8px 0;">${relicIconSVG(s.subject, s.relicGranted==='shiny', 72)}</div>
+        <p style="margin:0;font-weight:800;font-size:16px;">${RELIC_DEFS[s.subject].name}</p>
+        <p style="margin:4px 0 0;font-size:12.5px;color:var(--text-dim);font-style:italic;">${RELIC_DEFS[s.subject].flavor}</p>
+      </div>` : ''}
     ${s.newBadges && s.newBadges.length ? `
       <div class="section-title" style="margin-top:22px;">New badge${s.newBadges.length>1?'s':''}!</div>
       <div class="passport">${s.newBadges.map(id=>{
@@ -3155,7 +4186,10 @@ function attachBattleResultEvents(){
   Sound.unlock();
   const hasBadges = state.battle.newBadges && state.battle.newBadges.length;
   if(state.battle.result==='victory'){
-    if(hasBadges){ Sound.badge(); fireConfetti(34); }
+    if(state.battle.relicGranted){
+      Sound.relicFound(state.battle.relicGranted==='shiny');
+      fireConfetti(state.battle.relicGranted==='shiny' ? 50 : 30);
+    } else if(hasBadges){ Sound.badge(); fireConfetti(34); }
     else { Sound.questComplete(); fireConfetti(18); }
   } else {
     Sound.click();
@@ -3189,7 +4223,7 @@ function startFinalBoss(){
     window.alert("You're out of HP for today! Rest up and come back tomorrow.");
     return;
   }
-  if(SETTINGS.musicOn){ Sound.unlock(); Sound.startAmbient(); }
+  if(SETTINGS.musicOn){ Sound.unlock(); Sound.startAmbient(); startMusicRotation(); }
 
   const targetHits = finalBossTargetHits(p);
   const bossMaxHp = 1000;
@@ -3222,11 +4256,16 @@ function nextFinalBossQuestion(){
   const levels = track.subjects[subj.key].levels;
   const toughestIdx = levels.length - 1;
   const avoidIds = getTodayAskedSet(p);
-  const picked = pickNextUniqueQuestion(levels, toughestIdx, bs.usedQuestions, avoidIds);
+  if(!bs.recentConcepts) bs.recentConcepts = [];
+  const picked = pickNextUniqueQuestion(levels, toughestIdx, bs.usedQuestions, avoidIds, bs.recentConcepts);
   bs.currentQ = picked.q;
   bs.currentSubject = subj;
   bs.usedQuestions.add(picked.q);
   recordAskedToday(p, picked.q._id);
+  if(picked.q._concept){
+    bs.recentConcepts.push(picked.q._concept);
+    if(bs.recentConcepts.length>2) bs.recentConcepts.shift();
+  }
   bs.awaitingNext = false;
   bs.chosenIdx = null;
 }
@@ -3263,7 +4302,8 @@ function renderFinalBoss(){
       <span class="level-chip" style="background:linear-gradient(135deg,#FF4D6D,#B14AFF);color:#2A0A14;">🐉 FINAL BOSS · ${subj.icon} ${subj.name}</span>
       <div class="timer" id="bossTimerWrap"><span id="bossTimerDisplay">${m}:${sec.toString().padStart(2,'0')}</span></div>
     </div>
-    <div class="battle-arena dark">
+    <div class="battle-arena dark ${bs.playerHP>0 && bs.playerHP<30 ? 'low-hp':''}">
+      ${battleBackdropSVG('boss')}
       <div class="combatant">
         ${playerPortraitHTML(p.avatarEmoji, p.avatarColor, 'fbPlayerIcon', p.bodyShape, p.weapon)}
         <div class="combatant-label">You</div>
@@ -3327,6 +4367,7 @@ function attachFinalBossEvents(){
         bs.playerHP = Math.max(0, bs.playerHP - dmgTaken);
         Sound.incorrect();
         Sound.hitPlayer();
+        if(bs.playerHP>0 && bs.playerHP<30) Sound.heartbeat();
         animateAttack('fbBossIcon','fbPlayerIcon','attack-left');
       }
 
@@ -3368,6 +4409,7 @@ function attachFinalBossEvents(){
 async function endFinalBoss(){
   const bs = state.finalBoss;
   const p = getActiveProfile();
+  stopMusicRotation();
   setDailyHP(p, bs.playerHP); // HP persists for the rest of the day
   const won = bs.result==='victory';
   const today = todayStr();
@@ -3377,8 +4419,7 @@ async function endFinalBoss(){
   // XP scales with actual effort (hits landed), plus a completion bonus for winning —
   // this matters a lot more now that a late-summer fight can be 50+ hits long.
   const xpEarned = bs.correctCount * 6 + (won ? 100 : 0);
-  p.xpTotal += xpEarned;
-  log.xpEarned += xpEarned;
+  const xpAwarded = awardXP(p, xpEarned);
 
   const newBadges = [];
   if(won){
@@ -3390,7 +4431,8 @@ async function endFinalBoss(){
   pruneDailyLog(p);
   await saveProfile(state.activePlayerId, p);
 
-  state.finalBoss.xpEarned = xpEarned;
+  state.finalBoss.xpEarnedRaw = xpEarned;
+  state.finalBoss.xpEarned = xpAwarded;
   state.finalBoss.newBadges = newBadges;
   state.finalBoss.dailyRewardsEarned = dailyRewardsEarned;
   state.screen = 'finalboss-result';
@@ -3409,6 +4451,7 @@ function renderFinalBossResult(){
     <div class="summary-stat"><span>Questions answered</span><strong>${bs.answeredCount}</strong></div>
     <div class="summary-stat"><span>XP earned</span><strong>+${bs.xpEarned}</strong></div>
     <div class="summary-stat"><span>HP remaining</span><strong>You: ${Math.max(0,bs.playerHP)}/${PLAYER_MAX_HP} · Boss: ${Math.max(0,bs.bossHP)}/${bs.bossMaxHp}</strong></div>
+    ${bs.xpEarned < bs.xpEarnedRaw ? `<div class="card" style="background:linear-gradient(135deg,#FFF3D6,#FFE7A8);text-align:center;margin:10px 0;"><p style="margin:0;font-weight:700;">🎯 You hit today's XP cap (${DAILY_XP_CAP})! Your total is safe for tomorrow.</p></div>` : ''}
     ${bs.dailyRewardsEarned && bs.dailyRewardsEarned.length ? bs.dailyRewardsEarned.map(r=>`
       <div class="summary-stat"><span>🎉 Daily XP reward (${r.xp} XP)</span><strong>${r.type.emoji} +${r.minutes} min ${r.type.label}</strong></div>
     `).join('') : ''}
@@ -3515,7 +4558,8 @@ function attachReviewEvents(){
       document.getElementById('reviewNextWrap').innerHTML = `<button class="btn brass" id="reviewNextBtn">${isLast?'Finish Review →':'Next →'}</button>`;
       document.getElementById('reviewNextBtn').addEventListener('click', async ()=>{
         if(isLast){
-          p.xpTotal += rv.xpEarned;
+          rv.xpEarnedRaw = rv.xpEarned;
+          rv.xpEarned = awardXP(p, rv.xpEarned);
           await saveProfile(state.activePlayerId, p);
           state.screen = 'review-result';
           render();
@@ -3538,6 +4582,7 @@ function renderReviewResult(){
     <div class="summary-stat"><span>Questions reviewed</span><strong>${rv.items.length}</strong></div>
     <div class="summary-stat"><span>Mastered (cleared)</span><strong>${rv.masteredCount}</strong></div>
     <div class="summary-stat"><span>XP earned</span><strong>+${rv.xpEarned}</strong></div>
+    ${rv.xpEarned < rv.xpEarnedRaw ? `<div class="card" style="background:linear-gradient(135deg,#FFF3D6,#FFE7A8);text-align:center;margin:10px 0;"><p style="margin:0;font-weight:700;">🎯 You hit today's XP cap (${DAILY_XP_CAP})! Your total is safe for tomorrow.</p></div>` : ''}
     <div style="margin-top:22px;">
       <button class="btn brass" id="reviewBackBtn">Back to Realm Map</button>
     </div>
@@ -3580,10 +4625,15 @@ function nextPracticeQuestion(){
   const levels = track.subjects[s.subject].levels;
   const weighted = pickWeightedLevel(track, s.subject, p);
   const targetLevel = weighted!==null ? weighted : s.levelIdx;
-  const picked = pickNextUniqueQuestion(levels, targetLevel, s.usedQuestions);
+  if(!s.recentConcepts) s.recentConcepts = [];
+  const picked = pickNextUniqueQuestion(levels, targetLevel, s.usedQuestions, null, s.recentConcepts);
   s.currentQ = picked.q; s.levelIdx = picked.levelIdx;
   s.maxLevelReached = Math.max(s.maxLevelReached, picked.levelIdx);
   s.usedQuestions.add(picked.q);
+  if(picked.q._concept){
+    s.recentConcepts.push(picked.q._concept);
+    if(s.recentConcepts.length>2) s.recentConcepts.shift();
+  }
   s.awaitingNext = false;
 }
 function startPracticeTimer(){
@@ -3687,7 +4737,8 @@ function attachPracticeEvents(){
 async function endPractice(){
   const s = state.practice;
   const p = getActiveProfile();
-  p.xpTotal += s.xpEarned;
+  s.xpEarnedRaw = s.xpEarned;
+  s.xpEarned = awardXP(p, s.xpEarned);
   p.xpBySubject[s.subject] += s.xpEarned;
   await saveProfile(state.activePlayerId, p);
   state.screen = 'practice-result';
@@ -3705,6 +4756,7 @@ function renderPracticeResult(){
     <div class="summary-stat"><span>Questions answered</span><strong>${s.answeredCount}</strong></div>
     <div class="summary-stat"><span>Correct</span><strong>${s.correctCount} (${acc}%)</strong></div>
     <div class="summary-stat"><span>XP earned</span><strong>+${s.xpEarned}</strong></div>
+    ${s.xpEarned < s.xpEarnedRaw ? `<div class="card" style="background:linear-gradient(135deg,#FFF3D6,#FFE7A8);text-align:center;margin:10px 0;"><p style="margin:0;font-weight:700;">🎯 You hit today's XP cap (${DAILY_XP_CAP})! Your total is safe for tomorrow.</p></div>` : ''}
     <div style="margin-top:22px;">
       <button class="btn brass" id="practiceBackBtn">Back to Realm Map</button>
     </div>
@@ -3869,6 +4921,48 @@ function renderLeaderboard(){
 }
 function attachLeaderboardEvents(){
   document.getElementById('leaderboardBackLink').addEventListener('click', ()=>{ state.screen='pick-track'; render(); });
+}
+
+/* =========================================================================
+   RELIC COLLECTION — a trophy case of the loot earned this summer
+   ========================================================================= */
+function renderCollection(){
+  const p = getActiveProfile();
+  const earnedCount = Object.values(p.relics).filter(Boolean).length;
+  const slots = SUBJECT_ORDER.map(key=>{
+    const r = p.relics[key];
+    const def = RELIC_DEFS[key];
+    const meta = SUBJECTS.find(s=>s.key===key);
+    if(!r){
+      return `<div class="relic-slot locked">
+        <div style="font-size:32px;">🔒</div>
+        <strong style="font-size:12.5px;">${meta.icon} ${meta.name}</strong>
+        <span style="font-size:11px;color:var(--text-dim);">Defeat this realm's boss to unlock</span>
+      </div>`;
+    }
+    return `<div class="relic-slot ${r==='shiny'?'shiny':''}">
+      ${relicIconSVG(key, r==='shiny', 56)}
+      <strong style="font-size:13px;">${def.name}</strong>
+      ${r==='shiny' ? `<span style="font-size:10.5px;font-weight:800;color:#B8860B;">✨ SHINY</span>` : ''}
+      <span style="font-size:11px;color:var(--text-dim);font-style:italic;">${def.flavor}</span>
+    </div>`;
+  }).join('');
+
+  return `
+  ${renderHeader()}
+  <div class="card setup-card" style="margin-bottom:16px;">
+    <span class="back-link" id="collectionBackLink">← Back</span>
+    <h2 class="display" style="margin-top:0;">🎁 ${p.name}'s Relic Collection</h2>
+    <p>${earnedCount} / 5 relics found this summer. Each realm's boss drops a relic the first time you defeat it — with a small chance of a rare shiny version!</p>
+  </div>
+  <div class="card">
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:12px;">
+      ${slots}
+    </div>
+  </div>`;
+}
+function attachCollectionEvents(){
+  document.getElementById('collectionBackLink').addEventListener('click', ()=>{ state.screen='dashboard'; render(); });
 }
 
 /* =========================================================================
