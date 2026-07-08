@@ -195,6 +195,10 @@
   .relic-slot{display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 10px;border-radius:14px;background:var(--panel-tint);text-align:center;}
   .relic-slot.locked{opacity:0.45;}
   .relic-slot.shiny{background:linear-gradient(135deg,#FFF7DD,#FFECAD);border:2px solid #FFD166;}
+  .relic-tray{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:10px 0;padding:8px 10px;background:var(--panel-tint);border-radius:12px;}
+  .relic-tray-btn{width:38px;height:38px;border-radius:10px;border:2px solid transparent;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:2px;}
+  .relic-tray-btn.active{border-color:var(--violet);background:#F1EDFF;}
+  .relic-use-panel{background:linear-gradient(135deg,#F1EDFF,#E4DCFF);border:2px solid var(--violet);border-radius:14px;padding:14px;margin-bottom:10px;}
   .stamp{
     width:90px;height:90px;border-radius:50%;
     display:flex;align-items:center;justify-content:center;flex-direction:column;
@@ -1278,6 +1282,36 @@ function genSupplementaryFind(){
   return Q(`Two angles are supplementary. If one angle measures ${a}°, what is the measure of the other angle?`, c, ai, `Supplementary angles sum to 180°, so 180 − ${a} = ${ans}°.`);
 }
 
+/* Harder generators, used specifically for the Adult track. */
+function genPercentOfLarge(){
+  const base = randInt(200, 8000);
+  const pct = choose([6,8,12,15,18,22,24,28,32,35,38,42,45,55,62,65,68,72,78,85,88]);
+  const ans = Math.round(base*pct/100);
+  const {c,a} = buildMCQ(ans, [ans+randInt(8,60), ans-randInt(8,60), Math.round(ans*1.2)]);
+  return Q(`What is ${pct}% of ${base}?`, c, a, `${pct}% of ${base} = ${ans}.`);
+}
+function genExponent(){
+  const base = randInt(2,12);
+  const exp = randInt(2,4);
+  const ans = Math.pow(base,exp);
+  const {c,a} = buildMCQ(ans, [ans+base, Math.max(1,ans-base), Math.pow(base,exp-1)]);
+  return Q(`What is ${base}<sup>${exp}</sup> (${base} to the power of ${exp})?`, c, a, `${base}^${exp} = ${ans}.`);
+}
+function genTwoDigitMultiply(){
+  const x = randInt(11,99), y = randInt(11,99);
+  const ans = x*y;
+  const {c,a} = buildMCQ(ans, [ans+randInt(8,60), ans-randInt(8,60), ans+y]);
+  return Q(`What is ${x} × ${y}?`, c, a, `${x} × ${y} = ${ans}.`);
+}
+function genCompoundInterest(){
+  const principal = choose([500,1000,1500,2000,2500,3000]);
+  const rate = choose([3,4,5,6,7,8]);
+  const years = choose([2,3]);
+  const ans = Math.round(principal * Math.pow(1+rate/100, years));
+  const {c,a} = buildMCQ('$'+ans, ['$'+(ans+randInt(20,80)), '$'+(ans-randInt(20,80)), '$'+Math.round(principal*(1+rate*years/100))]);
+  return Q(`If you invest $${principal} at ${rate}% annual compound interest, what is it worth after ${years} years (rounded to the nearest dollar)?`, c, a, `$${principal} × (1 + ${rate}/100)^${years} ≈ $${ans}.`);
+}
+
 function G(fn, concept){ return {fn, concept}; }
 
 /* =========================================================================
@@ -1885,18 +1919,85 @@ function expandMathContent(target){
     G(()=>genTriangleArea(),'triangle-area'), G(()=>genComplementaryFind(),'angles'), G(()=>genSupplementaryFind(),'angles'), G(()=>genVolume(),'volume')
   ], target);
 
-  // Adult — mixed general-numeracy trivia across all three tiers
+  // Adult — genuinely challenging numeracy (bigger ranges + advanced operations)
   fillMathLevelToTarget(trackAdult.subjects.math.levels[0], [
-    G(()=>genAddition(20,300,20,300),'addition'), G(()=>genMultiplication(2,12,2,12),'multiplication'), G(()=>genCompare(100,9999),'compare'), G(()=>genDecimalAdd(),'decimals')
+    G(()=>genTwoDigitMultiply(),'multiplication'), G(()=>genPercentOfLarge(),'percentages'), G(()=>genCompare(1000,99999),'compare'), G(()=>genDecimalAdd(),'decimals')
   ], target);
   fillMathLevelToTarget(trackAdult.subjects.math.levels[1], [
-    G(()=>genRatioScale(),'ratios'), G(()=>genMean(4,12),'statistics'), G(()=>genDivision(2,12,6,40),'division'), G(()=>genVolume(),'volume')
+    G(()=>genRatioScale(),'ratios'), G(()=>genExponent(),'exponents'), G(()=>genDivision(11,60,20,90),'division'), G(()=>genCompoundInterest(),'interest')
   ], target);
   fillMathLevelToTarget(trackAdult.subjects.math.levels[2], [
-    G(()=>genLinearEquation(),'equations'), G(()=>genSlope(),'slope'), G(()=>genFunctionEval(),'functions'), G(()=>genTriangleArea(),'triangle-area')
+    G(()=>genLinearEquation(),'equations'), G(()=>genSlope(),'slope'), G(()=>genExponent(),'exponents'), G(()=>genCompoundInterest(),'interest')
   ], target);
 }
 expandMathContent(500);
+
+/* =========================================================================
+   ADULT EXPERT CONTENT — genuinely harder, more advanced trivia appended
+   directly to the Adult track's hardest tier only (never touches the kids'
+   tracks). Addresses "Adult questions are too easy" at the content level,
+   complementing the harder math generators and the tier-2 starting bias.
+   ========================================================================= */
+(function addAdultExpertQuestions(){
+  const scienceExpert = [
+    Q('What is the term for the phenomenon where light bends as it passes into a different medium?',['Reflection','Refraction','Diffraction','Absorption'],1,'Refraction is the bending of light as it changes medium.'),
+    Q('Which subatomic particle did J.J. Thomson discover in 1897?',['Proton','Neutron','Electron','Quark'],2,'Thomson discovered the electron via cathode ray experiments.'),
+    Q('Stars generate energy primarily through which process?',['Nuclear fission','Nuclear fusion','Radioactive decay','Combustion'],1,'Stars fuse hydrogen into helium, releasing enormous energy.'),
+    Q('Which enzyme unwinds the DNA double helix during replication?',['Ligase','Helicase','Polymerase','Primase'],1,'Helicase unwinds DNA by breaking hydrogen bonds between base pairs.'),
+    Q('The Chandrasekhar limit refers to the maximum mass of what?',['A white dwarf star','A black hole','A neutron star\'s spin rate','A planet\'s atmosphere'],0,'It defines the mass limit beyond which a white dwarf cannot support itself against gravity.'),
+    Q('Which law of thermodynamics states entropy in an isolated system never decreases?',['First law','Second law','Third law','Zeroth law'],1,'The second law of thermodynamics governs entropy increase.'),
+    Q('What type of chemical bond involves atoms sharing electron pairs?',['Ionic bond','Covalent bond','Metallic bond','Hydrogen bond'],1,'Covalent bonds form when atoms share electron pairs.'),
+    Q('Which brain structure primarily regulates balance and motor coordination?',['Cerebrum','Cerebellum','Medulla oblongata','Hypothalamus'],1,'The cerebellum coordinates balance and fine motor control.'),
+    Q('What term describes a species diverging into many new species due to differing environmental pressures?',['Convergent evolution','Adaptive radiation','Genetic drift','Punctuated equilibrium'],1,'Adaptive radiation describes rapid diversification into new forms.'),
+    Q('Among common greenhouse gases, which has a far higher warming potential per molecule than CO2 over 100 years?',['Carbon dioxide','Methane','Water vapor','Nitrogen'],1,'Methane traps significantly more heat per molecule than CO2 over a 100-year period.'),
+    Q('What is the primary function of mitochondrial cristae?',['Store genetic material','Increase surface area for ATP production','Break down waste proteins','Synthesize lipids'],1,'The folded cristae increase surface area for cellular respiration.'),
+    Q('Which scientist formulated the general theory of relativity?',['Isaac Newton','Albert Einstein','Niels Bohr','Max Planck'],1,'Einstein published general relativity in 1915.')
+  ];
+  const historyExpert = [
+    Q('The Peace of Westphalia (1648) is often cited as the origin of which modern concept?',['Democracy','National sovereignty','Human rights','Capitalism'],1,'It established the principle of state sovereignty in international relations.'),
+    Q('Which policy did the Soviet Union adopt in 1921 to temporarily allow limited private enterprise?',['Five-Year Plan','New Economic Policy','War Communism','Collectivization'],1,'Lenin\'s New Economic Policy allowed limited markets to recover the economy.'),
+    Q('The Sykes-Picot Agreement (1916) primarily divided which region between colonial powers?',['Africa','The Middle East','Southeast Asia','Eastern Europe'],1,'It secretly divided Ottoman territories in the Middle East between Britain and France.'),
+    Q('Who was the Byzantine Emperor when Constantinople fell in 1453?',['Justinian I','Constantine XI','Basil II','Michael VIII'],1,'Constantine XI died defending the city during its fall.'),
+    Q('The Congress of Vienna (1815) was convened to address the aftermath of which conflict?',['World War I','The Napoleonic Wars','The Thirty Years\' War','The Franco-Prussian War'],1,'It reorganized Europe after Napoleon\'s defeat.'),
+    Q('Which dynasty ruled China during the construction of the Forbidden City?',['Tang','Song','Ming','Qing'],2,'The Forbidden City was built under the Ming Dynasty in the early 1400s.'),
+    Q('The Marshall Plan primarily provided economic aid to which region after WWII?',['Latin America','Western Europe','Sub-Saharan Africa','Southeast Asia'],1,'The Marshall Plan funded the reconstruction of Western European economies.'),
+    Q('What was the primary underlying cause of the Opium Wars between Britain and China?',['Religious disputes','Trade imbalances and the opium trade','Territorial claims in Africa','Naval treaty violations'],1,'Disputes over the opium trade and trade imbalance sparked the conflicts.'),
+    Q('The Treaty of Tordesillas (1494) divided newly claimed lands between which two countries?',['England and France','Spain and Portugal','Netherlands and England','France and Spain'],1,'It divided New World territories along a meridian between Spain and Portugal.'),
+    Q('Which Enlightenment philosopher\'s ideas most directly shaped the U.S. Constitution\'s checks and balances?',['John Locke','Montesquieu','Rousseau','Voltaire'],1,'Montesquieu\'s writing on separation of powers directly influenced the framers.'),
+    Q('The Berlin Conference of 1884-85 primarily dealt with the colonial partition of which continent?',['Asia','Africa','South America','Australia'],1,'European powers divided African territory among themselves at this conference.'),
+    Q('Which historical event is most directly associated with the term "domino theory"?',['World War I','The Cold War / Vietnam era','The French Revolution','The fall of Rome'],1,'The domino theory shaped U.S. Cold War policy in Southeast Asia.')
+  ];
+  const readingExpert = [
+    Q('Which literary movement is Virginia Woolf most closely associated with?',['Romanticism','Modernism','Realism','Victorian literature'],1,'Woolf was a central figure of literary Modernism.'),
+    Q('Who wrote the novel "Crime and Punishment"?',['Leo Tolstoy','Fyodor Dostoevsky','Anton Chekhov','Ivan Turgenev'],1,'Dostoevsky published "Crime and Punishment" in 1866.'),
+    Q('What is the term for a narrator with limited or mistaken understanding of story events?',['Omniscient narrator','Unreliable narrator','Objective narrator','Epistolary narrator'],1,'An unreliable narrator gives readers a distorted account of events.'),
+    Q('Which Greek tragedian wrote "Oedipus Rex"?',['Aeschylus','Sophocles','Euripides','Aristophanes'],1,'Sophocles wrote this classical Greek tragedy.'),
+    Q('In literary terms, what does "in medias res" mean?',['Starting a story in the middle of the action','A story with no ending','A story told entirely through letters','A story with multiple narrators'],0,'"In medias res" means beginning a narrative already in progress.'),
+    Q('Who wrote the epic poem "Paradise Lost"?',['John Milton','William Blake','John Donne','Alexander Pope'],0,'John Milton published "Paradise Lost" in 1667.'),
+    Q('What is a "bildungsroman"?',['A novel about a war','A coming-of-age novel tracing moral and psychological growth','A novel written entirely in verse','A mystery novel'],1,'A bildungsroman follows a protagonist\'s formative development.'),
+    Q('Which author wrote the stream-of-consciousness novel "Ulysses"?',['James Joyce','Samuel Beckett','Oscar Wilde','George Bernard Shaw'],0,'James Joyce published "Ulysses" in 1922.'),
+    Q('What literary term describes a sudden reversal of fortune for the protagonist?',['Catharsis','Peripeteia','Anagnorisis','Hubris'],1,'Peripeteia refers to a sudden reversal of circumstances in a narrative.'),
+    Q('What is the primary distinguishing feature of "magical realism" as a literary genre?',['Fantasy elements presented within an otherwise realistic setting, treated as mundane','A story set entirely in a fantasy world','A story with no plot','A genre exclusive to poetry'],0,'Magical realism blends fantastical elements into realistic settings without treating them as extraordinary.'),
+    Q('Which term describes the moment a character gains a critical realization or insight?',['Anagnorisis','Peripeteia','Catharsis','Denouement'],0,'Anagnorisis is the moment of critical discovery or recognition in a narrative.')
+  ];
+  const writingExpert = [
+    Q('What is "asyndeton" in rhetoric?',['The deliberate omission of conjunctions between clauses','A type of rhyme scheme','Repetition of a word at the start of clauses','A logical fallacy'],0,'Asyndeton omits conjunctions for a clipped, rapid effect.'),
+    Q('Which rhetorical term describes an argument that appeals primarily to emotion?',['Logos','Pathos','Ethos','Kairos'],1,'Pathos is the emotional appeal in classical rhetoric.'),
+    Q('What is a "chiasmus"?',['A rhetorical structure repeating ideas in reversed order','A type of sonnet','A grammatical error','A citation style'],0,'Chiasmus reverses the order of repeated or parallel elements, as in "ask not what your country can do for you."'),
+    Q('In critical writing, what does "ad hominem" refer to?',['Attacking the person rather than their argument','A citation format','A type of thesis statement','A grammatical rule'],0,'An ad hominem attacks the arguer instead of addressing the argument.'),
+    Q('What is a "straw man" argument?',['Misrepresenting an opponent\'s position to make it easier to attack','A well-supported argument','A citation error','A type of narrative structure'],0,'A straw man distorts an opposing view into a weaker, easier target.'),
+    Q('What does "epistolary" mean when describing a novel\'s form?',['A story told through letters or documents','A story with a tragic ending','A story with no dialogue','A poem with fourteen lines'],0,'Epistolary novels are composed of letters, diary entries, or similar documents.'),
+    Q('What is "litotes"?',['A figure of speech using understatement via a negated opposite','A type of citation','A grammatical case','A poetic meter'],0,'Litotes uses understatement, like calling something "not bad" to mean "good."'),
+    Q('In formal argument, what is a "non sequitur"?',['A conclusion that doesn\'t logically follow from its premises','A type of footnote','A capitalization rule','A synonym for thesis'],0,'A non sequitur is a conclusion that doesn\'t logically follow from what preceded it.'),
+    Q('What is the difference between "affect" and "effect" in typical usage?',['"Affect" is usually a verb meaning to influence; "effect" is usually a noun meaning a result','They are always interchangeable','"Affect" is always a noun','"Effect" is always a verb'],0,'"Affect" typically functions as a verb, while "effect" typically functions as a noun.'),
+    Q('What rhetorical device involves repeating a word at the beginning of successive clauses?',['Epistrophe','Anaphora','Chiasmus','Zeugma'],1,'Anaphora repeats a word or phrase at the start of successive clauses for emphasis.'),
+    Q('What is a "zeugma"?',['A figure of speech where one word applies to two others in different senses','A citation format','A grammatical tense','A poetic rhyme scheme'],0,'A zeugma yokes together two ideas with one word used in two different ways, e.g., "she broke his car and his heart."')
+  ];
+  trackAdult.subjects.science.levels[2].push(...scienceExpert);
+  trackAdult.subjects.history.levels[2].push(...historyExpert);
+  trackAdult.subjects.reading.levels[2].push(...readingExpert);
+  trackAdult.subjects.writing.levels[2].push(...writingExpert);
+})();
 
 /* =========================================================================
    PERSISTENCE
@@ -1907,7 +2008,7 @@ function defaultProfile(grade){
     grade: grade || 3, // 3, 4, or 6 — determines which content bank (TRACKS proxy) applies
     avatarEmoji:null, avatarColor:null, bodyShape:null, weapon:null,
     xpTotal:0,
-    levelBySubject:{math:1, science:1, history:1, reading:1, writing:0}, // start near middle
+    levelBySubject: grade===99 ? {math:2, science:2, history:2, reading:2, writing:2} : {math:1, science:1, history:1, reading:1, writing:0}, // Adult starts at the hardest tier; kids start near the middle
     xpBySubject:{math:0,science:0,history:0,reading:0,writing:0},
     correctBySubject:{math:0,science:0,history:0,reading:0,writing:0},
     answeredBySubject:{math:0,science:0,history:0,reading:0,writing:0},
@@ -1969,7 +2070,19 @@ function reviewsDueToday(p){
 /* ---------- Day-over-day enemy scaling ---------- */
 // Counts distinct calendar days this explorer has played (not a "streak" —
 // it never resets, so enemies keep getting tougher across the whole summer).
+/* If more than 1 calendar day has passed since the player was last active,
+   their streak is broken — this is checked proactively (dashboard render,
+   start of any play session) rather than waiting for them to win a battle,
+   so a broken streak shows immediately instead of lagging a session behind. */
+function checkStreakBreak(p){
+  if(p.lastActiveDate){
+    const gap = daysBetween(p.lastActiveDate, todayStr());
+    if(gap > 1) p.streak = 0;
+  }
+}
+
 function registerDayPlayed(p){
+  checkStreakBreak(p);
   const today = todayStr();
   if(p.lastDayCounted !== today){
     p.totalDaysPlayed = (p.totalDaysPlayed||0) + 1;
@@ -2118,20 +2231,41 @@ function nextXPRewardTier(p){
   return XP_REWARD_TIERS.find(t=>!log.rewardTiersClaimed.includes(t.xp)) || null;
 }
 
-const DAILY_XP_CAP = 1000;
-/* All XP gains funnel through here so the 1000/day cap is enforced in
-   exactly one place, no matter which activity (battle, Final Boss, Review,
+const DAILY_XP_CAP_FULL = 1000;   // only reachable by defeating all 5 realms + the Final Boss the same day
+const DAILY_XP_CAP_PARTIAL = 700; // the ceiling for normal play without full completion
+/* "Full quest" = every subject boss AND the Final Boss defeated on today's date. */
+function isFullQuestCompletedToday(p){
+  const log = todayLogEntry(p);
+  return p.completedTodaySubjects.length >= 5 && log.finalBossResult === 'won';
+}
+/* All XP gains funnel through here so the daily cap is enforced in exactly
+   one place, no matter which activity (battle, Final Boss, Review,
    Practice) earned it. Returns the amount actually awarded (may be less
    than requested, or 0, if the day's cap has already been reached) so
    callers can show a "hit your daily cap" message if they want to. */
 function awardXP(p, amount){
   if(amount<=0) return 0;
   const log = todayLogEntry(p);
-  const remaining = Math.max(0, DAILY_XP_CAP - log.xpEarned);
+  const cap = isFullQuestCompletedToday(p) ? DAILY_XP_CAP_FULL : DAILY_XP_CAP_PARTIAL;
+  const remaining = Math.max(0, cap - log.xpEarned);
   const granted = Math.min(amount, remaining);
   p.xpTotal += granted;
   log.xpEarned += granted;
   return granted;
+}
+/* Called right after the Final Boss is defeated: tops today's XP up to the
+   full 1000 if it isn't already there, so completing the whole quest always
+   guarantees exactly 1000 XP for the day, regardless of how the individual
+   battles scored. */
+function topUpFullQuestXP(p){
+  const log = todayLogEntry(p);
+  if(log.xpEarned < DAILY_XP_CAP_FULL){
+    const bonus = DAILY_XP_CAP_FULL - log.xpEarned;
+    p.xpTotal += bonus;
+    log.xpEarned += bonus;
+    return bonus;
+  }
+  return 0;
 }
 
 function checkDailyXPRewards(p){
@@ -3201,6 +3335,36 @@ function grantRelic(p, subjectKey){
   return p.relics[subjectKey];
 }
 
+/* Relics can be spent mid-battle for a Heal or an Attack. Their impact
+   scales up both with how far into the summer the player is (same ramp
+   that drives the Final Boss and enemy toughness) and with the difficulty
+   tier of whatever question is currently on screen — so a relic used
+   during a late-summer, high-tier fight hits noticeably harder than one
+   used on day 1. Shiny relics get an extra 50% on top. Once used, a relic
+   is consumed (its slot returns to null) — but that slot can be earned
+   again later by defeating that subject's boss again. */
+function relicPowerMultiplier(p, levelIdx){
+  const tierMult = 0.85 + (levelIdx||0) * 0.1;
+  const dayMult = 1 + dayDifficultyFactor(p) / MAX_DIFFICULTY_DAY; // 1.0 (day 1) -> 2.0 (day 15+)
+  return tierMult * dayMult;
+}
+const RELIC_BASE_HEAL = 30;
+const RELIC_BASE_DAMAGE_HITS = 3; // a relic attack is worth roughly this many normal hits at baseline
+function relicHealAmount(p, levelIdx, shiny){
+  return Math.round(RELIC_BASE_HEAL * relicPowerMultiplier(p, levelIdx) * (shiny ? 1.5 : 1));
+}
+function relicDamageAmount(p, correctDamageBase, levelIdx, shiny){
+  return Math.round(correctDamageBase * RELIC_BASE_DAMAGE_HITS * relicPowerMultiplier(p, levelIdx) * (shiny ? 1.5 : 1));
+}
+/* Consumes the relic (returns its shiny-ness so the caller can compute the
+   effect before it's gone), or null if that slot was already empty. */
+function consumeRelic(p, subjectKey){
+  const had = p.relics[subjectKey];
+  if(!had) return null;
+  p.relics[subjectKey] = null;
+  return had;
+}
+
 const BADGE_DEFS = [
   {id:'streak3', emoji:'🔥', label:'3-Day Streak'},
   {id:'streak7', emoji:'🌟', label:'7-Day Streak'},
@@ -3224,6 +3388,7 @@ function renderDashboard(){
   const acc = totalAnswered? Math.round(100*totalCorrect/totalAnswered): 0;
   const frontier = currentFrontierIndex(p);
   const allDoneToday = frontier>=6;
+  checkStreakBreak(p);
   const dailyHP = getDailyHP(p);
   const outOfHP = dailyHP<=0;
 
@@ -3244,6 +3409,7 @@ function renderDashboard(){
     <div class="stat-pill" style="${outOfHP?'border-color:var(--coral);':''}"><div class="num" style="${outOfHP?'color:var(--coral);':''}">❤️ ${dailyHP}/${PLAYER_MAX_HP}</div><div class="lbl">HP Today</div></div>
     <div class="stat-pill"><div class="num">${p.xpTotal}</div><div class="lbl">Total XP</div></div>
     <div class="stat-pill"><div class="num">${p.streak}</div><div class="lbl">Day Streak</div></div>
+    <div class="stat-pill"><div class="num">${p.totalDaysPlayed||0}</div><div class="lbl">Days Played</div></div>
     <div class="stat-pill"><div class="num">${acc}%</div><div class="lbl">Accuracy</div></div>
     <div class="stat-pill"><div class="num">${p.badges.length}</div><div class="lbl">Badges Earned</div></div>
   </div>
@@ -3436,7 +3602,7 @@ function startBattle(subjectKey){
     xpEarned:0,
     playerHP: startingHP, bossHP: bossMaxHp, bossMaxHp,
     correctDamageBase, wrongDamageBase, targetHitsToWin, targetHitsToLose,
-    shrineTriggered:false, showShrine:false, matching:null,
+    shrineTriggered:false, showShrine:false, matching:null, relicMenuKey:null,
     currentQ:null, awaitingNext:false, chosenIdx:null,
     timeLeft: SESSION_MINUTES*60,
     timerId:null,
@@ -3875,6 +4041,7 @@ function renderBattle(){
       </div>
     </div>
 
+    ${renderRelicTray(p, s.relicMenuKey, s.levelIdx, s.correctDamageBase, 'battle')}
     <div id="scoreRow" class="score-row">${scoreRowHTML(s)}</div>
     <div class="progressbar"><div style="width:${pct}%"></div></div>
     <div class="q-card">
@@ -3886,6 +4053,33 @@ function renderBattle(){
       <div id="nextWrap" style="margin-top:16px;"></div>
     </div>
     <div style="margin-top:10px;"><span class="back-link" id="endEarlyBtn">Retreat from battle</span></div>
+  </div>`;
+}
+
+function renderRelicTray(p, relicMenuKey, levelIdx, correctDamageBase, trayId){
+  const owned = Object.entries(p.relics).filter(([k,v])=>v);
+  if(owned.length===0) return '';
+  const tray = `<div class="relic-tray">
+    <span style="font-size:11.5px;font-weight:700;color:var(--text-dim);align-self:center;">🎒 Relics:</span>
+    ${owned.map(([key,type])=>`
+      <button class="relic-tray-btn ${relicMenuKey===key?'active':''}" data-relic="${key}" data-tray="${trayId||'battle'}" title="${RELIC_DEFS[key].name}">
+        ${relicIconSVG(key, type==='shiny', 30)}
+      </button>`).join('')}
+  </div>`;
+  if(!relicMenuKey || !p.relics[relicMenuKey]) return tray;
+  const key = relicMenuKey;
+  const type = p.relics[key];
+  const def = RELIC_DEFS[key];
+  const healAmt = relicHealAmount(p, levelIdx, type==='shiny');
+  const dmgAmt = relicDamageAmount(p, correctDamageBase, levelIdx, type==='shiny');
+  return tray + `<div class="relic-use-panel">
+    <p style="margin:0 0 8px;font-weight:800;">${def.name}${type==='shiny'?' ✨':''} — use it now?</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="btn" id="relicHealBtn" style="background:linear-gradient(135deg,#00D9C0,#00A88F);color:#04332C;">💚 Heal +${healAmt} HP</button>
+      <button class="btn" id="relicAttackBtn" style="background:linear-gradient(135deg,#FF4D6D,#B14AFF);color:#fff;">⚔️ Attack -${dmgAmt} Boss HP</button>
+      <button class="btn ghost" id="relicCancelBtn">Cancel</button>
+    </div>
+    <p style="margin:8px 0 0;font-size:11.5px;color:var(--text-dim);">Using a relic consumes it — defeat this realm's boss again later to earn a new one.</p>
   </div>`;
 }
 
@@ -3940,6 +4134,53 @@ function attachBattleEvents(){
     if(s.timerId) clearInterval(s.timerId);
     s.result = 'retreat';
     endBattle();
+  });
+
+  app.querySelectorAll('.relic-tray-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      Sound.unlock(); Sound.click();
+      const key = btn.getAttribute('data-relic');
+      s.relicMenuKey = (s.relicMenuKey===key) ? null : key;
+      render();
+    });
+  });
+  const relicCancelBtn = document.getElementById('relicCancelBtn');
+  if(relicCancelBtn) relicCancelBtn.addEventListener('click', ()=>{ s.relicMenuKey=null; render(); });
+  const relicHealBtn = document.getElementById('relicHealBtn');
+  if(relicHealBtn) relicHealBtn.addEventListener('click', async ()=>{
+    Sound.unlock();
+    const p = getActiveProfile();
+    const key = s.relicMenuKey;
+    const type = consumeRelic(p, key);
+    if(!type) { s.relicMenuKey=null; render(); return; }
+    const amt = relicHealAmount(p, s.levelIdx, type==='shiny');
+    s.playerHP = Math.min(PLAYER_MAX_HP, s.playerHP + amt);
+    s.relicMenuKey = null;
+    Sound.badge(); fireConfetti(14);
+    await saveProfile(state.activePlayerId, p); // persist the consumed relic right away
+    render();
+  });
+  const relicAttackBtn = document.getElementById('relicAttackBtn');
+  if(relicAttackBtn) relicAttackBtn.addEventListener('click', async ()=>{
+    Sound.unlock();
+    const p = getActiveProfile();
+    const key = s.relicMenuKey;
+    const type = consumeRelic(p, key);
+    if(!type) { s.relicMenuKey=null; render(); return; }
+    const amt = relicDamageAmount(p, s.correctDamageBase, s.levelIdx, type==='shiny');
+    s.bossHP = Math.max(0, s.bossHP - amt);
+    s.relicMenuKey = null;
+    Sound.hitVillain();
+    animateAttack('playerIcon','bossIcon','attack-right');
+    await saveProfile(state.activePlayerId, p);
+    if(s.bossHP<=0){
+      Sound.villainDefeated();
+      if(s.timerId) clearInterval(s.timerId);
+      s.result = 'victory';
+      endBattle();
+      return;
+    }
+    render();
   });
 
   const claimShrineBtn = document.getElementById('claimShrineBtn');
@@ -4155,8 +4396,8 @@ function renderBattleResult(){
     <div class="summary-stat"><span>Correct</span><strong>${s.correctCount} (${acc}%)</strong></div>
     <div class="summary-stat"><span>XP earned</span><strong>+${s.xpAwarded}</strong></div>
     <div class="summary-stat"><span>HP remaining</span><strong>You: ${Math.max(0,s.playerHP)}/${PLAYER_MAX_HP} · Boss: ${Math.max(0,s.bossHP)}/${s.bossMaxHp}</strong></div>
-    <div class="summary-stat"><span>Today's total XP</span><strong>${todayLogEntry(p).xpEarned} / ${DAILY_XP_CAP}</strong></div>
-    ${s.xpAwarded < s.xpEarned ? `<div class="card" style="background:linear-gradient(135deg,#FFF3D6,#FFE7A8);text-align:center;margin:10px 0;"><p style="margin:0;font-weight:700;">🎯 You hit today's XP cap (${DAILY_XP_CAP})! Extra XP from great performances doesn't carry over — but your total is safe for tomorrow.</p></div>` : ''}
+    <div class="summary-stat"><span>Today's total XP</span><strong>${todayLogEntry(p).xpEarned} / ${isFullQuestCompletedToday(p) ? DAILY_XP_CAP_FULL : DAILY_XP_CAP_PARTIAL}</strong></div>
+    ${s.xpAwarded < s.xpEarned ? `<div class="card" style="background:linear-gradient(135deg,#FFF3D6,#FFE7A8);text-align:center;margin:10px 0;"><p style="margin:0;font-weight:700;">🎯 You hit today's XP cap (${DAILY_XP_CAP_PARTIAL})! Defeat all 5 realms + the Final Boss today to unlock the full 1000 XP.</p></div>` : ''}
     ${s.dailyRewardsEarned && s.dailyRewardsEarned.length ? s.dailyRewardsEarned.map(r=>`
       <div class="summary-stat"><span>🎉 Daily XP reward (${r.xp} XP)</span><strong>${r.type.emoji} +${r.minutes} min ${r.type.label}</strong></div>
     `).join('') : ''}
@@ -4240,7 +4481,7 @@ function startFinalBoss(){
     usedQuestions: new Set(),
     currentQ: null, currentSubject: null,
     timeLeft: timeLimit, timerId: null,
-    awaitingNext: false, chosenIdx: null, result: null
+    awaitingNext: false, chosenIdx: null, result: null, relicMenuKey: null
   };
   nextFinalBossQuestion();
   state.screen = 'finalboss';
@@ -4317,6 +4558,7 @@ function renderFinalBoss(){
       </div>
     </div>
     <p style="font-weight:700;color:#D8CFFF;margin-top:0;">⚔️ ${bs.correctCount} hits landed · Boss at ${pct}% HP · 🗓️ Day ${p.totalDaysPlayed||1} of summer</p>
+    ${renderRelicTray(p, bs.relicMenuKey, (getActiveTrack().subjects[bs.currentSubject.key].levels.length-1), bs.correctDamageBase, 'finalboss')}
     <div class="q-card">
       <div class="q-text" style="color:#F2EFFF;">${bs.currentQ.q}</div>
       <div id="bossChoicesWrap">
@@ -4340,6 +4582,55 @@ function attachFinalBossEvents(){
     if(bs.timerId) clearInterval(bs.timerId);
     bs.result = 'defeat';
     endFinalBoss();
+  });
+
+  app.querySelectorAll('.relic-tray-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      Sound.unlock(); Sound.click();
+      const key = btn.getAttribute('data-relic');
+      bs.relicMenuKey = (bs.relicMenuKey===key) ? null : key;
+      render();
+    });
+  });
+  const relicCancelBtn = document.getElementById('relicCancelBtn');
+  if(relicCancelBtn) relicCancelBtn.addEventListener('click', ()=>{ bs.relicMenuKey=null; render(); });
+  const relicHealBtn = document.getElementById('relicHealBtn');
+  if(relicHealBtn) relicHealBtn.addEventListener('click', async ()=>{
+    Sound.unlock();
+    const p = getActiveProfile();
+    const key = bs.relicMenuKey;
+    const type = consumeRelic(p, key);
+    if(!type) { bs.relicMenuKey=null; render(); return; }
+    const levelIdx = getActiveTrack().subjects[bs.currentSubject.key].levels.length-1;
+    const amt = relicHealAmount(p, levelIdx, type==='shiny');
+    bs.playerHP = Math.min(PLAYER_MAX_HP, bs.playerHP + amt);
+    bs.relicMenuKey = null;
+    Sound.badge(); fireConfetti(14);
+    await saveProfile(state.activePlayerId, p);
+    render();
+  });
+  const relicAttackBtn = document.getElementById('relicAttackBtn');
+  if(relicAttackBtn) relicAttackBtn.addEventListener('click', async ()=>{
+    Sound.unlock();
+    const p = getActiveProfile();
+    const key = bs.relicMenuKey;
+    const type = consumeRelic(p, key);
+    if(!type) { bs.relicMenuKey=null; render(); return; }
+    const levelIdx = getActiveTrack().subjects[bs.currentSubject.key].levels.length-1;
+    const amt = relicDamageAmount(p, bs.correctDamageBase, levelIdx, type==='shiny');
+    bs.bossHP = Math.max(0, bs.bossHP - amt);
+    bs.relicMenuKey = null;
+    Sound.hitVillain();
+    animateAttack('fbPlayerIcon','fbBossIcon','attack-right');
+    await saveProfile(state.activePlayerId, p);
+    if(bs.bossHP<=0){
+      Sound.villainDefeated();
+      if(bs.timerId) clearInterval(bs.timerId);
+      bs.result = 'victory';
+      endFinalBoss();
+      return;
+    }
+    render();
   });
 
   app.querySelectorAll('#bossChoicesWrap .choice').forEach(btn=>{
@@ -4420,6 +4711,9 @@ async function endFinalBoss(){
   // this matters a lot more now that a late-summer fight can be 50+ hits long.
   const xpEarned = bs.correctCount * 6 + (won ? 100 : 0);
   const xpAwarded = awardXP(p, xpEarned);
+  // Winning the Final Boss means all 5 realms + the boss are done today —
+  // guarantee the full 1000 XP for the day, topping up whatever was short.
+  const topUpBonus = won ? topUpFullQuestXP(p) : 0;
 
   const newBadges = [];
   if(won){
@@ -4432,7 +4726,9 @@ async function endFinalBoss(){
   await saveProfile(state.activePlayerId, p);
 
   state.finalBoss.xpEarnedRaw = xpEarned;
-  state.finalBoss.xpEarned = xpAwarded;
+  state.finalBoss.xpEarned = xpAwarded + topUpBonus;
+  state.finalBoss.fullQuestBonus = topUpBonus;
+  state.finalBoss.hitPartialCap = (xpAwarded < xpEarned) && !won;
   state.finalBoss.newBadges = newBadges;
   state.finalBoss.dailyRewardsEarned = dailyRewardsEarned;
   state.screen = 'finalboss-result';
@@ -4451,7 +4747,8 @@ function renderFinalBossResult(){
     <div class="summary-stat"><span>Questions answered</span><strong>${bs.answeredCount}</strong></div>
     <div class="summary-stat"><span>XP earned</span><strong>+${bs.xpEarned}</strong></div>
     <div class="summary-stat"><span>HP remaining</span><strong>You: ${Math.max(0,bs.playerHP)}/${PLAYER_MAX_HP} · Boss: ${Math.max(0,bs.bossHP)}/${bs.bossMaxHp}</strong></div>
-    ${bs.xpEarned < bs.xpEarnedRaw ? `<div class="card" style="background:linear-gradient(135deg,#FFF3D6,#FFE7A8);text-align:center;margin:10px 0;"><p style="margin:0;font-weight:700;">🎯 You hit today's XP cap (${DAILY_XP_CAP})! Your total is safe for tomorrow.</p></div>` : ''}
+    ${bs.fullQuestBonus>0 ? `<div class="card" style="background:linear-gradient(135deg,#FFF3D6,#FFE7A8);text-align:center;margin:10px 0;"><p style="margin:0;font-weight:700;">🏆 Full Quest Bonus! All 5 realms + the Final Boss defeated today — your XP is topped up to the full 1000!</p></div>`
+      : (bs.hitPartialCap ? `<div class="card" style="background:linear-gradient(135deg,#FFF3D6,#FFE7A8);text-align:center;margin:10px 0;"><p style="margin:0;font-weight:700;">🎯 You hit today's XP cap (${DAILY_XP_CAP_PARTIAL})! Defeat all 5 realms + the Final Boss today to unlock the full 1000 XP.</p></div>` : '')}
     ${bs.dailyRewardsEarned && bs.dailyRewardsEarned.length ? bs.dailyRewardsEarned.map(r=>`
       <div class="summary-stat"><span>🎉 Daily XP reward (${r.xp} XP)</span><strong>${r.type.emoji} +${r.minutes} min ${r.type.label}</strong></div>
     `).join('') : ''}
@@ -4582,7 +4879,7 @@ function renderReviewResult(){
     <div class="summary-stat"><span>Questions reviewed</span><strong>${rv.items.length}</strong></div>
     <div class="summary-stat"><span>Mastered (cleared)</span><strong>${rv.masteredCount}</strong></div>
     <div class="summary-stat"><span>XP earned</span><strong>+${rv.xpEarned}</strong></div>
-    ${rv.xpEarned < rv.xpEarnedRaw ? `<div class="card" style="background:linear-gradient(135deg,#FFF3D6,#FFE7A8);text-align:center;margin:10px 0;"><p style="margin:0;font-weight:700;">🎯 You hit today's XP cap (${DAILY_XP_CAP})! Your total is safe for tomorrow.</p></div>` : ''}
+    ${rv.xpEarned < rv.xpEarnedRaw ? `<div class="card" style="background:linear-gradient(135deg,#FFF3D6,#FFE7A8);text-align:center;margin:10px 0;"><p style="margin:0;font-weight:700;">🎯 You hit today's XP cap (${DAILY_XP_CAP_PARTIAL})! Defeat all 5 realms + the Final Boss today to unlock the full 1000 XP.</p></div>` : ''}
     <div style="margin-top:22px;">
       <button class="btn brass" id="reviewBackBtn">Back to Realm Map</button>
     </div>
@@ -4756,7 +5053,7 @@ function renderPracticeResult(){
     <div class="summary-stat"><span>Questions answered</span><strong>${s.answeredCount}</strong></div>
     <div class="summary-stat"><span>Correct</span><strong>${s.correctCount} (${acc}%)</strong></div>
     <div class="summary-stat"><span>XP earned</span><strong>+${s.xpEarned}</strong></div>
-    ${s.xpEarned < s.xpEarnedRaw ? `<div class="card" style="background:linear-gradient(135deg,#FFF3D6,#FFE7A8);text-align:center;margin:10px 0;"><p style="margin:0;font-weight:700;">🎯 You hit today's XP cap (${DAILY_XP_CAP})! Your total is safe for tomorrow.</p></div>` : ''}
+    ${s.xpEarned < s.xpEarnedRaw ? `<div class="card" style="background:linear-gradient(135deg,#FFF3D6,#FFE7A8);text-align:center;margin:10px 0;"><p style="margin:0;font-weight:700;">🎯 You hit today's XP cap (${DAILY_XP_CAP_PARTIAL})! Defeat all 5 realms + the Final Boss today to unlock the full 1000 XP.</p></div>` : ''}
     <div style="margin-top:22px;">
       <button class="btn brass" id="practiceBackBtn">Back to Realm Map</button>
     </div>
