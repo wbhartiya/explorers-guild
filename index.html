@@ -402,7 +402,7 @@ const SESSION_MINUTES = 20;
 const RANKS = ['Explorer','Adventurer','Master','Legend'];
 
 /* ---- helper for building MCQ objects tersely: [question, choices[], correctIndex, note] */
-function Q(q,c,a,n,passage=null,diagram=null){ return {q, c, a, n, passage, diagram}; }
+function Q(q,c,a,n,passage=null,diagram=null,diagramSpec=null){ return {q, c, a, n, passage, diagram, diagramSpec}; }
 
 /* =========================================================================
    TRACK A — Rising 3rd Grade (Advanced): 3rd mastery -> push into 4th Q1-Q2
@@ -1473,7 +1473,7 @@ function expandWritingContent(target){
     });
   });
 }
-expandWritingContent(500);
+expandWritingContent(350);
 
 /* =========================================================================
    PROCEDURAL SCIENCE GENERATOR
@@ -1640,7 +1640,7 @@ function expandScienceContent(target){
     });
   });
 }
-expandScienceContent(500);
+expandScienceContent(350);
 
 /* =========================================================================
    PROCEDURAL HISTORY GENERATOR — verified static fact tables (state
@@ -1779,7 +1779,7 @@ function expandHistoryContent(target){
     });
   });
 }
-expandHistoryContent(500);
+expandHistoryContent(350);
 
 /* =========================================================================
    PROCEDURAL READING GENERATOR
@@ -1875,7 +1875,7 @@ function expandReadingContent(target){
     });
   });
 }
-expandReadingContent(500);
+expandReadingContent(350);
 
 
 
@@ -1897,14 +1897,15 @@ function fillMathLevelToTarget(levelArr, generators, target){
 
 function expandMathContent(target){
   // Track A — 2nd review / 3rd+SOL / 4th Q1-Q2 (heavier 4th-grade weighting)
+  // Ranges widened ~30% per parent feedback that 3rd grade felt too easy.
   fillMathLevelToTarget(trackA.subjects.math.levels[0], [
-    G(()=>genAddition(15,70,15,40),'addition'), G(()=>genSubtraction(40,99,10,60),'subtraction'), G(()=>genCompare(100,999),'compare'), G(()=>genSkipCounting(5,1,30),'skip-counting')
+    G(()=>genAddition(20,90,20,55),'addition'), G(()=>genSubtraction(55,130,15,80),'subtraction'), G(()=>genCompare(100,1300),'compare'), G(()=>genSkipCounting(5,1,40),'skip-counting')
   ], target);
   fillMathLevelToTarget(trackA.subjects.math.levels[1], [
-    G(()=>genAreaRect(3,30),'area'), G(()=>genPerimeterSquare(3,80),'perimeter'), G(()=>genMultiplication(2,9,2,9),'multiplication'), G(()=>genFractionEquivalence(),'fractions')
+    G(()=>genAreaRect(3,40),'area'), G(()=>genPerimeterSquare(3,105),'perimeter'), G(()=>genMultiplication(2,12,2,12),'multiplication'), G(()=>genFractionEquivalence(),'fractions')
   ], target);
   fillMathLevelToTarget(trackA.subjects.math.levels[2], [
-    G(()=>genMultiplication(11,49,2,9),'multiplication'), G(()=>genDivision(2,9,6,25),'division'), G(()=>genFractionAddSameDenom(),'fractions'), G(()=>genDecimalTenths(),'decimals')
+    G(()=>genMultiplication(11,65,2,12),'multiplication'), G(()=>genDivision(2,12,6,33),'division'), G(()=>genFractionAddSameDenom(),'fractions'), G(()=>genDecimalTenths(),'decimals')
   ], target);
 
   // Track B — foundational review / 3rd mastery / 4th Q1-Q2 standard pace
@@ -1919,17 +1920,22 @@ function expandMathContent(target){
   ], target);
 
   // Track C — 5th review / 6th Q1-Q2 / Algebra I prep / Geometry prep
+  // Ranges widened and harder operation types mixed into EVERY tier (not
+  // just a small standalone batch) per parent feedback that 6th grade
+  // still felt too easy — a small trickery batch gets diluted once a tier
+  // grows into the hundreds, so this changes what the generators themselves
+  // produce throughout the whole pool.
   fillMathLevelToTarget(trackC.subjects.math.levels[0], [
-    G(()=>genDecimalAdd(),'decimals'), G(()=>genVolume(),'volume'), G(()=>genDivision(2,9,6,30),'division'), G(()=>genOrderOfOps(),'order-of-ops')
+    G(()=>genDecimalAdd(),'decimals'), G(()=>genVolume(),'volume'), G(()=>genDivision(2,12,6,40),'division'), G(()=>genOrderOfOps(),'order-of-ops'), G(()=>genTwoDigitMultiply(),'multiplication')
   ], target);
   fillMathLevelToTarget(trackC.subjects.math.levels[1], [
-    G(()=>genRatioScale(),'ratios'), G(()=>genIntegerAdd(15),'integers'), G(()=>genIntegerMultiply(9),'integers'), G(()=>genMean(4,9),'statistics')
+    G(()=>genRatioScale(),'ratios'), G(()=>genIntegerAdd(25),'integers'), G(()=>genIntegerMultiply(15),'integers'), G(()=>genMean(5,12),'statistics'), G(()=>genPercentOfLarge(),'percentages')
   ], target);
   fillMathLevelToTarget(trackC.subjects.math.levels[2], [
-    G(()=>genLinearEquation(),'equations'), G(()=>genSlope(),'slope'), G(()=>genFunctionEval(),'functions'), G(()=>genDistribute(),'expressions')
+    G(()=>genLinearEquation(),'equations'), G(()=>genSlope(),'slope'), G(()=>genFunctionEval(),'functions'), G(()=>genDistribute(),'expressions'), G(()=>genExponent(),'exponents')
   ], target);
   fillMathLevelToTarget(trackC.subjects.math.levels[3], [
-    G(()=>genTriangleArea(),'triangle-area'), G(()=>genComplementaryFind(),'angles'), G(()=>genSupplementaryFind(),'angles'), G(()=>genVolume(),'volume')
+    G(()=>genTriangleArea(),'triangle-area'), G(()=>genComplementaryFind(),'angles'), G(()=>genSupplementaryFind(),'angles'), G(()=>genVolume(),'volume'), G(()=>genCompoundInterest(),'interest')
   ], target);
 
   // Adult — genuinely challenging numeracy (bigger ranges + advanced operations)
@@ -1943,7 +1949,7 @@ function expandMathContent(target){
     G(()=>genLinearEquation(),'equations'), G(()=>genSlope(),'slope'), G(()=>genExponent(),'exponents'), G(()=>genCompoundInterest(),'interest')
   ], target);
 }
-expandMathContent(500);
+expandMathContent(350);
 
 /* =========================================================================
    ADULT EXPERT CONTENT — genuinely harder, more advanced trivia appended
@@ -2281,7 +2287,9 @@ function defaultProfile(grade){
     grade: grade || 3, // 3, 4, or 6 — determines which content bank (TRACKS proxy) applies
     avatarEmoji:null, avatarColor:null, bodyShape:null, weapon:null,
     xpTotal:0,
-    levelBySubject: grade===99 ? {math:2, science:2, history:2, reading:2, writing:2} : {math:1, science:1, history:1, reading:1, writing:0}, // Adult starts at the hardest tier; kids start near the middle
+    levelBySubject: grade===99 ? {math:2, science:2, history:2, reading:2, writing:2}
+      : (grade===3 || grade===6) ? {math:2, science:2, history:2, reading:2, writing:1} // bumped up per parent feedback that 3rd/6th felt too easy
+      : {math:1, science:1, history:1, reading:1, writing:0}, // 4th grade and others start near the middle
     xpBySubject:{math:0,science:0,history:0,reading:0,writing:0},
     correctBySubject:{math:0,science:0,history:0,reading:0,writing:0},
     answeredBySubject:{math:0,science:0,history:0,reading:0,writing:0},
@@ -3106,6 +3114,9 @@ function render(){
   if(state.screen==='parent'){ app.innerHTML = renderParentDashboard(); attachParentDashboardEvents(); attachHeaderEvents(); return; }
   if(state.screen==='leaderboard'){ app.innerHTML = renderLeaderboard(); attachLeaderboardEvents(); attachHeaderEvents(); return; }
   if(state.screen==='collection'){ app.innerHTML = renderCollection(); attachCollectionEvents(); attachHeaderEvents(); return; }
+  if(state.screen==='sparring-pick'){ app.innerHTML = renderSparringPick(); attachSparringPickEvents(); attachHeaderEvents(); return; }
+  if(state.screen==='sparring'){ app.innerHTML = renderSparring(); attachSparringEvents(); attachHeaderEvents(); return; }
+  if(state.screen==='sparring-result'){ app.innerHTML = renderSparringResult(); attachSparringResultEvents(); attachHeaderEvents(); return; }
   if(state.screen==='review'){ app.innerHTML = renderReview(); attachReviewEvents(); attachHeaderEvents(); return; }
   if(state.screen==='review-result'){ app.innerHTML = renderReviewResult(); attachReviewResultEvents(); attachHeaderEvents(); return; }
   if(state.screen==='practice'){ app.innerHTML = renderPractice(); attachPracticeEvents(); attachHeaderEvents(); return; }
@@ -3837,6 +3848,17 @@ function renderDashboard(){
     <p style="margin:8px 0 0;font-size:12.5px;color:var(--text-dim);">${Object.values(p.relics).filter(Boolean).length} / 5 relics found — defeat each realm's boss for the first time to earn one.</p>
   </div>
 
+  <div class="section-title">⚔️ Bonus Sparring Arena</div>
+  <div class="card" style="cursor:pointer;background:linear-gradient(135deg,#2A1B4D,#1C1533);" id="sparringPreviewCard">
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <div>
+        <p style="margin:0;font-weight:800;color:#F2EFFF;">🔥 5 brutal questions. Zero room for mistakes.</p>
+        <p style="margin:4px 0 0;font-size:12.5px;color:#B7B4D6;">A true test of mastery — win it and earn a relic (or upgrade one to shiny). No HP risk, try as often as you like.</p>
+      </div>
+      <span class="btn brass" style="min-width:auto;flex-shrink:0;margin-left:12px;">Enter →</span>
+    </div>
+  </div>
+
   <div class="section-title" style="color:var(--coral);">⚠️ Danger Zone</div>
   <div class="card" style="border:2px solid var(--coral);background:#FFF5F5;">
     <p style="margin:0 0 10px;font-size:13.5px;color:var(--text-dim);">This permanently erases <strong>${p.name}'s</strong> entire history — all XP, badges, streaks, and unredeemed rewards. This cannot be undone.</p>
@@ -3891,6 +3913,12 @@ function attachDashboardEvents(){
   if(collectionCard) collectionCard.addEventListener('click', ()=>{
     Sound.unlock(); Sound.click();
     state.screen = 'collection';
+    render();
+  });
+  const sparringCard = document.getElementById('sparringPreviewCard');
+  if(sparringCard) sparringCard.addEventListener('click', ()=>{
+    Sound.unlock(); Sound.click();
+    state.screen = 'sparring-pick';
     render();
   });
   // The map is the single source of navigation for battles now — every node
@@ -3949,12 +3977,15 @@ function startBattle(subjectKey){
   const bossMaxHp = scaledBossMaxHP(p);
   // Pace battles around explicit hit-count targets rather than letting combo
   // streaks / tier multipliers swing the count unpredictably:
-  //  - defeating a boss should take about 6-10 correct hits
-  //  - going from full HP to 0 should take about 10-12 wrong answers
+  //  - defeating a boss normally takes about 10-12 correct hits
+  //  - grades 3 and 6 specifically require MORE hits (~30% more), per
+  //    parent feedback that those grades felt too easy
+  //  - going from full HP to 0 takes about 10-12 wrong answers, unchanged
   // A modest per-question difficulty multiplier (applied at hit-time, based
   // on that question's tier) still makes harder questions hit harder, but
   // only by roughly ±15%, so the overall hit counts stay close to target.
-  const targetHitsToWin = randInt(10, 12);
+  const harderGrade = (p.grade===3 || p.grade===6);
+  const targetHitsToWin = harderGrade ? randInt(14, 16) : randInt(10, 12);
   const targetHitsToLose = randInt(10, 12);
   const correctDamageBase = bossMaxHp / targetHitsToWin;
   const wrongDamageBase = PLAYER_MAX_HP / targetHitsToLose;
@@ -4228,16 +4259,16 @@ const CHART_THEMES_HISTORY = [
 function genChartQuestion(chartType, theme){
   const numCats = chartType==='pie' ? (3+Math.floor(Math.random()*2)) : (3+Math.floor(Math.random()*3));
   const cats = shuffle(theme.categories).slice(0, Math.min(numCats, theme.categories.length));
-  let data, diagram;
+  let data, diagramSpec;
   const chartLabel = chartType==='pictograph' ? 'pictograph' : chartType==='line' ? 'line graph' : chartType==='pie' ? 'circle graph' : 'bar graph';
 
   if(chartType==='bar'){
     data = cats.map(c=>({label:c, value: randInt(theme.min, theme.max)}));
-    diagram = barChartSVG(data, theme.title);
+    diagramSpec = {type:'bar', data, title:theme.title};
   } else if(chartType==='pictograph'){
     const symbolValue = choose([1,2,5]);
     data = cats.map(c=>({label:c, value: randInt(1,8)*symbolValue}));
-    diagram = pictographSVG(data.map(d=>({label:d.label,count:d.value})), theme.title, theme.icon, symbolValue);
+    diagramSpec = {type:'pictograph', data:data.map(d=>({label:d.label,count:d.value})), title:theme.title, icon:theme.icon, symbolValue};
   } else if(chartType==='line'){
     const span = theme.max-theme.min;
     let val = randInt(theme.min, theme.min+Math.round(span/3));
@@ -4246,7 +4277,7 @@ function genChartQuestion(chartType, theme){
       val = Math.max(theme.min, Math.min(theme.max, val));
       return {label:c, value: val};
     });
-    diagram = lineChartSVG(data.map(d=>({x:d.label,y:d.value})), theme.title);
+    diagramSpec = {type:'line', data:data.map(d=>({x:d.label,y:d.value})), title:theme.title};
   } else { // pie — values sum to 100 for clean percentage questions
     let remaining = 100;
     data = cats.map((c,i)=>{
@@ -4256,7 +4287,7 @@ function genChartQuestion(chartType, theme){
       remaining -= val;
       return {label:c, value: val};
     });
-    diagram = pieChartSVG(data, theme.title);
+    diagramSpec = {type:'pie', data, title:theme.title};
   }
 
   const sorted = [...data].sort((a,b)=>b.value-a.value);
@@ -4320,7 +4351,7 @@ function genChartQuestion(chartType, theme){
   }
 
   const {c,a} = buildMCQ(correctAns, distractors);
-  return Q(stem, c, a, explain, null, diagram);
+  return Q(stem, c, a, explain, null, null, diagramSpec);
 }
 
 /* =========================================================================
@@ -4366,10 +4397,24 @@ function expandChartContent(perTierAdd){
     });
   });
 }
-expandChartContent(210);
+expandChartContent(146);
+
+function buildDiagramFromSpec(spec){
+  if(spec.type==='bar') return barChartSVG(spec.data, spec.title);
+  if(spec.type==='pictograph') return pictographSVG(spec.data, spec.title, spec.icon, spec.symbolValue);
+  if(spec.type==='line') return lineChartSVG(spec.data, spec.title);
+  if(spec.type==='pie') return pieChartSVG(spec.data, spec.title);
+  return '';
+}
 
 function renderQuestionBody(q){
   const passageHTML = q.passage ? `<div class="passage-box"><div class="passage-label">📖 Read this, then answer:</div>${q.passage}</div>` : '';
+  // Diagram questions generated at scale store a lightweight spec instead
+  // of a pre-built SVG string (building 7,800+ SVG strings up front was a
+  // major contributor to slow app startup). The actual SVG is built here,
+  // once, the first time this specific question is shown — and cached on
+  // the question object so re-rendering the same question doesn't rebuild it.
+  if(!q.diagram && q.diagramSpec){ q.diagram = buildDiagramFromSpec(q.diagramSpec); }
   const diagramHTML = q.diagram ? `<div class="diagram-box">${q.diagram}</div>` : '';
   return `${passageHTML}${diagramHTML}<div class="q-text">${q.q}</div>`;
 }
@@ -5206,7 +5251,7 @@ function renderFinalBoss(){
     <p style="font-weight:700;color:#D8CFFF;margin-top:0;">⚔️ ${bs.correctCount} hits landed · Boss at ${pct}% HP · 🗓️ Day ${p.totalDaysPlayed||1} of summer</p>
     ${renderRelicTray(p, bs.relicMenuKey, (getActiveTrack().subjects[bs.currentSubject.key].levels.length-1), bs.correctDamageBase, 'finalboss')}
     <div class="q-card">
-      <div class="q-text" style="color:#F2EFFF;">${bs.currentQ.q}</div>
+      ${renderQuestionBody(bs.currentQ)}
       <div id="bossChoicesWrap">
         ${bs.currentQ.c.map((choice,i)=>`<button class="choice" data-idx="${i}">${choice}</button>`).join('')}
       </div>
@@ -5909,6 +5954,201 @@ function attachCollectionEvents(){
 }
 
 /* =========================================================================
+   BONUS SPARRING ARENA
+   Five questions pulled from the player's own hardest available tier for a
+   chosen subject — a genuine test of mastery, not a normal battle. There's
+   no HP mechanic; the only way to win is a PERFECT run (5/5 correct). This
+   is deliberate: if hard-tier content gives a well-prepared player roughly
+   a 73-75% chance per question, requiring all 5 correct naturally lands
+   the overall win probability around 20-25% (0.74^5 ≈ 22%) without needing
+   to artificially rig outcomes. No penalty for losing — retry anytime.
+   Winning upgrades that subject's relic (grants it if not yet owned,
+   upgrades a normal relic to shiny, or grants a solid XP bonus if already
+   shiny) since a repeat win still deserves a reward.
+   ========================================================================= */
+function renderSparringPick(){
+  const p = getActiveProfile();
+  const rows = SUBJECTS.map(s=>{
+    const relic = p.relics[s.key];
+    const relicNote = relic==='shiny' ? '✨ Shiny relic owned — win for bonus XP' : relic==='normal' ? 'Win to upgrade your relic to shiny!' : 'Win to earn this realm\'s relic!';
+    return `<button class="btn ghost" style="justify-content:space-between;width:100%;margin-bottom:10px;" data-spar-subject="${s.key}">
+      <span>${s.icon} ${s.name}</span><span style="font-size:11px;color:var(--text-dim);">${relicNote}</span>
+    </button>`;
+  }).join('');
+  return `
+  ${renderHeader()}
+  <div class="card setup-card" style="margin-bottom:16px;background:linear-gradient(180deg,#1C1533,#2A1B4D);color:#F2EFFF;">
+    <span class="back-link" id="sparringPickBackLink" style="color:#D8CFFF;">← Back</span>
+    <h2 class="display" style="margin-top:0;">⚔️ Choose Your Sparring Subject</h2>
+    <p style="color:#D8CFFF;">5 questions from the hardest tier you've unlocked. Miss even one, and it's a loss — but there's no other penalty, so come back anytime.</p>
+  </div>
+  <div class="card">${rows}</div>`;
+}
+function attachSparringPickEvents(){
+  document.getElementById('sparringPickBackLink').addEventListener('click', ()=>{ state.screen='dashboard'; render(); });
+  app.querySelectorAll('[data-spar-subject]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      Sound.unlock(); Sound.click();
+      startSparring(btn.getAttribute('data-spar-subject'));
+    });
+  });
+}
+
+function startSparring(subjectKey){
+  const p = getActiveProfile();
+  const track = getActiveTrack();
+  const levels = track.subjects[subjectKey].levels;
+  const hardestIdx = levels.length - 1;
+  const usedQuestions = new Set();
+  const avoidIds = getTodayAskedSet(p);
+  const recentConcepts = [];
+  const questions = [];
+  for(let i=0;i<5;i++){
+    const picked = pickNextUniqueQuestion(levels, hardestIdx, usedQuestions, avoidIds, recentConcepts);
+    questions.push(picked.q);
+    usedQuestions.add(picked.q);
+    recordAskedToday(p, picked.q._id);
+    if(picked.q._concept){ recentConcepts.push(picked.q._concept); if(recentConcepts.length>2) recentConcepts.shift(); }
+  }
+  state.sparring = { subject: subjectKey, questions, idx:0, correctCount:0, awaitingNext:false, chosenIdx:null, result:null };
+  state.screen = 'sparring';
+  if(SETTINGS.musicOn){ Sound.startAmbient('boss'); startMusicRotation(); }
+  render();
+}
+
+function renderSparring(){
+  const s = state.sparring;
+  const subjMeta = SUBJECTS.find(x=>x.key===s.subject);
+  const q = s.questions[s.idx];
+  const dots = s.questions.map((_,i)=>{
+    if(i < s.idx) return '✅';
+    if(i === s.idx) return '⚔️';
+    return '⬜';
+  }).join(' ');
+  return `
+  ${renderHeader()}
+  <div class="card" style="background:linear-gradient(180deg,#1C1533,#2A1B4D);color:#F2EFFF;">
+    <div class="session-header">
+      <span class="level-chip" style="background:linear-gradient(135deg,#FF2E63,#B14AFF);color:#fff;">⚔️ SPARRING ARENA · ${subjMeta.icon} ${subjMeta.name}</span>
+    </div>
+    <p style="font-weight:700;color:#D8CFFF;margin:8px 0;">Round ${s.idx+1} of 5 — ${dots}</p>
+    <p style="font-size:12.5px;color:#B7B4D6;margin:0 0 10px;">Perfect run required. One miss ends the attempt.</p>
+    <div class="q-card">
+      ${renderQuestionBody(q)}
+      <div id="sparChoicesWrap">
+        ${q.c.map((choice,i)=>`<button class="choice" data-idx="${i}">${choice}</button>`).join('')}
+      </div>
+      <div id="sparExplainWrap"></div>
+      <div id="sparNextWrap" style="margin-top:16px;"></div>
+    </div>
+  </div>`;
+}
+function attachSparringEvents(){
+  const s = state.sparring;
+  app.querySelectorAll('#sparChoicesWrap .choice').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      if(s.awaitingNext) return;
+      Sound.unlock();
+      const idx = parseInt(btn.getAttribute('data-idx'));
+      s.awaitingNext = true; s.chosenIdx = idx;
+      const q = s.questions[s.idx];
+      const correct = idx === q.a;
+      const p = getActiveProfile();
+      const log = todayLogEntry(p);
+      log.subjects[s.subject].total += 1;
+
+      app.querySelectorAll('#sparChoicesWrap .choice').forEach((b,i)=>{
+        b.disabled = true;
+        if(i===q.a) b.classList.add('correct');
+        else if(i===idx) b.classList.add('incorrect');
+      });
+      document.getElementById('sparExplainWrap').innerHTML = `<div class="explain">${correct?'⚔️ Direct hit! ':'💥 Missed! '}${q.n}</div>`;
+
+      if(correct){
+        s.correctCount += 1;
+        log.subjects[s.subject].correct += 1;
+        Sound.correct(); Sound.hitVillain();
+        if(s.idx>=4){
+          document.getElementById('sparNextWrap').innerHTML = `<button class="btn brass" id="sparNextBtn">See Results! 🏆</button>`;
+          document.getElementById('sparNextBtn').addEventListener('click', ()=>{ s.result='victory'; endSparring(); });
+        } else {
+          document.getElementById('sparNextWrap').innerHTML = `<button class="btn brass" id="sparNextBtn">Next Round →</button>`;
+          document.getElementById('sparNextBtn').addEventListener('click', ()=>{ s.idx+=1; s.awaitingNext=false; s.chosenIdx=null; render(); });
+        }
+      } else {
+        Sound.incorrect(); Sound.hitPlayer();
+        document.getElementById('sparNextWrap').innerHTML = `<button class="btn" id="sparNextBtn">See Results</button>`;
+        document.getElementById('sparNextBtn').addEventListener('click', ()=>{ s.result='defeat'; endSparring(); });
+      }
+    });
+  });
+}
+
+async function endSparring(){
+  const s = state.sparring;
+  const p = getActiveProfile();
+  stopMusicRotation();
+  const won = s.result==='victory' && s.correctCount>=5;
+  let rewardKind = null, xpBonus = 0;
+  if(won){
+    const current = p.relics[s.subject];
+    if(current===null){ rewardKind = grantRelic(p, s.subject); }
+    else if(current==='normal'){ p.relics[s.subject] = 'shiny'; rewardKind = 'upgraded'; }
+    else { xpBonus = awardXP(p, 60); rewardKind = 'xp'; }
+  }
+  await saveProfile(state.activePlayerId, p);
+  state.sparring.rewardKind = rewardKind;
+  state.sparring.xpBonus = xpBonus;
+  state.screen = 'sparring-result';
+  render();
+}
+
+function renderSparringResult(){
+  const s = state.sparring;
+  const subjMeta = SUBJECTS.find(x=>x.key===s.subject);
+  const won = s.result==='victory' && s.correctCount>=5;
+  const p = getActiveProfile();
+  let rewardHTML = '';
+  if(won){
+    if(s.rewardKind==='normal' || s.rewardKind==='shiny'){
+      rewardHTML = `<div class="card relic-reveal ${s.rewardKind==='shiny'?'shiny':''}" style="text-align:center;margin:16px 0;">
+        <p style="margin:0 0 6px;font-weight:800;font-size:13px;text-transform:uppercase;color:${s.rewardKind==='shiny'?'#B8860B':'var(--violet)'};">${s.rewardKind==='shiny'?'✨ Shiny Relic Earned! ✨':'🎁 Relic Earned!'}</p>
+        <div style="margin:8px 0;">${relicIconSVG(s.subject, s.rewardKind==='shiny', 72)}</div>
+        <p style="margin:0;font-weight:800;font-size:16px;">${RELIC_DEFS[s.subject].name}</p>
+      </div>`;
+    } else if(s.rewardKind==='upgraded'){
+      rewardHTML = `<div class="card relic-reveal shiny" style="text-align:center;margin:16px 0;">
+        <p style="margin:0 0 6px;font-weight:800;font-size:13px;text-transform:uppercase;color:#B8860B;">✨ Relic Upgraded to Shiny! ✨</p>
+        <div style="margin:8px 0;">${relicIconSVG(s.subject, true, 72)}</div>
+        <p style="margin:0;font-weight:800;font-size:16px;">${RELIC_DEFS[s.subject].name}</p>
+      </div>`;
+    } else if(s.rewardKind==='xp'){
+      rewardHTML = `<div class="card" style="background:linear-gradient(135deg,#FFF3D6,#FFE7A8);text-align:center;margin:16px 0;"><p style="margin:0;font-weight:700;">Your relic is already shiny — enjoy a +${s.xpBonus} XP bonus instead!</p></div>`;
+    }
+  }
+  return `
+  ${renderHeader()}
+  <div class="card">
+    <h2 class="display" style="margin-top:0;">${won ? '🏆 Perfect Run!' : '💥 Attempt Ended'}</h2>
+    <p>${won ? `Flawless — 5 for 5 in ${subjMeta.name}. That's true mastery.` : `You got ${s.correctCount} of ${s.idx+1} before a miss. No penalty — come back and try again anytime.`}</p>
+    <div class="summary-stat"><span>Correct answers</span><strong>${s.correctCount} / 5</strong></div>
+    ${rewardHTML}
+    <div style="margin-top:22px;display:flex;gap:10px;flex-wrap:wrap;">
+      <button class="btn brass" id="sparAgainBtn">⚔️ Try Again</button>
+      <button class="btn ghost" id="sparBackBtn">Back to Realm Map</button>
+    </div>
+  </div>`;
+}
+function attachSparringResultEvents(){
+  Sound.unlock();
+  const s = state.sparring;
+  if(s.result==='victory' && s.correctCount>=5){ Sound.relicFound(s.rewardKind==='shiny'||s.rewardKind==='upgraded'); fireConfetti(s.rewardKind==='shiny'||s.rewardKind==='upgraded' ? 50 : 30); }
+  else { Sound.click(); }
+  document.getElementById('sparAgainBtn').addEventListener('click', ()=> startSparring(state.sparring.subject));
+  document.getElementById('sparBackBtn').addEventListener('click', ()=>{ state.screen='dashboard'; render(); });
+}
+
+/* =========================================================================
    INIT
    ========================================================================= */
 async function init(){
@@ -5932,3 +6172,7 @@ init();
 </script>
 </body>
 </html>
+
+
+
+
