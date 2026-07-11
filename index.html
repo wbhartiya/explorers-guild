@@ -167,11 +167,19 @@
   .btn:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none;}
 
   /* ---------- Dashboard: trail map ---------- */
-  .trail-wrap{margin:20px 0 28px;}
+  .trail-wrap{margin:20px 0 28px;border-radius:18px;overflow:hidden;box-shadow:0 8px 28px rgba(20,10,50,0.35);}
   .trail-svg{width:100%;height:auto;display:block;}
   .node-label{font-family:'Baloo 2',sans-serif;font-weight:700;}
   .trail-path-glow{animation:dashFlow 1.6s linear infinite;}
   @keyframes dashFlow{to{stroke-dashoffset:-24;}}
+  .map-star{animation:starTwinkle 2.4s ease-in-out infinite;}
+  @keyframes starTwinkle{0%,100%{opacity:0.15;}50%{opacity:0.9;}}
+  .map-clouds-far{animation:cloudDriftSlow 60s linear infinite;}
+  .map-clouds-near{animation:cloudDriftFast 40s linear infinite;}
+  @keyframes cloudDriftSlow{0%{transform:translateX(0);}100%{transform:translateX(-60px);}}
+  @keyframes cloudDriftFast{0%{transform:translateX(0);}100%{transform:translateX(-90px);}}
+  .node-ring-pulse{animation:nodeRingPulse 2.4s ease-in-out infinite;}
+  @keyframes nodeRingPulse{0%,100%{opacity:0.2;stroke-width:1;}50%{opacity:0.6;stroke-width:2;}}
 
   .stats-row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:22px;}
   .stat-pill{
@@ -314,6 +322,11 @@
     padding:16px 18px; margin-bottom:16px; font-size:16px; line-height:1.7; color:var(--text-dark);
   }
   .passage-label{font-weight:800;font-size:12.5px;text-transform:uppercase;letter-spacing:0.6px;color:var(--violet);margin-bottom:8px;}
+  .diagram-box{
+    background:#fff; border:2px solid #D9CFFF; border-radius:14px;
+    padding:12px; margin-bottom:16px; display:flex; justify-content:center;
+  }
+  .diagram-box svg{max-width:100%; height:auto; display:block;}
   .choice{
     display:block; width:100%; text-align:left; padding:16px 19px; margin-bottom:12px;
     border-radius:14px; border:2px solid #E1DBFF; background:#FBFAFF; cursor:pointer;
@@ -389,7 +402,7 @@ const SESSION_MINUTES = 20;
 const RANKS = ['Explorer','Adventurer','Master','Legend'];
 
 /* ---- helper for building MCQ objects tersely: [question, choices[], correctIndex, note] */
-function Q(q,c,a,n,passage=null){ return {q, c, a, n, passage}; }
+function Q(q,c,a,n,passage=null,diagram=null){ return {q, c, a, n, passage, diagram}; }
 
 /* =========================================================================
    TRACK A — Rising 3rd Grade (Advanced): 3rd mastery -> push into 4th Q1-Q2
@@ -2000,6 +2013,266 @@ expandMathContent(500);
 })();
 
 /* =========================================================================
+   6TH GRADE (TRACK C) TRICKERY BATCH
+   "50% harder, with trickery and confusion" — these are hand-authored (not
+   generator-based) so every calculation and distractor is individually
+   verified. Distractors are deliberately built from the SPECIFIC mistake a
+   student would make (forgetting order of operations, confusing
+   complementary/supplementary, the classic fence-post off-by-one, sign
+   errors, common science/history misconceptions, etc.) rather than random
+   wrong values — that's what makes them genuinely tricky rather than just
+   "bigger numbers." Appended directly to Track C only; grades 3, 4, and
+   Adult are completely untouched.
+   ========================================================================= */
+(function addTrack6TrickeryQuestions(){
+  const mathTrickL0 = [
+    Q('What is 8 + 4 × 2?',['24','16','20','12'],1,'Multiplication happens before addition: 4×2=8, then 8+8=16. (Computing strictly left to right gives the trap answer 24.)'),
+    Q('What is (6 + 2) × 3 − 4?',['20','8','24','16'],0,'(6+2)=8, 8×3=24, 24−4=20. (Ignoring the parentheses and computing 6+2×3−4 gives the trap answer 8.)'),
+    Q('What is 0.4 × 0.3?',['1.2','0.12','0.7','0.012'],1,'0.4 × 0.3 = 0.12. (Misplacing the decimal point gives the trap answer 1.2.)'),
+    Q('A rectangular prism measures 4 cm × 3 cm × 2 cm. What is its volume?',['24 cm³','18 cm³','9 cm³','14 cm³'],0,'Volume = length × width × height = 4×3×2 = 24 cm³. (18 cm³ comes from mistakenly adding some dimensions instead of multiplying.)'),
+    Q('What is 15 ÷ 3 + 2 × 4?',['13','28','20','17'],0,'Division and multiplication come first: 15÷3=5 and 2×4=8, then 5+8=13. (Computing strictly left to right gives the trap answer 28.)'),
+    Q('A pizza is cut into 8 equal slices. If 0.625 of the pizza was eaten, how many slices were eaten?',['5','4','6','3'],0,'0.625 × 8 = 5 slices, since 0.625 = 5/8.'),
+    Q('What is 20 − 4 × 3 + 1?',['9','49','8','13'],0,'Multiplication first: 4×3=12. Then 20−12+1=9. (Computing left to right without order of operations gives the trap answer 49.)'),
+    Q('What is the volume of a cube with a side length of 5 cm?',['125 cm³','25 cm³','15 cm³','20 cm³'],0,'Volume of a cube = side³ = 5×5×5 = 125 cm³. (25 cm³ mistakenly uses side² instead of side³.)'),
+    Q('What is 3.6 ÷ 0.4?',['9','0.9','14.4','1.44'],0,'3.6 ÷ 0.4 = 9. (Misplacing decimal points during division gives trap answers like 0.9 or 14.4.)'),
+    Q('What is 2 + 3 × (4 − 1)?',['11','15','9','21'],0,'Parentheses first: 4−1=3. Then 3×3=9. Then 2+9=11. (Ignoring order of operations gives trap answers like 15 or 21.)'),
+    Q('A rope is 12.5 meters long. It is cut into pieces that are 2.5 meters each. How many pieces are there?',['5','4','6','50'],0,'12.5 ÷ 2.5 = 5 pieces.'),
+    Q('What is 6² − 4 × 2?',['28','20','56','64'],0,'6²=36, 4×2=8, 36−8=28. (Skipping the exponent step or miscalculating it leads to trap answers like 20 or 64.)'),
+    Q('What is 100 − 5 × (3 + 2)?',['75','475','90','85'],0,'Parentheses first: 3+2=5. Then 5×5=25. Then 100−25=75. (Ignoring order of operations leads to trap answers like 475.)'),
+    Q('A cube-shaped box has a volume of 27 cm³. What is the length of one side?',['3 cm','9 cm','13.5 cm','6 cm'],0,'Since 3×3×3=27, the side length is 3 cm. (Dividing 27÷3=9, confusing volume with a simple division, is a common trap.)'),
+    Q('What is 7 + 3 × 2²?',['19','40','25','23'],0,'Exponent first: 2²=4. Then 3×4=12. Then 7+12=19. (Skipping the exponent or doing operations left-to-right gives trap answers like 40.)')
+  ];
+  const mathTrickL1 = [
+    Q('A recipe uses a ratio of 2 cups flour to 3 cups sugar. If you use 6 cups of flour, how much sugar do you need?',['9 cups','8 cups','4.5 cups','12 cups'],0,'The ratio 2:3 scaled by 3 (since 2×3=6) gives 3×3=9 cups of sugar.'),
+    Q('What is −8 + (−5)?',['−13','13','−3','3'],0,'Adding two negative numbers: −8 + (−5) = −13. (Treating this like subtraction gives trap answers like −3 or 3.)'),
+    Q('What is −6 × (−4)?',['24','−24','10','−10'],0,'A negative times a negative is positive: −6 × −4 = 24. (Forgetting this rule gives the trap answer −24.)'),
+    Q('The mean of 4 numbers is 10. Three of the numbers are 8, 12, and 9. What is the fourth number?',['11','9','13','10'],0,'The sum of all 4 must be 4×10=40. The known three sum to 29, so the fourth is 40−29=11.'),
+    Q('What is 15 − (−7)?',['22','8','−22','−8'],0,'Subtracting a negative is the same as adding: 15 − (−7) = 15+7 = 22. (Treating this as 15−7=8 is a very common mistake.)'),
+    Q('A shirt costs $40. It goes on sale for 25% off, then an additional 10% off the sale price. What is the final price?',['$27','$26','$30','$24'],0,'First 25% off: $40×0.75=$30. Then 10% off that: $30×0.9=$27. (Adding the percentages to get "35% off" and computing $26 is a very common mistake — sequential discounts don\'t simply add together.)'),
+    Q('What is the ratio 15:20 written in simplest form?',['3:4','15:20','5:4','4:3'],0,'Dividing both sides by their greatest common factor (5): 15÷5=3, 20÷5=4, giving 3:4.'),
+    Q('What is −3 × 4 + (−2)?',['−14','−10','10','14'],0,'−3×4=−12, then −12+(−2)=−14. (Sign errors during multiplication are a common trap.)'),
+    Q('The mean of 5 test scores is 82. Four of the scores are 78, 85, 90, and 80. What is the fifth score?',['77','80','82','85'],0,'The sum needed is 5×82=410. The known four sum to 333, so the fifth score is 410−333=77.'),
+    Q('What is −10 ÷ (−2)?',['5','−5','−20','20'],0,'A negative divided by a negative is positive: −10÷−2=5.'),
+    Q('A map has a scale of 1 inch = 20 miles. Two cities are 3.5 inches apart on the map. How far apart are they in real life?',['70 miles','60 miles','23.5 miles','17.5 miles'],0,'3.5 × 20 = 70 miles.'),
+    Q('What is 4 − 9?',['−5','5','−13','13'],0,'4−9=−5. (Computing 9−4=5 and forgetting the sign is a very common mistake.)')
+  ];
+  const mathTrickL2 = [
+    Q('Solve for x: 3x + 5 = 20',['x = 5','x = 8.33','x = 7.5','x = 15'],0,'3x=20−5=15, so x=15÷3=5. (Dividing 20÷3 before subtracting 5 gives trap answers like 7.5.)'),
+    Q('What is the slope of a line that passes through (2, 3) and (6, 11)?',['2','8','4','0.5'],0,'Slope = (11−3)/(6−2) = 8/4 = 2. (Forgetting to divide, or dividing the wrong way, are common traps.)'),
+    Q('If f(x) = 2x² − 3, what is f(3)?',['15','9','33','3'],0,'f(3) = 2(3)² − 3 = 2(9) − 3 = 18 − 3 = 15. (Computing (2×3)² instead of 2×(3²) gives the trap answer 33.)'),
+    Q('Simplify: 4(x + 3) − 2x',['2x + 12','2x + 3','6x + 12','2x + 6'],0,'4(x+3)=4x+12. Then 4x+12−2x=2x+12. (Forgetting to distribute to both terms is a common mistake.)'),
+    Q('Solve for x: 2(x − 4) = 10',['x = 9','x = 5','x = 7','x = 3'],0,'2x−8=10, so 2x=18, so x=9. (Forgetting to distribute the 2 gives trap answers like x=14 or x=5.)'),
+    Q('What is the slope of a line that passes through (−1, 4) and (3, −4)?',['−2','2','−0.5','0.5'],0,'Slope = (−4−4)/(3−(−1)) = −8/4 = −2. (Sign errors when subtracting negative coordinates are a common trap.)'),
+    Q('If f(x) = 3x − 5, for what value of x does f(x) = 10?',['x = 5','x = 15','x = 1.67','x = 3.33'],0,'3x−5=10, so 3x=15, so x=5.'),
+    Q('Simplify: 5x − 2(x + 4)',['3x − 8','3x + 8','7x − 8','3x − 4'],0,'5x−2x−8=3x−8. (Forgetting to distribute the negative sign to both terms gives trap answers like 3x+8.)'),
+    Q('Solve for x: x/3 + 4 = 9',['x = 15','x = 39','x = 5','x = 27'],0,'x/3=5, so x=15. (Multiplying 9 by 3 before subtracting 4 gives the trap answer 27.)'),
+    Q('What is the y-intercept of the line y = 4x − 7?',['−7','7','4','−4'],0,'In slope-intercept form y=mx+b, b is the y-intercept: −7. (Confusing the slope and y-intercept is a common mistake.)'),
+    Q('If f(x) = x² + 2x, what is f(−3)?',['3','15','−3','−15'],0,'f(−3)=(−3)²+2(−3)=9−6=3. (Forgetting that a negative squared is positive gives the trap answer −15.)'),
+    Q('Solve for x: 7 − 2x = 1',['x = 3','x = 4','x = −3','x = −4'],0,'−2x=1−7=−6, so x=(−6)/(−2)=3. (Sign errors when moving terms across the equals sign are a common trap.)')
+  ];
+  const mathTrickL3 = [
+    Q('A triangle has a base of 10 cm and a height of 6 cm. What is its area?',['30 cm²','60 cm²','16 cm²','48 cm²'],0,'Area of a triangle = ½ × base × height = ½ × 10 × 6 = 30 cm². (Forgetting the ½ gives the trap answer 60 cm².)'),
+    Q('Two angles are complementary. If one measures 35°, what is the measure of the other?',['55°','145°','65°','325°'],0,'Complementary angles sum to 90°: 90−35=55°. (Confusing complementary with supplementary and computing 180−35=145° is a very common trap.)'),
+    Q('A triangular prism has a triangular base with an area of 20 cm² and a length of 8 cm. What is its volume?',['160 cm³','28 cm³','80 cm³','200 cm³'],0,'Volume of a prism = base area × length = 20×8=160 cm³.'),
+    Q('A fence needs posts every 4 feet along a straight 40-foot wall, including posts at both ends. How many posts are needed?',['11','10','9','12'],0,'There are 40÷4=10 gaps, which requires 10+1=11 posts. (Forgetting the "+1" for a fence-post problem is a classic mistake, giving the trap answer 10.)'),
+    Q('Two angles are supplementary. If one measures 112°, what is the measure of the other?',['68°','78°','22°','258°'],0,'Supplementary angles sum to 180°: 180−112=68°. (Confusing supplementary with complementary is a very common trap.)'),
+    Q('A triangle has a base of 14 cm and an area of 42 cm². What is its height?',['6 cm','3 cm','84 cm','1.5 cm'],0,'Area=½×base×height, so 42=½×14×h=7h, so h=6 cm. (Forgetting to account for the ½ gives the trap answer 3 cm.)'),
+    Q('A triangular flower bed has the same base (8 m) and height (5 m) as a rectangular garden\'s width and length. What is the area of the triangular flower bed?',['20 m²','40 m²','13 m²','26 m²'],0,'Triangle area = ½ × base × height = ½ × 8 × 5 = 20 m². (Using the rectangle formula instead of the triangle formula gives the trap answer 40 m².)'),
+    Q('A cube has a volume of 64 cm³. What is the area of one of its faces?',['16 cm²','64 cm²','32 cm²','8 cm²'],0,'Side length = cube root of 64 = 4 cm. Area of one face = 4×4=16 cm². (Confusing volume with face area is a common trap.)'),
+    Q('A triangular sign has angles measuring 40° and 65°. What is the measure of the third angle?',['75°','105°','115°','180°'],0,'A triangle\'s angles sum to 180°: 180−40−65=75°.'),
+    Q('Fence posts are needed every 6 meters around a CLOSED rectangular field with a perimeter of 60 meters. How many posts are needed?',['10','11','9','60'],0,'For a closed loop, the number of posts equals the number of gaps: 60÷6=10. (Unlike an open fence, no extra "+1" is needed for a closed shape — this trips up many students who just learned the open-fence rule.)')
+  ];
+  trackC.subjects.math.levels[0].push(...mathTrickL0);
+  trackC.subjects.math.levels[1].push(...mathTrickL1);
+  trackC.subjects.math.levels[2].push(...mathTrickL2);
+  trackC.subjects.math.levels[3].push(...mathTrickL3);
+
+  const scienceTrick = [
+    Q('Which of the following is NOT a state of matter?',['Solid','Liquid','Gas','Energy'],3,'Energy is not a state of matter — solid, liquid, gas, and plasma are the states of matter.'),
+    Q('A ball is thrown straight up. At the very top of its path, what is its velocity?',['At its maximum','Zero','Constant throughout','Negative'],1,'At the peak, the ball momentarily stops before falling, so its velocity is zero — a common misconception is that it\'s still moving upward at that instant.'),
+    Q('Which of these is a chemical change, NOT a physical change?',['Melting ice','Tearing paper','Rusting iron','Boiling water'],2,'Rusting forms a new substance (iron oxide), making it a chemical change. The others are physical changes.'),
+    Q('Ignoring air resistance, how does the mass of two different objects affect how fast they fall?',['Heavier objects always fall faster','They fall at the same rate regardless of mass','Lighter objects always fall faster','Falling speed depends on color, not mass'],1,'Without air resistance, gravity accelerates all objects at the same rate regardless of mass — confusing weight with falling speed is a classic misconception.'),
+    Q('A metal spoon and a wooden spoon are both at room temperature. Why does the metal spoon feel colder?',['The metal spoon is actually colder','Metal conducts heat away from your hand faster than wood does','Wood generates its own heat','Metal has a naturally lower temperature'],1,'Both spoons are the same temperature — metal just conducts heat away from your hand faster, making it feel colder even though it isn\'t.'),
+    Q('Which of the following is NOT one of Newton\'s three laws of motion?',['An object in motion stays in motion unless acted on by a force','For every action there is an equal and opposite reaction','Force equals mass times acceleration','Energy cannot be created or destroyed'],3,'Conservation of energy is a separate scientific law, not one of Newton\'s three laws of motion — a common mix-up.'),
+    Q('Most of a plant\'s mass actually comes from which source?',['Nutrients absorbed from the soil','Carbon dioxide from the air, used in photosynthesis','Water alone','Sunlight directly turning into matter'],1,'Most of a plant\'s mass comes from carbon dioxide captured from the air during photosynthesis, not from the soil — a very common misconception.'),
+    Q('Which of these is NOT true about Earth\'s seasons?',['Seasons are caused by Earth\'s tilted axis','Earth is closer to the Sun in summer than in winter (Northern Hemisphere)','The tilt causes different hemispheres to receive more direct sunlight at different times','Seasons are opposite in the Northern and Southern Hemispheres'],1,'Seasons are caused by Earth\'s axial tilt, NOT distance from the Sun — Earth is actually slightly closer to the Sun during Northern Hemisphere winter, contrary to the common assumption.'),
+    Q('Which gas makes up most of Earth\'s atmosphere?',['Oxygen','Nitrogen','Carbon dioxide','Hydrogen'],1,'Nitrogen makes up about 78% of the atmosphere — many people mistakenly assume it\'s oxygen (about 21%).'),
+    Q('Does the Moon produce its own light?',['Yes, it glows from internal heat','No, it only reflects sunlight','Yes, it is a small star','Its light comes from Earth\'s reflection'],1,'The Moon has no light of its own — it only reflects sunlight, a very common misconception.')
+  ];
+  const historyTrick = [
+    Q('Which statement about the Declaration of Independence is FALSE?',['It was adopted in 1776','It declared the colonies\' independence from Britain','It immediately ended the Revolutionary War','Thomas Jefferson was its primary author'],2,'The Declaration did not end the war — fighting continued for years until the Treaty of Paris in 1783, a common misconception.'),
+    Q('Which is more historically accurate about Columbus and the shape of the Earth?',['Columbus was the first to discover the Earth is round','Educated Europeans already knew the Earth was round before his voyage','The Earth was believed to be flat until the 1900s','His voyage was primarily about proving Earth\'s shape'],1,'Educated people already knew the Earth was round before Columbus — his voyage aimed to find a new trade route, not prove Earth\'s shape.'),
+    Q('Which of these was NOT a cause of World War I?',['Alliances between European powers','The assassination of Archduke Franz Ferdinand','Nationalism and militarism in Europe','The attack on Pearl Harbor'],3,'Pearl Harbor was an event of World War II (1941), not World War I — a common mix-up between the two world wars.'),
+    Q('What is a more accurate view of the Middle Ages than "a period with zero progress"?',['It saw real advances in architecture, universities, and technology','No progress happened anywhere in the world during this era','Only warfare technology advanced','The "Dark Ages" label accurately describes the entire world at this time'],0,'The Middle Ages included real advances like Gothic architecture, the first universities, and new technologies — the "no progress" idea is an oversimplified myth.'),
+    Q('Which of these events happened FIRST?',['The signing of the U.S. Constitution','The American Civil War','World War I','The Great Depression'],0,'The Constitution was signed in 1787, before the Civil War (1861-65), WWI (1914-18), and the Great Depression (1929).'),
+    Q('Where did the Renaissance actually begin?',['Italy','France','England','Germany'],0,'The Renaissance began in Italy in the 14th century before spreading across Europe.'),
+    Q('Which of these is NOT one of the three branches of the U.S. federal government?',['Legislative','Executive','Judicial','Regional'],3,'"Regional" is not a branch of government — the three branches are legislative, executive, and judicial.'),
+    Q('Which statement about the Cold War is most accurate?',['The U.S. and Soviet Union fought each other directly in major battles','It was primarily political tension and indirect conflict, without direct large-scale fighting between the two superpowers','It lasted only two years','It ended immediately after World War II began'],1,'The "Cold War" is called that because it was fought mainly through political tension, proxy wars, and an arms race — not direct battles between the U.S. and USSR.'),
+    Q('Why did American colonists use the phrase "no taxation without representation"?',['They opposed all taxation forever','They objected to being taxed by a Parliament in which they had no elected representatives','They wanted to raise their own taxes higher','It referred only to taxes on foreign goods'],1,'Colonists weren\'t opposed to taxation itself — they objected to being taxed without elected representatives who could vote on those taxes.'),
+    Q('What is more historically accurate about the fall of the Roman Empire?',['The Western Roman Empire gradually declined by 476 CE, while the Eastern (Byzantine) Empire continued for centuries after','The whole Roman Empire fell instantly in 476 CE','Rome never actually declined','Both halves fell on the exact same date'],0,'The West\'s fall was gradual, and the Eastern half (Byzantine Empire) continued for nearly another thousand years — a common misconception treats the "fall of Rome" as one sudden event.')
+  ];
+  const readingTrick = [
+    Q('In the sentence "Although it was raining, the game continued," what does "although" signal?',['The game was cancelled','A contrast between two ideas','That there is no dependent clause','That the rain caused the game to end'],1,'"Although" signals contrast — despite the rain, the game continued, not the opposite.'),
+    Q('Which term describes a narrator whose account should be questioned rather than automatically trusted?',['Omniscient narrator','Unreliable narrator','First-person narrator','Objective narrator'],1,'An "unreliable narrator" may be biased, mistaken, or dishonest — not all narrators, especially first-person ones, are automatically trustworthy.'),
+    Q('What is the best definition of "irony"?',['When something happens exactly as expected','A contrast between what is expected and what actually happens','A type of rhyme scheme','A synonym for coincidence'],1,'Irony involves a contrast between expectation and reality, not simply any surprising event — a common misuse of the term.'),
+    Q('Does a long text automatically have a more complicated main idea?',['Yes, length always equals complexity','No — good readers identify the central idea regardless of length','Yes, so long texts should be skipped','Only the first sentence matters'],1,'Text length doesn\'t necessarily indicate complexity — the central idea can be identified by looking at how details support it, regardless of length.'),
+    Q('What best distinguishes a "theme" from a "topic"?',['They mean the same thing','A topic is the subject matter; a theme is the deeper message about that subject','A theme is always stated directly in the title','A topic can only apply to nonfiction'],1,'A topic is WHAT a text is about; a theme is the deeper insight or lesson the text conveys ABOUT that topic.'),
+    Q('Must a text written in first person always be true/nonfiction?',['Yes, first person can only be used in autobiographies','No — fiction can also be written in first person using an invented narrator','Yes, first-person narration is always accurate','No, only poems use first person'],1,'Fiction is often written in first person with a made-up narrator — point of view doesn\'t determine whether a text is fiction or nonfiction.'),
+    Q('Which sentence contains a logical inconsistency?',['"All birds can fly, so penguins, which are birds, can fly."','"The sky is blue during a clear day."','"She studied hard, so she felt prepared for the test."','"It rained, so the ground got wet."'],0,'Not all birds can fly (penguins can\'t), so the starting premise is false, making the conclusion unreliable — a classic logical fallacy.'),
+    Q('Do an author\'s opinions and a narrator\'s opinions always match?',['Yes, always','No — an author can create a narrator whose views differ from or oppose their own','Narrators never have opinions','Only nonfiction narrators can differ from the author'],1,'Authors often create narrators with very different views from their own, especially to critically explore a theme — assuming they always match is a common reading error.'),
+    Q('What is the purpose of a counterargument in a persuasive text?',['To confuse the reader','To acknowledge an opposing view, which the author then addresses to strengthen their own case','To prove the author has no real argument','It should never appear in strong persuasive writing'],1,'A well-placed counterargument shows the author considered other views and can respond to them, which strengthens rather than weakens the argument.'),
+    Q('Is a text\'s genre determined only by its setting?',['Yes, setting alone determines genre','No — genre is shaped by plot structure, tone, and conventions, not setting alone','Only the book cover determines genre','Genre never actually matters'],1,'Genre is shaped by many elements working together — plot patterns, tone, and reader expectations — not simply where a story takes place.')
+  ];
+  const writingTrick = [
+    Q('Which sentence correctly uses "whom"?',['"Who did you give the book to?"','"To whom did you give the book?"','"Whom is going to the store?"','Both A and C are correct'],1,'"Whom" is the object form, correctly used after a preposition like "to" — "who" should be used as a subject, as in choice C\'s incorrect usage.'),
+    Q('Is passive voice always grammatically incorrect?',['Yes, always wrong','No — it\'s grammatically valid and sometimes appropriate, though often less direct than active voice','It should never be used in any writing','Passive and active voice mean the same thing'],1,'Passive voice is grammatically valid and has legitimate uses (e.g., when the doer of an action is unknown) — it\'s a stylistic choice, not an error.'),
+    Q('Which sentence correctly uses "its" vs. "it\'s"?',['"The dog wagged it\'s tail."','"Its going to rain today."','"The dog wagged its tail."','Both A and C are correct'],2,'"Its" (no apostrophe) shows possession; "it\'s" is a contraction for "it is." "The dog wagged its tail" is correct.'),
+    Q('Is repeatedly using "very" and "really" the strongest way to add emphasis?',['Yes, use them as often as possible','No — choosing more precise, vivid words is usually stronger writing','Never use any adjectives instead','Only write one-word sentences'],1,'Skilled writers often replace vague intensifiers like "very tired" with precise words like "exhausted" — generally considered stronger writing.'),
+    Q('Which sentence avoids a dangling modifier?',['"Running down the street, the bus was missed by John."','"Running down the street, John missed the bus."','"The bus, running down the street, was missed."','"Down the street running, missed the bus John."'],1,'The modifier "Running down the street" should describe John, the one running — placing it right before "John" avoids the dangling modifier error.'),
+    Q('Should a strong thesis statement be phrased as a question?',['Yes, questions are always strongest','No — a thesis should typically make a clear, arguable claim, not just pose a question','It doesn\'t matter what form it takes','Thesis statements should never be one sentence'],1,'A thesis statement should state a clear, arguable position, not just an open question — the claim gives the essay direction.'),
+    Q('Which sentence uses commas correctly with an introductory clause?',['"After the movie ended we went home."','"After the movie ended, we went home."','"After, the movie ended we went home."','"After the movie, ended we went home."'],1,'An introductory dependent clause ("After the movie ended") should be followed by a comma before the main clause.'),
+    Q('Must every paragraph be exactly five sentences long?',['Yes, always exactly five','No — paragraph length should be flexible, based on fully developing one main idea','All paragraphs must be one sentence','Yes, this is a strict, universal grammar rule'],1,'There\'s no fixed sentence-count rule for paragraphs — good paragraphs are as long as needed to fully develop a single main idea.'),
+    Q('Which sentence correctly avoids a run-on?',['"I finished my homework I went outside to play."','"I finished my homework, so I went outside to play."','"I finished my homework I, went outside to play."','"I finished, my homework I went outside to play."'],1,'Adding "so" with a comma correctly joins the two independent clauses, avoiding the run-on in the other choices.'),
+    Q('Does swapping every simple word for a "fancier" thesaurus synonym always improve writing?',['Yes, fancier words are automatically better','No — clarity and precision matter more than sounding impressive; misused synonyms can confuse meaning','Simple words should never appear in formal writing','Thesauruses guarantee correct word choice'],1,'Swapping in unfamiliar synonyms without understanding their precise meaning often makes writing less clear, not more sophisticated — clarity should come first.')
+  ];
+  trackC.subjects.science.levels[2].push(...scienceTrick);
+  trackC.subjects.history.levels[2].push(...historyTrick);
+  trackC.subjects.reading.levels[2].push(...readingTrick);
+  trackC.subjects.writing.levels[2].push(...writingTrick);
+})();
+
+/* =========================================================================
+   DIAGRAM / CHART QUESTIONS
+   Added after verifying against the actual FCPS curriculum: Grade 3 Math
+   explicitly teaches pictographs and bar graphs, Grade 4/5 Math explicitly
+   teaches line graphs, and Grade 6 Math explicitly teaches circle graphs —
+   this was a genuine 0%-coverage gap in the question bank before this
+   batch. Every chart uses fixed, hand-verified data (not randomly
+   generated) so every answer is checked by hand against the diagram.
+   ========================================================================= */
+(function addDiagramQuestions(){
+  // ---- GRADE 3 (Track A): pictographs + bar graphs ----
+  const pets = [{label:'Dogs',count:8},{label:'Cats',count:6},{label:'Fish',count:4},{label:'Birds',count:2}];
+  const petsDiagram = pictographSVG(pets, 'Favorite Pets', '🐾', 2);
+  const books = [{label:'Week 1',count:3},{label:'Week 2',count:5},{label:'Week 3',count:7},{label:'Week 4',count:4}];
+  const booksDiagram = pictographSVG(books, 'Books Read This Summer', '📚', 1);
+  const votes = [{label:'Zoo',value:12},{label:'Museum',value:7},{label:'Aquarium',value:9},{label:'Park',value:5}];
+  const votesDiagram = barChartSVG(votes, 'Class Vote for Field Trip');
+  const recess = [{label:'Mon',value:20},{label:'Tue',value:25},{label:'Wed',value:15},{label:'Thu',value:30},{label:'Fri',value:20}];
+  const recessDiagram = barChartSVG(recess, 'Recess Minutes by Day');
+
+  const grade3Charts = [
+    Q('According to the pictograph, how many students chose dogs as their favorite pet?',['8','6','4','2'],0,'The "Dogs" row shows 4 paw icons, and each icon = 2, so 4×2=8.',null,petsDiagram),
+    Q('According to the pictograph, how many MORE students chose dogs than cats?',['2','4','8','6'],0,'Dogs=8, Cats=6, so 8−6=2 more students chose dogs.',null,petsDiagram),
+    Q('According to the pictograph, how many students chose fish or birds combined?',['6','4','8','10'],0,'Fish=4 and Birds=2, so 4+2=6 students total.',null,petsDiagram),
+    Q('According to the pictograph, how many books were read in Week 3?',['7','5','4','3'],0,'The Week 3 row shows 7 book icons, and each icon = 1 book, so 7 books.',null,booksDiagram),
+    Q('According to the pictograph, how many total books were read across all 4 weeks?',['19','15','21','17'],0,'3+5+7+4 = 19 books total.',null,booksDiagram),
+    Q('According to the pictograph, which week had the FEWEST books read?',['Week 1','Week 2','Week 3','Week 4'],0,'Week 1 shows only 3 books, the smallest amount shown.',null,booksDiagram),
+    Q('According to the bar graph, how many students voted for the aquarium?',['9','12','7','5'],0,'The "Aquarium" bar reaches 9 on the vertical axis.',null,votesDiagram),
+    Q('According to the bar graph, how many more students voted for the zoo than the park?',['7','5','12','2'],0,'Zoo=12, Park=5, so 12−5=7 more votes for the zoo.',null,votesDiagram),
+    Q('According to the bar graph, what was the total number of votes cast for a field trip location?',['33','28','30','35'],0,'12+7+9+5 = 33 total votes.',null,votesDiagram),
+    Q('According to the bar graph, on which day did students get the MOST recess minutes?',['Thursday','Tuesday','Friday','Monday'],0,'Thursday\'s bar reaches 30, the tallest bar shown.',null,recessDiagram),
+    Q('According to the bar graph, what was the total number of recess minutes Monday through Friday?',['110','100','120','105'],0,'20+25+15+30+20 = 110 total minutes.',null,recessDiagram),
+    Q('According to the bar graph, how many fewer recess minutes were there on Wednesday than Thursday?',['15','10','20','5'],0,'Thursday=30, Wednesday=15, so 30−15=15 fewer minutes.',null,recessDiagram)
+  ];
+  trackA.subjects.math.levels[1].push(...grade3Charts);
+
+  // ---- GRADE 4 (Track B): line graphs ----
+  const temps = [{x:'Mon',y:60},{x:'Tue',y:65},{x:'Wed',y:70},{x:'Thu',y:68},{x:'Fri',y:75}];
+  const tempsDiagram = lineChartSVG(temps, 'Temperature Over a Week (°F)');
+  const plant = [{x:'Wk1',y:2},{x:'Wk2',y:5},{x:'Wk3',y:9},{x:'Wk4',y:12},{x:'Wk5',y:14}];
+  const plantDiagram = lineChartSVG(plant, 'Plant Height Over 5 Weeks (cm)');
+  const bookSales = [{x:'Jan',y:40},{x:'Feb',y:55},{x:'Mar',y:50},{x:'Apr',y:65},{x:'May',y:80}];
+  const salesDiagram = lineChartSVG(bookSales, 'Books Sold Each Month');
+
+  const grade4Charts = [
+    Q('According to the line graph, what was the temperature on Wednesday?',['70°F','65°F','68°F','75°F'],0,'The point above "Wed" is at 70 on the vertical axis.',null,tempsDiagram),
+    Q('According to the line graph, between which two days did the temperature increase the most?',['Thursday to Friday','Monday to Tuesday','Tuesday to Wednesday','Wednesday to Thursday'],0,'Thu→Fri rises from 68 to 75, a jump of 7 — the largest increase of any interval shown.',null,tempsDiagram),
+    Q('According to the line graph, what is the difference between the highest and lowest temperatures shown?',['15°F','10°F','12°F','20°F'],0,'The highest is 75°F (Friday) and the lowest is 60°F (Monday): 75−60=15°F.',null,tempsDiagram),
+    Q('According to the line graph, how tall was the plant in Week 4?',['12 cm','9 cm','14 cm','5 cm'],0,'The point above "Wk4" is at 12 on the vertical axis.',null,plantDiagram),
+    Q('According to the line graph, how much did the plant grow from Week 1 to Week 5?',['12 cm','14 cm','9 cm','16 cm'],0,'Week 5 height (14) minus Week 1 height (2) = 12 cm of growth.',null,plantDiagram),
+    Q('According to the line graph, during which interval did the plant grow the MOST?',['Week 2 to Week 3','Week 1 to Week 2','Week 3 to Week 4','Week 4 to Week 5'],0,'Week 2→3 rises from 5 to 9, a gain of 4 — the largest jump between any two points shown.',null,plantDiagram),
+    Q('According to the line graph, how many books were sold in April?',['65','55','50','80'],0,'The point above "Apr" is at 65 on the vertical axis.',null,salesDiagram),
+    Q('According to the line graph, in which month were the FEWEST books sold?',['January','February','March','May'],0,'January\'s point is at 40, the lowest point on the graph.',null,salesDiagram),
+    Q('According to the line graph, what was the total number of books sold from January through May?',['290','280','300','270'],0,'40+55+50+65+80 = 290 books total.',null,salesDiagram)
+  ];
+  trackB.subjects.math.levels[1].push(...grade4Charts);
+
+  // ---- GRADE 6 (Track C): circle graphs ----
+  const commute = [{label:'Bus',value:45},{label:'Car',value:25},{label:'Walk',value:20},{label:'Bike',value:10}];
+  const commuteDiagram = pieChartSVG(commute, 'How Students Get to School');
+  const sports = [{label:'Soccer',value:30},{label:'Basketball',value:25},{label:'Baseball',value:20},{label:'Swimming',value:15},{label:'Tennis',value:10}];
+  const sportsDiagram = pieChartSVG(sports, 'Favorite Sports Survey');
+  const budget = [{label:'Rent',value:40},{label:'Food',value:25},{label:'Transportation',value:15},{label:'Savings',value:20}];
+  const budgetDiagram = pieChartSVG(budget, 'Monthly Budget Breakdown');
+
+  const grade6Charts = [
+    Q('According to the circle graph, what percentage of students get to school by bus?',['45%','25%','20%','10%'],0,'The "Bus" slice is labeled 45%, and the values in this graph total 100.',null,commuteDiagram),
+    Q('According to the circle graph, what percentage of students walk or bike to school combined?',['30%','20%','35%','25%'],0,'Walk (20%) + Bike (10%) = 30%.',null,commuteDiagram),
+    Q('According to the circle graph, if there are 200 students total, how many get to school by car?',['50','25','75','100'],0,'25% of 200 = 0.25 × 200 = 50 students.',null,commuteDiagram),
+    Q('According to the circle graph, what percentage of students prefer basketball?',['25%','30%','20%','15%'],0,'The "Basketball" slice is labeled 25%.',null,sportsDiagram),
+    Q('According to the circle graph, which sport was the LEAST popular?',['Tennis','Soccer','Baseball','Swimming'],0,'Tennis is 10%, the smallest slice shown.',null,sportsDiagram),
+    Q('According to the circle graph, what percentage of students chose either soccer or baseball?',['50%','45%','55%','40%'],0,'Soccer (30%) + Baseball (20%) = 50%.',null,sportsDiagram),
+    Q('According to the circle graph, what percentage of the monthly budget goes to food?',['25%','40%','15%','20%'],0,'The "Food" slice is labeled 25%.',null,budgetDiagram),
+    Q('According to the circle graph, if the total monthly budget is $2,000, how much is spent on rent?',['$800','$500','$400','$1,000'],0,'40% of $2,000 = 0.40 × 2000 = $800.',null,budgetDiagram),
+    Q('According to the circle graph, what percentage is spent on transportation and savings combined?',['35%','40%','30%','25%'],0,'Transportation (15%) + Savings (20%) = 35%.',null,budgetDiagram)
+  ];
+  trackC.subjects.math.levels[1].push(...grade6Charts);
+
+  // ---- SCIENCE: labeled water cycle diagram (shared K-6 topic, appears in grade 3/4 SOLs) ----
+  const waterCycleDiagram = `<svg viewBox="0 0 320 220" width="300" xmlns="http://www.w3.org/2000/svg">
+    <rect width="320" height="220" rx="10" fill="#EAF6FF"/>
+    <circle cx="50" cy="45" r="22" fill="#FFD166"/>
+    <text x="50" y="82" text-anchor="middle" font-size="15" font-weight="800" fill="#241c48">A</text>
+    <ellipse cx="220" cy="50" rx="45" ry="22" fill="#D9D9E8"/><ellipse cx="190" cy="55" rx="30" ry="18" fill="#D9D9E8"/><ellipse cx="250" cy="55" rx="30" ry="18" fill="#D9D9E8"/>
+    <text x="220" y="92" text-anchor="middle" font-size="15" font-weight="800" fill="#241c48">B</text>
+    <line x1="200" y1="80" x2="190" y2="120" stroke="#4D8DFF" stroke-width="3"/>
+    <line x1="220" y1="80" x2="215" y2="130" stroke="#4D8DFF" stroke-width="3"/>
+    <line x1="240" y1="80" x2="240" y2="120" stroke="#4D8DFF" stroke-width="3"/>
+    <text x="215" y="150" text-anchor="middle" font-size="15" font-weight="800" fill="#241c48">C</text>
+    <ellipse cx="120" cy="195" rx="100" ry="20" fill="#4D8DFF"/>
+    <path d="M100,175 Q105,155 100,140" stroke="#00A88F" stroke-width="3" fill="none"/>
+    <path d="M130,175 Q135,150 128,130" stroke="#00A88F" stroke-width="3" fill="none"/>
+    <text x="115" y="122" text-anchor="middle" font-size="15" font-weight="800" fill="#241c48">D</text>
+  </svg>`;
+  const waterCycleQs = [
+    Q('In this water cycle diagram, which letter represents EVAPORATION (water turning to vapor and rising from the lake)?',['D','A','B','C'],0,'D shows the wavy arrows rising from the lake — that\'s evaporation.',null,waterCycleDiagram),
+    Q('In this water cycle diagram, which letter represents PRECIPITATION (water falling from clouds)?',['C','A','B','D'],0,'C shows straight downward arrows falling from the cloud to the ground — that\'s precipitation.',null,waterCycleDiagram),
+    Q('In this water cycle diagram, which letter represents the Sun, the energy source that powers the whole water cycle?',['A','B','C','D'],0,'A is the sun shape in the upper left, providing the heat energy that drives evaporation.',null,waterCycleDiagram),
+    Q('In this water cycle diagram, which letter represents CONDENSATION (water vapor forming clouds)?',['B','A','C','D'],0,'B is the cloud shape, formed when rising water vapor cools and condenses.',null,waterCycleDiagram)
+  ];
+  trackA.subjects.science.levels[1].push(...waterCycleQs);
+  const waterCycleQsB = [
+    Q('Looking at this water cycle diagram, water rising from the lake as vapor is shown at which letter?',['D','A','B','C'],0,'D shows the wavy arrows rising from the lake, representing evaporation.',null,waterCycleDiagram),
+    Q('Looking at this water cycle diagram, rain falling from the clouds to the ground is shown at which letter?',['C','A','B','D'],0,'C shows the straight downward arrows from the cloud, representing precipitation.',null,waterCycleDiagram),
+    Q('Looking at this water cycle diagram, which letter provides the heat energy that powers the entire cycle?',['A','B','C','D'],0,'A is the sun, the energy source driving the whole water cycle.',null,waterCycleDiagram),
+    Q('Looking at this water cycle diagram, water vapor cooling and forming a cloud is shown at which letter?',['B','A','C','D'],0,'B is the cloud, formed when rising water vapor cools and condenses.',null,waterCycleDiagram)
+  ];
+  trackB.subjects.science.levels[1].push(...waterCycleQsB);
+
+  // ---- SOCIAL STUDIES (Track C): schematic U.S. geographic regions map, matching the
+  // verified FCPS Grade 6 standard on locating/comparing North American geographic regions ----
+  const regionsMapDiagram = `<svg viewBox="0 0 340 180" width="320" xmlns="http://www.w3.org/2000/svg">
+    <rect width="340" height="180" rx="10" fill="#F5F2FF"/>
+    <rect x="10" y="20" width="60" height="140" fill="#B14AFF" opacity="0.5"/><text x="40" y="95" text-anchor="middle" font-size="10" font-weight="700" fill="#241c48">Rocky Mtns</text>
+    <rect x="70" y="20" width="70" height="140" fill="#4D8DFF" opacity="0.5"/><text x="105" y="95" text-anchor="middle" font-size="10" font-weight="700" fill="#241c48">Great Plains</text>
+    <rect x="140" y="20" width="70" height="140" fill="#00D9C0" opacity="0.5"/><text x="175" y="95" text-anchor="middle" font-size="9" font-weight="700" fill="#241c48">Interior Lowlands</text>
+    <rect x="210" y="20" width="55" height="140" fill="#FF9F1C" opacity="0.5"/><text x="237" y="95" text-anchor="middle" font-size="9" font-weight="700" fill="#241c48">Appalachian Mtns</text>
+    <rect x="265" y="20" width="65" height="140" fill="#FF4D6D" opacity="0.5"/><text x="297" y="95" text-anchor="middle" font-size="10" font-weight="700" fill="#241c48">Coastal Plain</text>
+    <text x="170" y="14" text-anchor="middle" font-size="11" font-weight="800" fill="#241c48">U.S. Geographic Regions (West → East)</text>
+    <line x1="10" y1="165" x2="330" y2="165" stroke="#8b87a8" stroke-width="1"/>
+    <text x="10" y="176" font-size="8" fill="#8b87a8">West</text><text x="310" y="176" font-size="8" fill="#8b87a8">East</text>
+  </svg>`;
+  const regionsQs = [
+    Q('According to this map, which region is located along the Atlantic coast, farthest east?',['Coastal Plain','Rocky Mountains','Great Plains','Interior Lowlands'],0,'The Coastal Plain (Tidewater) region borders the Atlantic Ocean on the eastern edge of the country.'),
+    Q('According to this map, which region is located farthest west?',['Rocky Mountains','Coastal Plain','Appalachian Mountains','Interior Lowlands'],0,'The Rocky Mountains are shown on the far western side of this map.'),
+    Q('According to this map, which mountain range lies between the Interior Lowlands and the Coastal Plain?',['Appalachian Mountains','Rocky Mountains','Great Plains','Basin and Range'],0,'The Appalachian Mountains are shown positioned between the Interior Lowlands and the Coastal Plain.')
+  ];
+  regionsQs.forEach(q=> q.diagram = regionsMapDiagram);
+  trackC.subjects.history.levels[1].push(...regionsQs);
+})();
+
+/* =========================================================================
    PERSISTENCE
    ========================================================================= */
 function defaultProfile(grade){
@@ -2491,25 +2764,70 @@ async function saveSettings(){
 /* 10 distinct 8-note riffs used for battle background music — one is picked
    at random each time a battle starts, so the soundtrack varies. All still
    fully synthesized (no external audio files). */
-const MUSIC_RIFFS = [
-  [392.00,523.25,587.33,523.25,466.16,523.25,392.00,349.23], // Adventure Start
-  [329.63,392.00,440.00,392.00,349.23,392.00,329.63,293.66], // Calm Trail
-  [440.00,554.37,659.25,554.37,493.88,554.37,440.00,415.30], // Bright Heroic
-  [261.63,329.63,392.00,329.63,293.66,329.63,261.63,246.94], // Mellow Wander
-  [493.88,587.33,698.46,587.33,523.25,587.33,493.88,440.00], // Playful Sprint
-  [369.99,440.00,523.25,440.00,392.00,440.00,369.99,329.63], // Mysterious Grove
-  [523.25,659.25,783.99,659.25,587.33,659.25,523.25,493.88], // Epic Soar
-  [293.66,349.23,415.30,349.23,329.63,349.23,293.66,277.18], // Moody Depths
-  [415.30,523.25,622.25,523.25,466.16,523.25,415.30,392.00], // Bold Charge
-  [349.23,440.00,523.25,440.00,392.00,440.00,349.23,329.63]  // Classic Quest
-];
+/* Each realm has its own musical identity — 3 variants per zone (for
+   in-battle rotation variety) rather than one shared pool picked randomly.
+   Melodic shape and rhythm pattern are chosen to match each subject's mood:
+   Math = tight/precise, Science = wide curious intervals, History = bold
+   march-like root-fifth movement, Reading = gentle storybook lilt, Writing
+   = flowing/mysterious, Boss = dark and dramatic. */
+const ZONE_THEMES = {
+  math: {
+    riffs: [
+      [392.00,466.16,523.25,466.16,392.00,349.23,392.00,440.00],
+      [440.00,523.25,587.33,523.25,440.00,392.00,440.00,493.88],
+      [349.23,415.30,466.16,415.30,349.23,311.13,349.23,392.00]
+    ],
+    kickBeats:[0,2,4,6], hihatMod:1
+  },
+  science: {
+    riffs: [
+      [523.25,698.46,587.33,783.99,659.25,880.00,698.46,932.33],
+      [440.00,587.33,493.88,659.25,554.37,739.99,587.33,783.99],
+      [392.00,523.25,440.00,587.33,493.88,659.25,523.25,698.46]
+    ],
+    kickBeats:[0,4], hihatMod:2
+  },
+  history: {
+    riffs: [
+      [349.23,349.23,523.25,440.00,349.23,349.23,392.00,349.23],
+      [392.00,392.00,587.33,493.88,392.00,392.00,440.00,392.00],
+      [329.63,329.63,493.88,415.30,329.63,329.63,369.99,329.63]
+    ],
+    kickBeats:[0,1,2,3,4,5,6,7], hihatMod:4
+  },
+  reading: {
+    riffs: [
+      [523.25,587.33,659.25,587.33,493.88,440.00,493.88,523.25],
+      [440.00,493.88,554.37,493.88,415.30,369.99,415.30,440.00],
+      [587.33,659.25,739.99,659.25,554.37,493.88,554.37,587.33]
+    ],
+    kickBeats:[0], hihatMod:3
+  },
+  writing: {
+    riffs: [
+      [369.99,415.30,392.00,349.23,415.30,466.16,440.00,392.00],
+      [329.63,369.99,349.23,311.13,369.99,415.30,392.00,349.23],
+      [415.30,466.16,440.00,392.00,466.16,523.25,493.88,440.00]
+    ],
+    kickBeats:[0,3,6], hihatMod:2
+  },
+  boss: {
+    riffs: [
+      [220.00,329.63,261.63,392.00,293.66,440.00,349.23,523.25],
+      [246.94,369.99,293.66,440.00,329.63,493.88,392.00,587.33],
+      [196.00,293.66,233.08,349.23,261.63,392.00,311.13,466.16]
+    ],
+    kickBeats:[0,1,4,5], hihatMod:1
+  }
+};
 
 const Sound = (function(){
   let ctx = null;
   let unlocked = false;
   let musicSchedulerId = null;
   let musicStep = 0;
-  let currentTrackIndex = -1;
+  let currentZone = null;
+  let currentVariantIndex = -1;
 
   function getCtx(){
     if(!ctx){
@@ -2656,25 +2974,35 @@ const Sound = (function(){
   /* Energetic looping background beat: steady kick/hi-hat pulse + a bouncy
      arpeggiated synth riff on top, scheduled at 128 BPM. All synthesized —
      no external audio files. */
-  function startAmbient(forceIdx){
+  function startAmbient(subjectKey, forceIdx){
     if(!SETTINGS.musicOn) return;
     stopAmbient();
+    const zone = subjectKey || currentZone || 'math';
+    const theme = ZONE_THEMES[zone] || ZONE_THEMES.math;
     const bpm = 128;
     const stepDur = 60/bpm/2; // 8th notes
-    let idx = (forceIdx!==undefined && forceIdx!==null) ? forceIdx : Math.floor(Math.random()*MUSIC_RIFFS.length);
-    if(idx===currentTrackIndex && MUSIC_RIFFS.length>1) idx = (idx+1) % MUSIC_RIFFS.length;
-    currentTrackIndex = idx;
-    const riff = MUSIC_RIFFS[idx];
+    let idx = (forceIdx!==undefined && forceIdx!==null) ? forceIdx : Math.floor(Math.random()*theme.riffs.length);
+    if(zone===currentZone && idx===currentVariantIndex && theme.riffs.length>1) idx = (idx+1) % theme.riffs.length;
+    currentZone = zone;
+    currentVariantIndex = idx;
+    const riff = theme.riffs[idx];
     musicStep = 0;
     function scheduleStep(){
       if(!SETTINGS.musicOn) return;
       const beatInBar = musicStep % 8;
-      if(beatInBar===0 || beatInBar===4) kick(0, 0.16);
-      if(beatInBar%2===1) noiseHit(0, 0.04, 0.045, 7000);
-      tone(riff[beatInBar], 0, stepDur*0.92, 'triangle', 0.06);
+      if(theme.kickBeats.includes(beatInBar)) kick(0, 0.15);
+      if(beatInBar % theme.hihatMod === 0) noiseHit(0, 0.04, 0.04, 7500);
+      const note = riff[beatInBar];
+      tone(note, 0, stepDur*0.92, 'triangle', 0.06);
+      // Harmony layer — a quiet perfect-fifth above the melody note, for a
+      // fuller chord-like sound instead of a single bare melodic line.
+      tone(note*1.5, 0, stepDur*0.85, 'sine', 0.022);
+      // Soft echo — a faint, slightly-delayed repeat of the same note,
+      // giving the loop some sense of space/depth.
+      tone(note, stepDur*0.55, stepDur*0.35, 'sine', 0.018);
       // Rolling bass layer — a sustained low note every 2 beats (not just
       // once per bar) gives the loop a fuller, less thin sound throughout.
-      if(beatInBar%2===0) tone(riff[0]/2, 0, stepDur*1.9, 'sine', 0.055);
+      if(beatInBar%2===0) tone(riff[0]/2, 0, stepDur*1.9, 'sine', 0.05);
       musicStep++;
       musicSchedulerId = setTimeout(scheduleStep, stepDur*1000);
     }
@@ -3219,14 +3547,27 @@ function terrainForLocation(key, x, y, color){
   return terrains[key] || '';
 }
 
+// Smooth winding trail between waypoints (cubic-bezier "S" curves) instead
+// of straight segments — reads far more like an adventure-game world map.
+function buildSmoothPath(positions){
+  let path = `M ${positions[0][0]} ${positions[0][1]}`;
+  for(let i=0;i<positions.length-1;i++){
+    const [x1,y1] = positions[i];
+    const [x2,y2] = positions[i+1];
+    const midX = x1 + (x2-x1)/2;
+    path += ` C ${midX},${y1} ${midX},${y2} ${x2},${y2}`;
+  }
+  return path;
+}
+
 function renderTrailSVG(track, profile){
   const positions = [ [80,165],[210,80],[360,160],[510,75],[660,160],[770,90] ];
   const hexColors = {math:'#FF9F1C', science:'#00D9C0', history:'#FF4D6D', reading:'#4D8DFF', writing:'#B14AFF', boss:'#FF2E63'};
+  const darkColors = {math:'#B8630A', science:'#00877A', history:'#B8203D', reading:'#2A56A8', writing:'#7A2FA0', boss:'#A80F3D'};
   const names = {math:'Number Peaks',science:'Bubbling Springs',history:'Ancient Ruins',reading:'Storybook Grove',writing:'Inkwell Marsh',boss:'SHADOW KEEP'};
   const icons = {math:'⛰️',science:'🔬',history:'🏛️',reading:'📖',writing:'✍️',boss:'🐉'};
   const order = [...SUBJECT_ORDER, 'boss'];
-  let path = `M ${positions[0][0]} ${positions[0][1]}`;
-  positions.slice(1).forEach(pt=> path += ` L ${pt[0]} ${pt[1]}`);
+  const path = buildSmoothPath(positions);
   const frontier = currentFrontierIndex(profile);
 
   const terrainLayer = order.map((key,i)=> terrainForLocation(key, positions[i][0], positions[i][1], hexColors[key])).join('');
@@ -3238,17 +3579,23 @@ function renderTrailSVG(track, profile){
     const unlocked = key==='boss' ? (frontier>=5) : true;
     const isCurrent = i === frontier;
     const clickable = unlocked && !defeated;
+    const gradId = 'mapNodeGrad-'+key;
     return `
+    <ellipse cx="${x}" cy="${y+34}" rx="34" ry="8" fill="#000" opacity="0.28"/>
     <g class="node-btn ${clickable?'':'node-disabled'}" ${clickable?`data-subject="${key}"`:''} transform="translate(${x},${y})">
-      <circle r="40" fill="${hexColors[key]}" opacity="${unlocked?0.22:0.08}" ${isCurrent?'class="node-glow"':''} style="color:${hexColors[key]}"/>
-      <circle r="38" fill="#151030" opacity="${unlocked?0.55:0.75}"/>
-      <g class="node-illustration" opacity="${unlocked?1:0.3}">${nodeIllustration(key, hexColors[key])}</g>
-      <circle r="38" fill="none" stroke="${defeated?'#FFD166':(unlocked?'#ffffff':'#5b5680')}" stroke-width="${defeated?3:2}" opacity="0.8"/>
-      <text x="0" y="9" text-anchor="middle" font-size="24">${defeated?'✅':(unlocked?icons[key]:'🔒')}</text>
+      <circle r="46" fill="${hexColors[key]}" opacity="${unlocked?0.22:0.08}" ${isCurrent?'class="node-glow"':''} style="color:${hexColors[key]}"/>
+      <circle r="38" fill="#151030" opacity="${unlocked?0.6:0.8}"/>
+      <defs><linearGradient id="${gradId}" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="${hexColors[key]}"/><stop offset="100%" stop-color="${darkColors[key]}"/>
+      </linearGradient></defs>
+      <g class="node-illustration" opacity="${unlocked?0.9:0.28}" transform="scale(0.85)">${key==='boss' ? villainCreature('boss', gradId) : nodeIllustration(key, hexColors[key])}</g>
+      <circle r="38" fill="none" stroke="${defeated?'#FFD166':(unlocked?'#ffffff':'#5b5680')}" stroke-width="${defeated?3.5:2}" opacity="0.85"/>
+      <circle r="38" fill="none" stroke="${hexColors[key]}" stroke-width="1" opacity="${unlocked&&!defeated?0.5:0}" class="node-ring-pulse"/>
+      <text x="0" y="9" text-anchor="middle" font-size="26">${defeated?'✅':(unlocked?icons[key]:'🔒')}</text>
     </g>
-    <g transform="translate(${x},${y+56})">
-      <rect x="-52" y="0" width="104" height="26" rx="6" fill="#2a2050" opacity="0.85" stroke="${unlocked?hexColors[key]:'#4a4570'}" stroke-width="1.5"/>
-      <text x="0" y="17" text-anchor="middle" class="node-label" font-size="${key==='boss'?11:11.5}" fill="${unlocked?'#F2EFFF':'#8b87a8'}">${names[key]}</text>
+    <g transform="translate(${x},${y+58})">
+      <rect x="-54" y="0" width="108" height="27" rx="7" fill="#2a2050" opacity="0.9" stroke="${unlocked?hexColors[key]:'#4a4570'}" stroke-width="1.5"/>
+      <text x="0" y="18" text-anchor="middle" class="node-label" font-size="${key==='boss'?11:11.5}" fill="${unlocked?'#F2EFFF':'#8b87a8'}">${names[key]}</text>
     </g>
     `;
   }).join('');
@@ -3257,12 +3604,23 @@ function renderTrailSVG(track, profile){
   const avEmoji = profile.avatarEmoji || '🧭';
   const avColor = profile.avatarColor || '#7C5CFF';
   const avPos = frontier<=6 ? positions[Math.min(frontier,5)] : positions[5];
-  const avOffsetY = -62;
+  const avOffsetY = -66;
   const avatarMarker = `
+    <ellipse cx="${avPos[0]}" cy="${avPos[1]+avOffsetY+20}" rx="16" ry="4" fill="#000" opacity="0.3"/>
     <g transform="translate(${avPos[0]},${avPos[1]+avOffsetY})" class="map-avatar">
       <circle r="22" fill="${avColor}" opacity="0.9" stroke="#fff" stroke-width="2.5"/>
+      <circle r="26" fill="none" stroke="${avColor}" stroke-width="1.5" opacity="0.5" class="node-ring-pulse"/>
       <text x="0" y="8" text-anchor="middle" font-size="22">${avEmoji}</text>
     </g>`;
+
+  // Twinkling stars scattered across the sky, staggered so they don't all pulse in sync
+  const stars = Array.from({length:14}).map((_,i)=>{
+    const sx = 20 + (i*57)%810;
+    const sy = 8 + ((i*37)%55);
+    const delay = (i%5)*0.4;
+    const r = 1 + (i%3)*0.5;
+    return `<circle cx="${sx}" cy="${sy}" r="${r}" fill="#F2EFFF" class="map-star" style="animation-delay:${delay}s;"/>`;
+  }).join('');
 
   return `
   <div class="trail-wrap">
@@ -3273,15 +3631,24 @@ function renderTrailSVG(track, profile){
           <stop offset="60%" stop-color="#181035"/>
           <stop offset="100%" stop-color="#241a3d"/>
         </linearGradient>
+        <linearGradient id="mapGround" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#2a2050" stop-opacity="0"/>
+          <stop offset="100%" stop-color="#120c26" stop-opacity="0.6"/>
+        </linearGradient>
       </defs>
       <rect x="0" y="0" width="850" height="270" rx="18" fill="url(#mapSky)"/>
-      <!-- distant mountains -->
-      <polygon points="0,120 60,70 130,120 200,55 270,120 340,80 410,120 850,120 850,270 0,270" fill="#241c48" opacity="0.55"/>
-      <!-- scattered clouds -->
-      <g opacity="0.35" fill="#EDE6FF">
-        <ellipse cx="120" cy="30" rx="26" ry="8"/><ellipse cx="140" cy="24" rx="18" ry="7"/>
-        <ellipse cx="620" cy="24" rx="28" ry="8"/><ellipse cx="645" cy="18" rx="16" ry="6"/>
+      <g class="map-stars">${stars}</g>
+      <!-- parallax mountain layers: far, mid, near -->
+      <polygon points="0,100 70,60 150,100 230,50 310,100 850,100 850,270 0,270" fill="#1f1840" opacity="0.4"/>
+      <g class="map-clouds-far" opacity="0.28" fill="#EDE6FF">
+        <ellipse cx="150" cy="26" rx="30" ry="9"/><ellipse cx="175" cy="20" rx="20" ry="8"/>
+        <ellipse cx="560" cy="20" rx="26" ry="8"/>
       </g>
+      <polygon points="0,120 60,70 130,120 200,55 270,120 340,80 410,120 850,120 850,270 0,270" fill="#241c48" opacity="0.55"/>
+      <g class="map-clouds-near" opacity="0.35" fill="#EDE6FF">
+        <ellipse cx="700" cy="30" rx="28" ry="8"/><ellipse cx="725" cy="24" rx="18" ry="7"/>
+      </g>
+      <rect x="0" y="150" width="850" height="120" fill="url(#mapGround)"/>
       <!-- compass rose -->
       <g transform="translate(802,235)" opacity="0.5">
         <circle r="16" fill="none" stroke="#EDE6FF" stroke-width="1.2"/>
@@ -3289,7 +3656,7 @@ function renderTrailSVG(track, profile){
         <polygon points="-14,0 0,-3 14,0 0,3" fill="#EDE6FF"/>
       </g>
       ${terrainLayer}
-      <path d="${path}" fill="none" stroke="#4a4570" stroke-width="5" stroke-linecap="round" opacity="0.5"/>
+      <path d="${path}" fill="none" stroke="#4a4570" stroke-width="6" stroke-linecap="round" opacity="0.5"/>
       <path d="${path}" fill="none" stroke="#3a3568" stroke-width="4" stroke-dasharray="2 10" stroke-linecap="round"/>
       <path d="${path}" fill="none" stroke="#00D9C0" stroke-width="2" stroke-dasharray="6 8" stroke-linecap="round" class="trail-path-glow" opacity="0.7"/>
       ${nodes}
@@ -3572,7 +3939,7 @@ function startBattle(subjectKey){
     window.alert("You're out of HP for today! Rest up and come back tomorrow, or visit the Review Realm / Practice Zone in the meantime.");
     return;
   }
-  if(SETTINGS.musicOn){ Sound.unlock(); Sound.startAmbient(); startMusicRotation(); }
+  if(SETTINGS.musicOn){ Sound.unlock(); Sound.startAmbient(subjectKey); startMusicRotation(); }
   const levels = track.subjects[subjectKey].levels;
   let startLevel = p.levelBySubject[subjectKey];
   startLevel = Math.max(0, Math.min(startLevel, levels.length-1));
@@ -3638,35 +4005,32 @@ function preferDifferentConcept(pool, recentConcepts){
 
 function pickNextUniqueQuestion(levels, targetLevelIdx, usedSet, avoidIds, recentConcepts){
   avoidIds = avoidIds || new Set();
+  // Search tiers in order of DISTANCE from the target tier (target itself
+  // first, then ±1, then ±2, ...) rather than jumping to a random tier
+  // anywhere in the subject. Without this, once the target tier's "fresh"
+  // pool ran low (easy to happen with today's-question-avoidance active),
+  // the picker would grab from ANY tier with equal odds — including the
+  // hardest or easiest in the whole subject — producing a jarring,
+  // unexplained difficulty spike or drop mid-battle.
+  const tierOrder = levels.map((_,li)=>li).sort((a,b)=> Math.abs(a-targetLevelIdx) - Math.abs(b-targetLevelIdx));
+
   // Preference 1: not used this battle AND not already asked today (covers the daily-reset case)
-  let inLevel = levels[targetLevelIdx].filter(q=>!usedSet.has(q) && !avoidIds.has(q._id));
-  if(inLevel.length>0){
-    inLevel = preferDifferentConcept(inLevel, recentConcepts);
-    return { q: inLevel[Math.floor(Math.random()*inLevel.length)], levelIdx: targetLevelIdx };
+  for(const li of tierOrder){
+    const pool = levels[li].filter(q=>!usedSet.has(q) && !avoidIds.has(q._id));
+    if(pool.length>0){
+      const filtered = preferDifferentConcept(pool, recentConcepts);
+      return { q: filtered[Math.floor(Math.random()*filtered.length)], levelIdx: li };
+    }
   }
-  let otherOptions = [];
-  levels.forEach((lvlQs, li)=>{
-    lvlQs.forEach(q=>{ if(!usedSet.has(q) && !avoidIds.has(q._id)) otherOptions.push({q, levelIdx:li}); });
-  });
-  if(otherOptions.length>0){
-    otherOptions = preferDifferentConcept(otherOptions, recentConcepts);
-    return otherOptions[Math.floor(Math.random()*otherOptions.length)];
+  // Preference 2: relax the today-avoidance (small subjects may not have enough content) — still avoid this battle's repeats, still distance-ordered
+  for(const li of tierOrder){
+    const pool = levels[li].filter(q=>!usedSet.has(q));
+    if(pool.length>0){
+      const filtered = preferDifferentConcept(pool, recentConcepts);
+      return { q: filtered[Math.floor(Math.random()*filtered.length)], levelIdx: li };
+    }
   }
-  // Preference 2: relax the today-avoidance (small subjects may not have enough content) — still avoid this battle's repeats
-  inLevel = levels[targetLevelIdx].filter(q=>!usedSet.has(q));
-  if(inLevel.length>0){
-    inLevel = preferDifferentConcept(inLevel, recentConcepts);
-    return { q: inLevel[Math.floor(Math.random()*inLevel.length)], levelIdx: targetLevelIdx };
-  }
-  otherOptions = [];
-  levels.forEach((lvlQs, li)=>{
-    lvlQs.forEach(q=>{ if(!usedSet.has(q)) otherOptions.push({q, levelIdx:li}); });
-  });
-  if(otherOptions.length>0){
-    otherOptions = preferDifferentConcept(otherOptions, recentConcepts);
-    return otherOptions[Math.floor(Math.random()*otherOptions.length)];
-  }
-  // Fully exhausted — start a fresh cycle for this battle
+  // Fully exhausted — start a fresh cycle at the target tier
   usedSet.clear();
   const fresh = levels[targetLevelIdx];
   return { q: fresh[Math.floor(Math.random()*fresh.length)], levelIdx: targetLevelIdx };
@@ -3723,9 +4087,291 @@ function updateBattleTimerDisplay(){
 /* Shared question renderer used by Battles, Practice, and Review — shows a
    passage box above the question when one is attached (used for Reading
    Realm passages so 2-3 questions can reference the same short text). */
+/* =========================================================================
+   CHART/DIAGRAM GENERATORS
+   These map directly to verified FCPS Data Analysis curriculum requirements:
+   pictographs and bar graphs are core Grade 3 standards, line graphs are
+   core Grade 4/5 standards, and circle graphs are a core Grade 6 standard.
+   Charts are built from fixed, hand-verified data at question-authoring
+   time (not randomly generated) so every answer can be checked by hand.
+   ========================================================================= */
+function barChartSVG(data, title){
+  const w=360, h=230, padL=48, padB=42, padT=32, padR=20;
+  const chartW=w-padL-padR, chartH=h-padT-padB;
+  const maxVal = Math.max(...data.map(d=>d.value)) * 1.15;
+  const gap = chartW/data.length, barW = gap*0.6;
+  const bars = data.map((d,i)=>{
+    const barH = (d.value/maxVal)*chartH;
+    const x = padL + i*gap + (gap-barW)/2;
+    const y = padT + chartH - barH;
+    return `<rect x="${x}" y="${y}" width="${barW}" height="${barH}" fill="#7C5CFF" rx="3"/>
+      <text x="${x+barW/2}" y="${padT+chartH+16}" text-anchor="middle" font-size="11" fill="#3a3450">${d.label}</text>
+      <text x="${x+barW/2}" y="${y-6}" text-anchor="middle" font-size="11" font-weight="700" fill="#3a3450">${d.value}</text>`;
+  }).join('');
+  let gridlines = '';
+  for(let i=0;i<=4;i++){
+    const gy = padT + chartH - (i/4)*chartH;
+    const val = Math.round((i/4)*maxVal);
+    gridlines += `<line x1="${padL}" y1="${gy}" x2="${padL+chartW}" y2="${gy}" stroke="#E1DBFF" stroke-width="1"/><text x="${padL-8}" y="${gy+4}" text-anchor="end" font-size="10" fill="#8b87a8">${val}</text>`;
+  }
+  return `<svg viewBox="0 0 ${w} ${h}" width="340" xmlns="http://www.w3.org/2000/svg">
+    <text x="${w/2}" y="18" text-anchor="middle" font-size="13" font-weight="800" fill="#241c48">${title}</text>
+    ${gridlines}
+    <line x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT+chartH}" stroke="#3a3450" stroke-width="1.5"/>
+    <line x1="${padL}" y1="${padT+chartH}" x2="${padL+chartW}" y2="${padT+chartH}" stroke="#3a3450" stroke-width="1.5"/>
+    ${bars}
+  </svg>`;
+}
+function pictographSVG(data, title, icon, symbolValue){
+  const rowH=32, labelW=100, startX=labelW+12, startY=42;
+  const maxCount = Math.max(...data.map(d=>Math.round(d.count/symbolValue)));
+  const rows = data.map((d,i)=>{
+    const count = Math.round(d.count/symbolValue);
+    const icons = Array.from({length:count}).map((_,j)=>`<text x="${startX+j*24}" y="${startY+i*rowH+8}" font-size="18">${icon}</text>`).join('');
+    return `<text x="${labelW}" y="${startY+i*rowH+8}" text-anchor="end" font-size="12" fill="#3a3450">${d.label}</text>${icons}`;
+  }).join('');
+  const w = Math.max(320, startX + maxCount*24 + 20);
+  const h = startY + data.length*rowH + 26;
+  return `<svg viewBox="0 0 ${w} ${h}" width="${Math.min(w,380)}" xmlns="http://www.w3.org/2000/svg">
+    <text x="${w/2}" y="18" text-anchor="middle" font-size="13" font-weight="800" fill="#241c48">${title}</text>
+    ${rows}
+    <text x="${labelW}" y="${h-6}" text-anchor="end" font-size="10" fill="#8b87a8">Key: each ${icon} = ${symbolValue}</text>
+  </svg>`;
+}
+function lineChartSVG(points, title){
+  const w=360,h=230,padL=42,padB=40,padT=32,padR=20;
+  const chartW=w-padL-padR, chartH=h-padT-padB;
+  const maxY = Math.max(...points.map(p=>p.y))*1.15;
+  const stepX = points.length>1 ? chartW/(points.length-1) : 0;
+  const coords = points.map((p,i)=>({ x: padL+i*stepX, y: padT+chartH-(p.y/maxY)*chartH, label:p.x, val:p.y }));
+  const path = coords.map((c,i)=> (i===0?'M':'L')+c.x+','+c.y).join(' ');
+  const dots = coords.map(c=>`<circle cx="${c.x}" cy="${c.y}" r="4" fill="#00A88F"/><text x="${c.x}" y="${c.y-10}" text-anchor="middle" font-size="10" font-weight="700" fill="#3a3450">${c.val}</text><text x="${c.x}" y="${padT+chartH+16}" text-anchor="middle" font-size="10" fill="#3a3450">${c.label}</text>`).join('');
+  return `<svg viewBox="0 0 ${w} ${h}" width="340" xmlns="http://www.w3.org/2000/svg">
+    <text x="${w/2}" y="18" text-anchor="middle" font-size="13" font-weight="800" fill="#241c48">${title}</text>
+    <line x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT+chartH}" stroke="#3a3450" stroke-width="1.5"/>
+    <line x1="${padL}" y1="${padT+chartH}" x2="${padL+chartW}" y2="${padT+chartH}" stroke="#3a3450" stroke-width="1.5"/>
+    <path d="${path}" fill="none" stroke="#00D9C0" stroke-width="2.5"/>
+    ${dots}
+  </svg>`;
+}
+function pieChartSVG(data, title){
+  const total = data.reduce((s,d)=>s+d.value,0);
+  const cx=110, cy=115, r=80;
+  let angle=-90;
+  const colors = ['#7C5CFF','#00D9C0','#FF9F1C','#FF4D6D','#4D8DFF','#B14AFF'];
+  const slices = data.map((d,i)=>{
+    const sliceAngle = (d.value/total)*360;
+    const startAngle = angle, endAngle = angle+sliceAngle;
+    const x1 = cx + r*Math.cos(startAngle*Math.PI/180), y1 = cy + r*Math.sin(startAngle*Math.PI/180);
+    const x2 = cx + r*Math.cos(endAngle*Math.PI/180), y2 = cy + r*Math.sin(endAngle*Math.PI/180);
+    const largeArc = sliceAngle>180?1:0;
+    const midAngle = (startAngle+endAngle)/2;
+    const labelX = cx + (r*0.62)*Math.cos(midAngle*Math.PI/180), labelY = cy + (r*0.62)*Math.sin(midAngle*Math.PI/180);
+    const pct = Math.round((d.value/total)*100);
+    angle = endAngle;
+    return `<path d="M${cx},${cy} L${x1},${y1} A${r},${r} 0 ${largeArc} 1 ${x2},${y2} Z" fill="${colors[i%colors.length]}" stroke="#fff" stroke-width="2"/>${pct>=8?`<text x="${labelX}" y="${labelY}" text-anchor="middle" font-size="12" font-weight="700" fill="#fff">${pct}%</text>`:''}`;
+  }).join('');
+  const legend = data.map((d,i)=>`<rect x="230" y="${20+i*22}" width="14" height="14" fill="${colors[i%colors.length]}"/><text x="250" y="${31+i*22}" font-size="12" fill="#3a3450">${d.label} (${d.value})</text>`).join('');
+  const h = Math.max(220, 30+data.length*22);
+  return `<svg viewBox="0 0 380 ${h}" width="360" xmlns="http://www.w3.org/2000/svg">
+    <text x="110" y="18" text-anchor="middle" font-size="13" font-weight="800" fill="#241c48">${title}</text>
+    ${slices}${legend}
+  </svg>`;
+}
+
+/* =========================================================================
+   PROCEDURAL CHART-QUESTION GENERATOR
+   Answers are always computed directly from the SAME randomized data used
+   to build the diagram, so correctness is guaranteed by construction (the
+   same pattern used by the math generators). Question stems embed the
+   specific theme title AND the specific category names chosen for that
+   instance — without that, generic stems like "which category is highest?"
+   would look textually identical across thousands of instances and get
+   silently rejected by the dedup system (a mistake I made once already
+   with an earlier generator batch, so this one avoids it from the start).
+   ========================================================================= */
+const CHART_THEMES_MATH = [
+  {title:'Favorite Colors', unit:'students', icon:'🎨', categories:['Red','Blue','Green','Yellow','Purple','Orange'], min:4, max:22},
+  {title:'Marbles Collected', unit:'marbles', icon:'🔵', categories:['Ana','Ben','Carla','Diego','Emma','Felix'], min:5, max:40},
+  {title:'Minutes of Exercise', unit:'minutes', icon:'⏱️', categories:['Monday','Tuesday','Wednesday','Thursday','Friday'], min:10, max:45},
+  {title:'Books Read This Month', unit:'books', icon:'📕', categories:['Class A','Class B','Class C','Class D','Class E'], min:6, max:30},
+  {title:'Allowance Saved', unit:'dollars', icon:'💵', categories:['Week 1','Week 2','Week 3','Week 4','Week 5'], min:5, max:35},
+  {title:'Pencils Sold at the Fundraiser', unit:'pencils', icon:'✏️', categories:['Monday','Tuesday','Wednesday','Thursday'], min:8, max:50},
+  {title:'Miles Biked', unit:'miles', icon:'🚴', categories:['Sam','Priya','Wei','Noah','Zara','Leo'], min:3, max:28},
+  {title:'Cookies Baked', unit:'cookies', icon:'🍪', categories:['Batch 1','Batch 2','Batch 3','Batch 4','Batch 5'], min:12, max:48},
+  {title:'Tickets Sold for the School Play', unit:'tickets', icon:'🎟️', categories:['Grade 3','Grade 4','Grade 5','Grade 6'], min:15, max:60},
+  {title:'Minutes Spent Reading', unit:'minutes', icon:'📖', categories:['Mon','Tue','Wed','Thu','Fri','Sat'], min:10, max:50}
+];
+const CHART_THEMES_SCIENCE = [
+  {title:'Animal Weights', unit:'kg', icon:'🐾', categories:['Fox','Wolf','Deer','Bear','Raccoon','Otter'], min:3, max:80},
+  {title:'Monthly Rainfall', unit:'mm', icon:'💧', categories:['March','April','May','June','July'], min:20, max:120},
+  {title:'Plant Growth', unit:'cm', icon:'🌱', categories:['Plant A','Plant B','Plant C','Plant D'], min:4, max:30},
+  {title:'Average Temperature by Season', unit:'°F', icon:'🌡️', categories:['Winter','Spring','Summer','Fall'], min:30, max:90},
+  {title:'Species Observed on a Nature Walk', unit:'species', icon:'🦋', categories:['Birds','Insects','Mammals','Reptiles','Amphibians'], min:2, max:18},
+  {title:'Recycling Collected', unit:'lbs', icon:'♻️', categories:['Paper','Plastic','Glass','Metal'], min:10, max:65},
+  {title:'Classroom Water Usage', unit:'liters', icon:'🚰', categories:['Mon','Tue','Wed','Thu','Fri'], min:8, max:40},
+  {title:'Seeds Germinated', unit:'seeds', icon:'🌾', categories:['Group 1','Group 2','Group 3','Group 4'], min:5, max:25},
+  {title:'Daily High Temperature', unit:'°F', icon:'☀️', categories:['Mon','Tue','Wed','Thu','Fri'], min:55, max:95},
+  {title:'Insects Counted in the Garden', unit:'insects', icon:'🐛', categories:['Bees','Ants','Ladybugs','Beetles','Butterflies'], min:3, max:30}
+];
+const CHART_THEMES_HISTORY = [
+  {title:'State Population Sample', unit:'thousand people', icon:'🏙️', categories:['Virginia','Maryland','North Carolina','Pennsylvania'], min:200, max:900},
+  {title:'Votes in a Class Election', unit:'votes', icon:'🗳️', categories:['Candidate A','Candidate B','Candidate C','Candidate D'], min:10, max:50},
+  {title:'Trade Goods Exported', unit:'shipments', icon:'📦', categories:['Cotton','Tobacco','Wheat','Textiles'], min:15, max:70},
+  {title:'Immigrants by Decade', unit:'thousand people', icon:'🚢', categories:['1880s','1890s','1900s','1910s'], min:50, max:400},
+  {title:'Government Budget by Category', unit:'percent', icon:'🏛️', categories:['Defense','Education','Healthcare','Infrastructure'], min:10, max:40},
+  {title:'Historical Events by Region', unit:'events', icon:'📜', categories:['Northeast','South','Midwest','West'], min:4, max:20},
+  {title:'Colonial Population Growth', unit:'thousand people', icon:'⚓', categories:['1650','1700','1750','1775'], min:50, max:600},
+  {title:'Museum Visitors by Exhibit', unit:'visitors', icon:'🖼️', categories:['Ancient Egypt','Colonial America','Civil War','Modern Era'], min:20, max:90}
+];
+
+function genChartQuestion(chartType, theme){
+  const numCats = chartType==='pie' ? (3+Math.floor(Math.random()*2)) : (3+Math.floor(Math.random()*3));
+  const cats = shuffle(theme.categories).slice(0, Math.min(numCats, theme.categories.length));
+  let data, diagram;
+  const chartLabel = chartType==='pictograph' ? 'pictograph' : chartType==='line' ? 'line graph' : chartType==='pie' ? 'circle graph' : 'bar graph';
+
+  if(chartType==='bar'){
+    data = cats.map(c=>({label:c, value: randInt(theme.min, theme.max)}));
+    diagram = barChartSVG(data, theme.title);
+  } else if(chartType==='pictograph'){
+    const symbolValue = choose([1,2,5]);
+    data = cats.map(c=>({label:c, value: randInt(1,8)*symbolValue}));
+    diagram = pictographSVG(data.map(d=>({label:d.label,count:d.value})), theme.title, theme.icon, symbolValue);
+  } else if(chartType==='line'){
+    const span = theme.max-theme.min;
+    let val = randInt(theme.min, theme.min+Math.round(span/3));
+    data = cats.map(c=>{
+      val += randInt(-Math.round(span*0.12), Math.round(span*0.28));
+      val = Math.max(theme.min, Math.min(theme.max, val));
+      return {label:c, value: val};
+    });
+    diagram = lineChartSVG(data.map(d=>({x:d.label,y:d.value})), theme.title);
+  } else { // pie — values sum to 100 for clean percentage questions
+    let remaining = 100;
+    data = cats.map((c,i)=>{
+      const isLast = i===cats.length-1;
+      const minLeft = 5*(cats.length-i-1);
+      const val = isLast ? remaining : randInt(10, Math.max(10, remaining-minLeft-5));
+      remaining -= val;
+      return {label:c, value: val};
+    });
+    diagram = pieChartSVG(data, theme.title);
+  }
+
+  const sorted = [...data].sort((a,b)=>b.value-a.value);
+  const highest = sorted[0], lowest = sorted[sorted.length-1];
+  const total = data.reduce((s,d)=>s+d.value,0);
+  const catList = cats.join(', ');
+  const unitTxt = theme.unit ? ' '+theme.unit : '';
+
+  const qTypePool = chartType==='pie'
+    ? ['pct-specific','pct-combo','pct-highest']
+    : ['specific-value','highest','lowest','difference','total'];
+  const qType = choose(qTypePool);
+
+  let stem, correctAns, distractors, explain;
+  if(qType==='specific-value'){
+    const target = choose(data);
+    stem = `The "${theme.title}" ${chartLabel} compares ${catList}. What is the value shown for "${target.label}"?`;
+    correctAns = String(target.value);
+    distractors = [String(target.value+randInt(2,8)), String(Math.max(0,target.value-randInt(2,8))), String(target.value+randInt(9,15))];
+    explain = `"${target.label}" shows a value of ${target.value}${unitTxt}.`;
+  } else if(qType==='highest'){
+    stem = `Looking at the "${theme.title}" ${chartLabel} (comparing ${catList}), which category has the HIGHEST value?`;
+    correctAns = highest.label;
+    distractors = data.filter(d=>d.label!==highest.label).map(d=>d.label);
+    explain = `"${highest.label}" has the highest value (${highest.value}${unitTxt}).`;
+  } else if(qType==='lowest'){
+    stem = `Looking at the "${theme.title}" ${chartLabel} (comparing ${catList}), which category has the LOWEST value?`;
+    correctAns = lowest.label;
+    distractors = data.filter(d=>d.label!==lowest.label).map(d=>d.label);
+    explain = `"${lowest.label}" has the lowest value (${lowest.value}${unitTxt}).`;
+  } else if(qType==='difference'){
+    const [a,b] = shuffle(data).slice(0,2);
+    const diff = Math.abs(a.value-b.value);
+    stem = `On the "${theme.title}" ${chartLabel}, what is the difference between "${a.label}" and "${b.label}"?`;
+    correctAns = String(diff);
+    distractors = [String(diff+randInt(2,6)), String(Math.max(0,diff-randInt(2,6)) || diff+1), String(a.value+b.value)];
+    explain = `|${a.value} − ${b.value}| = ${diff}${unitTxt}.`;
+  } else if(qType==='total'){
+    stem = `On the "${theme.title}" ${chartLabel} (${catList}), what is the total of all categories combined?`;
+    correctAns = String(total);
+    distractors = [String(total+randInt(3,10)), String(Math.max(0,total-randInt(3,10))), String(highest.value*data.length)];
+    explain = `Adding all values together: ${data.map(d=>d.value).join(' + ')} = ${total}${unitTxt}.`;
+  } else if(qType==='pct-specific'){
+    const target = choose(data);
+    stem = `The "${theme.title}" circle graph shows ${catList}. What percentage is "${target.label}"?`;
+    correctAns = target.value+'%';
+    distractors = data.filter(d=>d.label!==target.label).map(d=>d.value+'%');
+    explain = `"${target.label}" is labeled ${target.value}% on the circle graph.`;
+  } else if(qType==='pct-combo'){
+    const [a,b] = shuffle(data).slice(0,2);
+    const sum = a.value+b.value;
+    stem = `On the "${theme.title}" circle graph, what percentage is "${a.label}" and "${b.label}" combined?`;
+    correctAns = sum+'%';
+    distractors = [(sum+5)+'%', Math.max(0,sum-5)+'%', (100-sum)+'%'];
+    explain = `${a.value}% + ${b.value}% = ${sum}%.`;
+  } else {
+    stem = `On the "${theme.title}" circle graph (${catList}), which category has the LARGEST percentage?`;
+    correctAns = highest.label;
+    distractors = data.filter(d=>d.label!==highest.label).map(d=>d.label);
+    explain = `"${highest.label}" has the largest slice at ${highest.value}%.`;
+  }
+
+  const {c,a} = buildMCQ(correctAns, distractors);
+  return Q(stem, c, a, explain, null, diagram);
+}
+
+/* =========================================================================
+   LARGE-SCALE CHART QUESTION EXPANSION
+   The hand-authored batch earlier (41 questions) was a good proof of
+   concept but nowhere near enough for meaningful diagram coverage
+   throughout gameplay. This scales it up using the procedural chart
+   generator across every math/science/history tier in all four tracks,
+   targeting roughly 20% of the entire question bank being diagram/chart-
+   based — matching real FCPS Data Analysis requirements per grade
+   (pictographs/bar graphs, line graphs, circle graphs) while also
+   extending chart literacy into science and social studies data, not
+   just math.
+   ========================================================================= */
+function expandChartContent(perTierAdd){
+  const mathGenerators = [
+    G(()=>genChartQuestion('bar', choose(CHART_THEMES_MATH)),'chart-bar'),
+    G(()=>genChartQuestion('pictograph', choose(CHART_THEMES_MATH)),'chart-pictograph'),
+    G(()=>genChartQuestion('line', choose(CHART_THEMES_MATH)),'chart-line'),
+    G(()=>genChartQuestion('pie', choose(CHART_THEMES_MATH)),'chart-pie')
+  ];
+  const scienceGenerators = [
+    G(()=>genChartQuestion('bar', choose(CHART_THEMES_SCIENCE)),'chart-bar'),
+    G(()=>genChartQuestion('pictograph', choose(CHART_THEMES_SCIENCE)),'chart-pictograph'),
+    G(()=>genChartQuestion('line', choose(CHART_THEMES_SCIENCE)),'chart-line'),
+    G(()=>genChartQuestion('pie', choose(CHART_THEMES_SCIENCE)),'chart-pie')
+  ];
+  const historyGenerators = [
+    G(()=>genChartQuestion('bar', choose(CHART_THEMES_HISTORY)),'chart-bar'),
+    G(()=>genChartQuestion('pictograph', choose(CHART_THEMES_HISTORY)),'chart-pictograph'),
+    G(()=>genChartQuestion('line', choose(CHART_THEMES_HISTORY)),'chart-line'),
+    G(()=>genChartQuestion('pie', choose(CHART_THEMES_HISTORY)),'chart-pie')
+  ];
+  [trackA, trackB, trackC, trackAdult].forEach(track=>{
+    track.subjects.math.levels.forEach(levelArr=>{
+      fillMathLevelToTarget(levelArr, mathGenerators, levelArr.length + perTierAdd);
+    });
+    track.subjects.science.levels.forEach(levelArr=>{
+      fillMathLevelToTarget(levelArr, scienceGenerators, levelArr.length + perTierAdd);
+    });
+    track.subjects.history.levels.forEach(levelArr=>{
+      fillMathLevelToTarget(levelArr, historyGenerators, levelArr.length + perTierAdd);
+    });
+  });
+}
+expandChartContent(210);
+
 function renderQuestionBody(q){
   const passageHTML = q.passage ? `<div class="passage-box"><div class="passage-label">📖 Read this, then answer:</div>${q.passage}</div>` : '';
-  return `${passageHTML}<div class="q-text">${q.q}</div>`;
+  const diagramHTML = q.diagram ? `<div class="diagram-box">${q.diagram}</div>` : '';
+  return `${passageHTML}${diagramHTML}<div class="q-text">${q.q}</div>`;
 }
 
 /* Large villain portrait for battles — an illustrated badge (reusing the
@@ -4464,7 +5110,7 @@ function startFinalBoss(){
     window.alert("You're out of HP for today! Rest up and come back tomorrow.");
     return;
   }
-  if(SETTINGS.musicOn){ Sound.unlock(); Sound.startAmbient(); startMusicRotation(); }
+  if(SETTINGS.musicOn){ Sound.unlock(); Sound.startAmbient('boss'); startMusicRotation(); }
 
   const targetHits = finalBossTargetHits(p);
   const bossMaxHp = 1000;
