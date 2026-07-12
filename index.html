@@ -203,6 +203,12 @@
   .relic-slot{display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 10px;border-radius:14px;background:var(--panel-tint);text-align:center;}
   .relic-slot.locked{opacity:0.45;}
   .relic-slot.shiny{background:linear-gradient(135deg,#FFF7DD,#FFECAD);border:2px solid #FFD166;}
+  .gear-item-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);}
+  .gear-item-row:last-child{border-bottom:none;}
+  .gear-item-row.equipped{background:linear-gradient(135deg,#F1EDFF,#E4DCFF);border-radius:10px;padding-left:8px;margin:0 -8px;}
+  .gear-item-icon{width:40px;height:40px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:var(--panel-tint);border-radius:10px;}
+  .gear-item-info{flex:1;min-width:0;}
+  .gear-item-actions{display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end;}
   .relic-tray{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:10px 0;padding:8px 10px;background:var(--panel-tint);border-radius:12px;}
   .relic-tray-btn{width:38px;height:38px;border-radius:10px;border:2px solid transparent;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:2px;}
   .relic-tray-btn.active{border-color:var(--violet);background:#F1EDFF;}
@@ -1790,6 +1796,110 @@ expandHistoryContent(350);
    determine word meaning, and recognizing text-structure patterns from a
    short example — both real, teachable reading skills.
    ========================================================================= */
+/* Harder word-definition vocabulary, one tier of difficulty higher than the
+   existing synonym/antonym/context-clue banks, per grade band. Each entry:
+   [word, correct definition, wrong definition 1, wrong definition 2, wrong definition 3] */
+const WORD_DEF_TABLE_A = [
+  ['reluctant','unwilling or hesitant to do something','extremely excited about something','unable to speak','very tired'],
+  ['precise','exact and accurate','loud and confusing','old and broken','large in size'],
+  ['absurd','wildly unreasonable or silly','very serious and formal','extremely quiet','perfectly normal'],
+  ['gigantic','extremely large in size','extremely small','very fast','very old'],
+  ['feeble','very weak','very strong','very colorful','very loud'],
+  ['sturdy','strongly and solidly built','easily broken','brightly colored','very quiet'],
+  ['drowsy','sleepy; ready to fall asleep','wide awake and alert','very hungry','extremely angry'],
+  ['mimic',"to imitate or copy someone's actions",'to ignore someone completely','to shout loudly','to run away quickly'],
+  ['ponder','to think carefully about something','to eat quickly','to laugh loudly','to sleep deeply'],
+  ['scarce','not enough of something; rare','plentiful and common','extremely large','brightly colored'],
+  ['vast','extremely large in area or extent','extremely tiny','very quiet','very old'],
+  ['brittle','hard but easily broken','soft and bendable','very heavy','brightly colored'],
+  ['nimble','quick and light in movement','slow and clumsy','very loud','extremely tall'],
+  ['weary','very tired','full of energy','very angry','extremely happy'],
+  ['jubilant','feeling great happiness and triumph','feeling deep sadness','feeling extremely tired','feeling very confused'],
+  ['cautious','careful to avoid danger or mistakes','careless and reckless','loud and boastful','shy and silent'],
+  ['generous','willing to give freely','unwilling to share anything','extremely quiet','very confused'],
+  ['clumsy','awkward in movement, likely to drop things','graceful and elegant','extremely intelligent','very quiet'],
+  ['ancient','very old, from a long time ago','brand new','medium-sized','very colorful'],
+  ['glisten','to shine with a sparkling light','to make a loud noise','to smell bad','to feel heavy']
+];
+const WORD_DEF_TABLE_B = [
+  ['diligent','showing careful and steady effort','lazy and careless','extremely loud','very confused'],
+  ['skeptical','having doubts; not easily convinced','completely trusting','extremely happy','very tired'],
+  ['meticulous','showing great attention to detail','careless and sloppy','extremely fast','very loud'],
+  ['resilient','able to recover quickly from difficulties','easily broken or defeated','extremely large','very quiet'],
+  ['candid','honest and straightforward','secretive and dishonest','extremely angry','very confused'],
+  ['tedious','long, slow, and boring','exciting and fast-paced','extremely short','very colorful'],
+  ['plausible','seeming reasonable or probable','clearly impossible','extremely loud','very old'],
+  ['notorious','famous for something bad','completely unknown','famous for something good only','very quiet'],
+  ['prevalent','widespread; common in a particular area','extremely rare','very loud','old-fashioned'],
+  ['adamant',"refusing to change one's mind; firm",'easily persuaded','extremely confused','very tired'],
+  ['futile','having no effect; pointless','extremely effective','very colorful','brightly lit'],
+  ['robust','strong and healthy; vigorous','weak and fragile','extremely quiet','very old'],
+  ['arduous','involving great effort; difficult','very easy and simple','extremely short','brightly colored'],
+  ['congenial','friendly and pleasant','hostile and unfriendly','extremely loud','very confused'],
+  ['indifferent','having no particular interest or concern','extremely passionate','very angry','deeply worried'],
+  ['amiable','friendly and pleasant in nature','unfriendly and cold','extremely fast','very quiet'],
+  ['compassionate','feeling sympathy and concern for others','feeling no concern for others','extremely confused','very tired'],
+  ['diminish','to make or become smaller','to make or become larger','to make a loud noise','to travel quickly'],
+  ['vivid','producing powerful feelings or clear images','dull and lifeless','extremely quiet','very old'],
+  ['persistent','continuing firmly despite difficulty','giving up easily','extremely loud','very confused']
+];
+const WORD_DEF_TABLE_C = [
+  ['ambiguous','having more than one possible meaning; unclear','perfectly clear and obvious','extremely loud','very colorful'],
+  ['cogent','clear, logical, and convincing','confusing and illogical','extremely quiet','very old'],
+  ['ephemeral','lasting for a very short time','lasting forever','extremely large','very loud'],
+  ['ubiquitous','present or found everywhere','found in only one place','extremely rare','very quiet'],
+  ['pragmatic','dealing with things in a practical, realistic way','dealing with things in an unrealistic, idealistic way','extremely emotional','very confused'],
+  ['austere','severe or strict in manner; without luxury','luxurious and extravagant','extremely colorful','very loud'],
+  ['benevolent','kind and generous','cruel and selfish','extremely confused','very tired'],
+  ['capricious','given to sudden, unpredictable changes','extremely predictable and steady','very quiet','brightly colored'],
+  ['deference',"respectful submission to someone's wishes",'open defiance and rebellion','extreme excitement','deep confusion'],
+  ['enigmatic','mysterious and difficult to understand','perfectly clear and simple','extremely loud','very colorful'],
+  ['fastidious','very attentive to detail; hard to please','careless about details','extremely relaxed','very loud'],
+  ['gregarious','sociable; fond of company','shy and solitary','extremely angry','very confused'],
+  ['incessant','continuing without pause or interruption','occasional and brief','extremely quiet','very colorful'],
+  ['lucid','expressed clearly; easy to understand','confusing and unclear','extremely loud','very old'],
+  ['nonchalant','calm and casual; unconcerned','extremely anxious and worried','very loud','brightly colored'],
+  ['obstinate',"stubbornly refusing to change one's opinion",'easily persuaded to change one\'s mind','extremely quiet','very confused'],
+  ['paradox','a statement that seems contradictory but may be true','a statement that is obviously and simply true','a type of loud noise','a very old object'],
+  ['quandary','a state of uncertainty about what to do','a state of complete confidence','a type of celebration','a very loud argument'],
+  ['staunch','loyal and committed in attitude','disloyal and unreliable','extremely confused','very quiet'],
+  ['tenacious','holding firmly to something; persistent','giving up quickly','extremely loud','very colorful'],
+  ['vindicate','to clear someone of blame or suspicion','to prove someone guilty','to make a loud noise','to travel quickly'],
+  ['zealous','showing great energy and enthusiasm for a cause','showing no interest at all','extremely tired','very confused']
+];
+const WORD_DEF_TABLE_ADULT = [
+  ['perspicacious','having keen insight or judgment','lacking any judgment or insight','extremely loud','very old'],
+  ['sagacious','showing wisdom and sound judgment','showing poor judgment','extremely confused','very quiet'],
+  ['mellifluous','sweet or musical in sound; pleasant to hear','harsh and unpleasant to hear','extremely loud','very colorful'],
+  ['ostensible','stated or appearing to be true, but not necessarily so','definitely and certainly true','extremely rare','very old'],
+  ['obfuscate','to make something unclear or confusing','to make something perfectly clear','to travel quickly','to make a loud noise'],
+  ['magnanimous','generous or forgiving, especially toward a rival','petty and vengeful toward a rival','extremely confused','very quiet'],
+  ['vicissitude','a change of circumstances, often unwelcome','a period of complete stability','a type of celebration','a loud argument'],
+  ['equanimity','mental calmness in difficult situations','extreme panic in difficult situations','very loud excitement','deep confusion'],
+  ['perfunctory','done with minimal effort or interest','done with great care and enthusiasm','extremely loud','very colorful'],
+  ['sanguine','optimistic in a difficult situation','pessimistic in a difficult situation','extremely confused','very quiet'],
+  ['taciturn','reserved and saying little','talkative and outgoing','extremely loud','very colorful'],
+  ['verisimilitude','the appearance of being true or real','the appearance of being obviously false','a type of loud noise','a very old object'],
+  ['laconic','using very few words; concise','using excessive, flowery language','extremely loud','very confused'],
+  ['ineffable','too great to be expressed in words','easily described in simple words','extremely quiet','very old'],
+  ['quixotic','extremely idealistic and unrealistic','extremely practical and realistic','very loud','brightly colored'],
+  ['surreptitious','done secretly or stealthily','done openly and publicly','extremely loud','very colorful'],
+  ['garrulous','excessively talkative','extremely quiet and reserved','very confused','extremely tired'],
+  ['innocuous','not harmful or offensive','extremely dangerous and harmful','very loud','brightly colored'],
+  ['tenuous','very weak or slight; barely valid','extremely strong and solid','very loud','brightly colored'],
+  ['inscrutable','impossible to understand or interpret','perfectly easy to understand','extremely loud','very quiet']
+];
+function genWordDefinition(table){
+  const [word, correct, w1, w2, w3] = choose(table);
+  const phrasing = choose([
+    `What does the word "${word}" mean?`,
+    `Which definition best matches the word "${word}"?`,
+    `If someone is described as "${word}," what does that mean?`
+  ]);
+  const {c,a} = buildMCQ(correct, [w1,w2,w3]);
+  return Q(phrasing, c, a, `"${word.charAt(0).toUpperCase()+word.slice(1)}" means: ${correct}.`);
+}
+
 const CONTEXT_CLUE_TABLE = [
   {sentence:'The ___ animal hid under the rocks because it was afraid of everything.', answer:'timid', distractors:['bold','loud','friendly']},
   {sentence:'After running the marathon, she felt completely ___ and could barely stand.', answer:'exhausted', distractors:['energetic','excited','hungry']},
@@ -1865,11 +1975,13 @@ function genTextStructure(){
 }
 
 function expandReadingContent(target){
-  const readingGenerators = [
-    G(()=>genContextClue(),'context-clue'), G(()=>genTextStructure(),'text-structure'),
-    G(()=>genSynonym(),'synonym'), G(()=>genAntonym(),'antonym')
-  ];
-  [trackA, trackB, trackC, trackAdult].forEach(track=>{
+  const tableFor = {A:WORD_DEF_TABLE_A, B:WORD_DEF_TABLE_B, C:WORD_DEF_TABLE_C, Adult:WORD_DEF_TABLE_ADULT};
+  [[trackA,'A'], [trackB,'B'], [trackC,'C'], [trackAdult,'Adult']].forEach(([track,tid])=>{
+    const readingGenerators = [
+      G(()=>genContextClue(),'context-clue'), G(()=>genTextStructure(),'text-structure'),
+      G(()=>genSynonym(),'synonym'), G(()=>genAntonym(),'antonym'),
+      G(()=>genWordDefinition(tableFor[tid]),'word-definition')
+    ];
     track.subjects.reading.levels.forEach(levelArr=>{
       fillMathLevelToTarget(levelArr, readingGenerators, target);
     });
@@ -1877,6 +1989,343 @@ function expandReadingContent(target){
 }
 expandReadingContent(350);
 
+/* =========================================================================
+   READING COMPREHENSION PASSAGES
+   Hand-authored (not generated) so every passage is genuinely coherent and
+   every answer is verifiably supported by the text. Question types are
+   deliberately varied per passage to match real FCPS/VA SOL reading
+   standards: main idea, supporting detail, inference, vocabulary-in-context,
+   sequence, author's purpose, and extension/application. Pushed into every
+   tier of each track (comprehension skill doesn't vary by tier the way
+   math difficulty does), significantly raising the share of passage-based
+   comprehension questions in the Reading pool.
+   ========================================================================= */
+function readingComp(passage, rows){
+  return rows.map(([stem,choices,ansIdx,exp]) => Q(stem, choices, ansIdx, exp, passage));
+}
+(function addReadingComprehensionPassagesA(){
+  const a1 = "Mia was walking home from school when she heard a soft meowing sound coming from behind a bush. She pushed the branches aside and found a small gray kitten, shivering and alone. Mia gently picked up the kitten and wrapped it in her jacket. She knocked on doors up and down her street, asking if anyone had lost a kitten. Finally, an elderly woman named Mrs. Chen opened her door and gasped with joy. \"That's Whiskers! He got out yesterday and I've been so worried!\" Mrs. Chen thanked Mia with a warm hug and a plate of cookies.";
+  const a1q = readingComp(a1, [
+    ['What is this passage mostly about?', ['A girl helps reunite a lost kitten with its owner','A girl adopts a new pet','A woman bakes cookies for her neighbors','A kitten learns to find its way home'], 0, 'The passage centers on Mia finding the kitten and helping return it to Mrs. Chen.'],
+    ['Where did Mia first hear the kitten?', ['Behind a bush','Inside her house','At school','In a tree'], 0, 'The passage states she heard "a soft meowing sound coming from behind a bush."'],
+    ['What did Mia use to keep the kitten warm?', ['Her jacket','A blanket','A box','Mrs. Chen\'s sweater'], 0, 'The text says Mia "wrapped it in her jacket."'],
+    ['Who turned out to be the kitten\'s owner?', ['Mrs. Chen','A classmate','Mia\'s mother','A stranger on the street'], 0, 'Mrs. Chen recognized the kitten as her own, named Whiskers.'],
+    ['Based on the passage, how did Mia most likely feel when she found the shivering kitten?', ['Concerned and eager to help','Annoyed by the noise','Frightened of the kitten','Uninterested'], 0, 'Her actions — picking it up gently and searching for its owner — show she was concerned and wanted to help.'],
+    ['In this passage, the word "gasped" means...', ['took a sudden breath from surprise','yelled angrily','fell asleep','walked away quickly'], 0, 'Mrs. Chen gasped with joy upon recognizing her kitten — a sudden breath from surprise/emotion.'],
+    ['What did Mia do right after finding the kitten?', ['Wrapped it in her jacket','Called Mrs. Chen on the phone','Brought it to school','Gave it a bath'], 0, 'Immediately after finding it, "Mia gently picked up the kitten and wrapped it in her jacket."'],
+    ['Why did the author most likely write this passage?', ['To tell an entertaining story about kindness','To explain how to care for kittens','To describe a neighborhood','To persuade readers to adopt pets'], 0, 'This is a short narrative highlighting Mia\'s kind actions — its purpose is to entertain with a story of kindness.'],
+    ['Based on the story, what might Mia do the next time she finds a lost animal?', ['Try to help find its owner again','Ignore it and keep walking','Keep the animal for herself','Call animal control immediately'], 0, 'Her caring, helpful behavior in the story suggests she would likely act the same way again.'],
+    ['How did Mrs. Chen react when she saw the kitten?', ['She gasped with joy','She was confused','She was upset with Mia','She did not recognize it'], 0, 'The text states she "gasped with joy" upon seeing Whiskers.']
+  ]);
+
+  const a2 = "Every spring, Ms. Rivera's third-grade class plants a garden behind the school. This year, the students voted to grow tomatoes, carrots, and sunflowers. Each morning, a different student is chosen to water the plants and pull any weeds. By June, the tomatoes had turned bright red and the sunflowers stood taller than most of the students. On the last day of school, the class harvested the vegetables and made a big salad to share. Ms. Rivera said the garden taught the class patience, because plants take time to grow, and teamwork, because everyone had a job to do.";
+  const a2q = readingComp(a2, [
+    ['What is the main idea of this passage?', ['A class learns lessons by growing a garden together','A teacher grows vegetables at home','Sunflowers grow taller than tomatoes','Students vote on classroom activities'], 0, 'The passage focuses on the class garden project and the lessons it taught.'],
+    ['What three things did the class grow?', ['Tomatoes, carrots, and sunflowers','Corn, beans, and peppers','Apples, pears, and grapes','Lettuce, onions, and peas'], 0, 'The passage names "tomatoes, carrots, and sunflowers" as what the class voted to grow.'],
+    ['Who was responsible for watering the plants each day?', ['A different student each morning','Only Ms. Rivera','The school janitor','The same student every day'], 0, 'The text says "a different student is chosen to water the plants" each morning.'],
+    ['What happened on the last day of school?', ['The class harvested vegetables and made a salad','The class planted new seeds','The sunflowers were removed','The garden was destroyed'], 0, 'The passage states the class "harvested the vegetables and made a big salad to share."'],
+    ['Based on the passage, what can you infer about how the sunflowers grew compared to the students?', ['They grew taller than most students','They stayed shorter than the students','They did not grow at all','They grew the same height as the tomatoes'], 0, 'The text says the sunflowers "stood taller than most of the students."'],
+    ['In this passage, the word "harvested" most likely means...', ['gathered ripe crops from the garden','planted new seeds','watered the plants','pulled out weeds'], 0, 'Harvesting a garden means gathering the ripe crops that have grown — matching "harvested the vegetables."'],
+    ['What lesson did Ms. Rivera say the garden taught about teamwork?', ['Everyone had a job to do','Only one person should do all the work','Teamwork is not important for gardens','Gardens grow faster with teamwork'], 0, 'The passage directly states the garden taught teamwork "because everyone had a job to do."'],
+    ['Which sentence describes something that happened BEFORE the tomatoes turned red?', ['The class voted on what to grow','The class made a salad','The class harvested the vegetables','School ended for the year'], 0, 'Voting on what to plant happens at the very start of the process, before the plants could grow and ripen.'],
+    ['If the class starts a new garden next year, what might they do differently based on this passage?', ['Vote on new vegetables to grow together','Skip watering the plants','Let only the teacher do all the work','Avoid growing sunflowers again'], 0, 'Since the class enjoyed voting together and sharing responsibilities, they would likely repeat that collaborative process.'],
+    ['Why did the author most likely include the detail about patience?', ['To show one of the real lessons the garden taught the class','To explain how to plant tomatoes','To describe the weather in spring','To compare gardens to sports'], 0, 'The patience detail is included specifically to highlight a lesson the class learned, matching the passage\'s purpose.']
+  ]);
+
+  const a3 = "It rained all weekend, so Jake and his sister Ava decided to build a fort in the living room. They stacked couch cushions into walls and draped a blanket over two chairs to make a roof. Inside, they used flashlights to make shadow puppets on the fabric ceiling. Their dog, Biscuit, squeezed in beside them and fell asleep. Jake wanted to read comic books inside the fort, while Ava wanted to tell scary stories. In the end, they took turns doing both, and Ava admitted the fort was the best part of the rainy weekend.";
+  const a3q = readingComp(a3, [
+    ['What is this passage mostly about?', ['Two siblings build an indoor fort on a rainy day','A family goes camping outdoors','A dog gets lost in the rain','Jake and Ava clean the living room'], 0, 'The passage describes Jake and Ava building and enjoying a fort during a rainy weekend.'],
+    ['What did they use to make the roof of the fort?', ['A blanket draped over two chairs','A tent','Cardboard boxes','An umbrella'], 0, 'The text says they "draped a blanket over two chairs to make a roof."'],
+    ['Who fell asleep inside the fort?', ['Biscuit the dog','Jake','Ava','Their mother'], 0, 'The passage states "their dog, Biscuit, squeezed in beside them and fell asleep."'],
+    ['What did Jake want to do inside the fort?', ['Read comic books','Tell scary stories','Watch a movie','Take a nap'], 0, 'The text says "Jake wanted to read comic books inside the fort."'],
+    ['Based on the passage, how did Ava feel about the fort by the end?', ['She thought it was the best part of the weekend','She was bored by it','She wanted to take it down right away','She was scared of it'], 0, 'The passage states "Ava admitted the fort was the best part of the rainy weekend."'],
+    ['In this passage, the word "draped" most likely means...', ['hung loosely over something','folded neatly','nailed tightly','thrown away'], 0, 'Draping a blanket over chairs means hanging it loosely over them to form a shape.'],
+    ['What did the siblings do to solve their disagreement about activities?', ['They took turns doing both activities','Jake gave up his idea completely','Ava refused to play at all','They asked their parents to decide'], 0, 'The passage says "they took turns doing both," resolving their different preferences.'],
+    ['Why did the author most likely write this passage?', ['To tell a fun story about sibling creativity on a rainy day','To give instructions for building furniture','To explain why it rains','To describe a dog\'s daily routine'], 0, 'This is a light narrative meant to entertain, showing how the siblings made the best of a rainy day.'],
+    ['What happened first in the passage?', ['It rained all weekend','They used flashlights for shadow puppets','Biscuit fell asleep','Ava told scary stories'], 0, 'The rain is what prompted them to build the fort in the first place, making it the first event.'],
+    ['The next time it rains, what might Jake and Ava do based on this passage?', ['Build another fort together', 'Refuse to play indoors', 'Argue the whole time', 'Ignore each other'], 0, 'Since they had a great time and Ava called it "the best part," they would likely want to repeat the experience.']
+  ]);
+
+  const a4 = "On Marcus's first day at his new school, he didn't know anyone in his class. At lunch, he sat alone, unsure of what to do. A boy named Tyler noticed Marcus sitting by himself and walked over with his tray. \"Want to sit with us? We're talking about our favorite video games,\" Tyler said. Marcus smiled and joined the table. By the end of the week, Marcus had made three new friends and felt much less nervous about being new. He decided that when he saw other new students in the future, he would do the same thing Tyler had done for him.";
+  const a4q = readingComp(a4, [
+    ['What is the main idea of this passage?', ['A kind classmate helps a new student feel welcome','Marcus dislikes his new school','Tyler is the best video game player','Lunch is Marcus\'s favorite class'], 0, 'The passage centers on Tyler\'s kindness helping Marcus feel included at his new school.'],
+    ['Where was Marcus sitting when Tyler noticed him?', ['Alone at lunch','In the classroom','On the playground','At home'], 0, 'The text says "at lunch, he sat alone" before Tyler approached him.'],
+    ['What were Tyler and his friends talking about?', ['Their favorite video games','Their homework','A school project','Sports teams'], 0, 'Tyler said "we\'re talking about our favorite video games."'],
+    ['How many new friends had Marcus made by the end of the week?', ['Three','One','Five','None'], 0, 'The passage states "Marcus had made three new friends" by week\'s end.'],
+    ['Based on the passage, how did Marcus most likely feel while sitting alone at lunch?', ['Nervous and unsure','Excited and confident','Angry','Bored'], 0, 'The text describes him as "unsure of what to do," implying nervousness in an unfamiliar situation.'],
+    ['In this passage, the word "nervous" most likely means...', ['feeling worried or uneasy','feeling extremely happy','feeling very tired','feeling proud'], 0, 'Nervous describes the uneasy, worried feeling Marcus had as a new student.'],
+    ['What lesson did Marcus decide to carry forward from this experience?', ['To help other new students the way Tyler helped him','To always sit alone at lunch','To avoid talking to new students','To only play video games at lunch'], 0, 'The passage ends with Marcus deciding to repeat Tyler\'s kind action for future new students.'],
+    ['Why did the author most likely write this passage?', ['To show how a small act of kindness can make a big difference','To describe a school cafeteria','To explain the rules of a video game','To compare two different schools'], 0, 'The story\'s focus on Tyler\'s kindness and its lasting impact suggests this theme was the author\'s purpose.'],
+    ['What happened immediately after Tyler invited Marcus to sit with him?', ['Marcus smiled and joined the table','Marcus said no and left','Tyler ate lunch alone','The bell rang for class'], 0, 'The text states "Marcus smiled and joined the table" right after the invitation.'],
+    ['If a new student joined Marcus\'s class next year, what would Marcus most likely do?', ['Invite the student to sit with him and his friends','Ignore the new student','Tell the teacher to handle it','Avoid the cafeteria that day'], 0, 'Based on his stated decision at the end of the passage, Marcus would likely repeat Tyler\'s welcoming gesture.']
+  ]);
+
+  const a5 = "Every Saturday, Grandpa took his old, rusty bicycle out of the garage and rode it around the block with his granddaughter, Priya, riding alongside on her bike. The old bike squeaked loudly with every turn of the pedals, but Grandpa refused to get a new one. \"This bike has seen forty years of Saturdays,\" he told Priya. \"It remembers every ride we've taken.\" One day, the bike's chain finally broke beyond repair. Priya expected Grandpa to be sad, but instead he smiled and said it was time to teach the bike's story to a new bicycle, which he bought the very next day.";
+  const a5q = readingComp(a5, [
+    ['What is this passage mostly about?', ['A grandfather\'s attachment to his old bicycle and how he handles its breaking', 'How to repair a bicycle chain', 'A race between Grandpa and Priya', 'The history of bicycles'], 0, 'The passage focuses on Grandpa\'s relationship with his old bike and his reaction when it finally breaks.'],
+    ['What sound did the old bike make?', ['A loud squeak with every pedal turn', 'A clicking sound', 'No sound at all', 'A whistling sound'], 0, 'The text says the bike "squeaked loudly with every turn of the pedals."'],
+    ['How long had Grandpa had the bicycle?', ['Forty years', 'Ten years', 'Five years', 'One year'], 0, 'Grandpa says the bike "has seen forty years of Saturdays."'],
+    ['What eventually happened to the bike?', ['Its chain broke beyond repair', 'It was stolen', 'Priya broke it accidentally', 'It rusted completely away'], 0, 'The passage states "the bike\'s chain finally broke beyond repair."'],
+    ['Based on the passage, what can you infer about how Grandpa felt about his old bike?', ['He was sentimentally attached to it', 'He disliked riding it', 'He wanted to sell it', 'He was afraid of it'], 0, 'His refusal to replace it and his comment about it "remembering every ride" show sentimental attachment.'],
+    ['In this passage, the word "refused" most likely means...', ['firmly said no to something', 'happily agreed to something', 'forgot about something', 'was confused about something'], 0, 'Refusing to get a new bike means firmly declining to replace it.'],
+    ['How did Priya expect Grandpa to react when the bike broke, and how did he actually react?', ['She expected sadness, but he smiled instead', 'She expected anger, and he was angry', 'She expected excitement, and he was excited', 'She expected nothing, and he said nothing'], 0, 'The passage contrasts her expectation ("expected Grandpa to be sad") with his actual reaction ("he smiled").'],
+    ['Why did the author most likely include the detail about buying a new bike "the very next day"?', ['To show Grandpa moved forward positively rather than staying sad', 'To show Grandpa was careless with money', 'To explain how bicycles are made', 'To describe a store\'s return policy'], 0, 'This detail emphasizes his positive, forward-looking attitude rather than dwelling on the loss.'],
+    ['What might Grandpa say to Priya about the new bicycle in the future?', ['That it will make its own new memories, just like the old one', 'That he regrets buying a new bike', 'That the new bike is worse than the old one', 'That he will never ride again'], 0, 'Given his stated plan to "teach the bike\'s story to a new bicycle," he likely sees the new bike as a way to continue building memories.'],
+    ['What happened right before the bike\'s chain broke?', ['Grandpa and Priya were riding together on Saturdays as usual', 'Grandpa bought a new bike', 'The bike was put in storage', 'Priya learned to ride a bike'], 0, 'Their regular Saturday rides were ongoing routine right up until the chain finally broke.']
+  ]);
+
+  const a6 = "The school talent show was two days away, and Sam still hadn't decided what to perform. His best friend, Leah, was going to sing, and his classmate Owen planned to do magic tricks. Sam loved drawing, but he wasn't sure how drawing could work as a \"performance.\" That night, he had an idea: he could draw a large picture live on stage while music played, finishing it just as the song ended. He practiced every night until the show. When the night came, Sam's hands shook at first, but as the music played, he relaxed and finished his drawing right on cue. The audience cheered loudly.";
+  const a6q = readingComp(a6, [
+    ['What is the main idea of this passage?', ['Sam finds a creative way to turn his artistic talent into a stage performance', 'Sam decides not to participate in the talent show', 'Leah wins the talent show with her singing', 'Owen teaches Sam magic tricks'], 0, 'The passage follows Sam figuring out how to present his drawing skill as a talent show act.'],
+    ['What was Leah planning to perform?', ['Singing', 'Magic tricks', 'Drawing', 'Dancing'], 0, 'The text says "his best friend, Leah, was going to sing."'],
+    ['What idea did Sam come up with for his performance?', ['Drawing a picture live on stage while music played', 'Singing a duet with Leah', 'Doing magic tricks like Owen', 'Reading a poem aloud'], 0, 'Sam\'s idea was to "draw a large picture live on stage while music played."'],
+    ['What did Sam do to prepare for the show?', ['He practiced every night', 'He asked Owen for help', 'He changed his idea at the last minute', 'He did not prepare at all'], 0, 'The passage states "he practiced every night until the show."'],
+    ['Based on the passage, how did Sam feel at the very start of his performance?', ['Nervous, since his hands shook', 'Completely calm and confident', 'Bored', 'Angry'], 0, 'The text says "Sam\'s hands shook at first," indicating initial nervousness.'],
+    ['In this passage, the phrase "right on cue" most likely means...', ['at exactly the right moment', 'much too late', 'by complete accident', 'without any effort'], 0, 'Finishing "right on cue" as the song ended means timing it perfectly to the right moment.'],
+    ['What happened after Sam relaxed during his performance?', ['He finished his drawing as the music ended', 'He stopped drawing completely', 'He asked to start over', 'He left the stage early'], 0, 'Once relaxed, "he finished his drawing right on cue" as the song ended.'],
+    ['Why did the author most likely write this passage?', ['To show that talents can be shared in creative, unexpected ways', 'To explain the rules of a talent show', 'To describe how to draw a picture', 'To compare singing and magic tricks'], 0, 'The story\'s focus on Sam\'s creative solution suggests its purpose is to show talents can be expressed in unique ways.'],
+    ['How did the audience react to Sam\'s performance?', ['They cheered loudly', 'They were confused', 'They stayed silent', 'They left early'], 0, 'The passage ends with "the audience cheered loudly."'],
+    ['If Sam entered another talent show next year, what might he do based on this passage?', ['Come up with another creative way to perform his artistic talent', 'Refuse to participate again', 'Only ever sing like Leah', 'Give up on drawing entirely'], 0, 'Given his successful, creative approach and the positive outcome, he would likely apply similar creative thinking again.']
+  ]);
+
+  trackA.subjects.reading.levels.forEach(levelArr=>{
+    levelArr.push(...a1q, ...a2q, ...a3q, ...a4q, ...a5q, ...a6q);
+  });
+})();
+
+(function addReadingComprehensionPassagesB(){
+  const b1 = "Bees are remarkable insects that work together to produce honey. Worker bees fly from flower to flower, collecting a sweet liquid called nectar. Back at the hive, they pass the nectar to other bees, who chew it and add special enzymes that begin turning it into honey. The bees then store the honey in six-sided wax cells called honeycombs and fan it with their wings to remove extra moisture. Once the honey thickens, the bees seal the cell with a thin layer of wax. A single beehive can produce over sixty pounds of honey in one year, though bees keep most of it to feed themselves during winter, when flowers are scarce.";
+  const b1q = readingComp(b1, [
+    ['What is the main idea of this passage?', ['Bees work together through several steps to produce and store honey', 'Bees only visit one flower per day', 'Honeycombs are made of stone', 'Bees dislike making honey'], 0, 'The passage traces the multi-step process bees use as a team to create and store honey.'],
+    ['What do worker bees collect from flowers?', ['Nectar', 'Pollen only', 'Water', 'Wax'], 0, 'The text states worker bees collect "a sweet liquid called nectar."'],
+    ['What shape are the wax cells that store honey?', ['Six-sided', 'Round', 'Square', 'Triangular'], 0, 'The passage describes "six-sided wax cells called honeycombs."'],
+    ['Why do the bees fan the honey with their wings?', ['To remove extra moisture', 'To cool the hive down', 'To attract other bees', 'To clean the honeycomb'], 0, 'The text states bees fan the honey "to remove extra moisture."'],
+    ['Based on the passage, why do bees keep most of their honey instead of it all being harvested?', ['They need it to feed themselves during winter when flowers are scarce', 'They dislike the taste of honey', 'They only make honey for humans', 'They store it for no particular reason'], 0, 'The passage explains bees "keep most of it to feed themselves during winter, when flowers are scarce."'],
+    ['In this passage, the word "enzymes" refers to...', ['substances that help change the nectar into honey', 'a type of flower', 'the wax used to build honeycombs', 'a tool beekeepers use'], 0, 'The passage describes bees adding "special enzymes that begin turning it into honey," indicating enzymes are a transforming substance.'],
+    ['What happens immediately after bees chew the nectar and add enzymes?', ['They store it in honeycomb cells', 'They eat it immediately', 'They fly back out to more flowers', 'They discard it'], 0, 'The passage moves from chewing/enzymes directly to storing "in six-sided wax cells called honeycombs."'],
+    ['Why did the author most likely write this passage?', ['To explain how bees produce honey step by step', 'To persuade readers to keep bees as pets', 'To describe a beekeeper\'s daily schedule', 'To compare bees to other insects'], 0, 'This is an informational passage structured around explaining the honey-making process.'],
+    ['About how much honey can a single hive produce in a year?', ['Over sixty pounds', 'About five pounds', 'About one pound', 'Over five hundred pounds'], 0, 'The passage states a hive "can produce over sixty pounds of honey in one year."'],
+    ['Based on this passage, what would likely happen to a hive if there were very few flowers nearby all year?', ['The bees would struggle to produce enough honey to survive', 'The bees would produce more honey than usual', 'The hive would not be affected at all', 'The bees would stop making honeycombs entirely'], 0, 'Since nectar from flowers is essential to the entire process, a lack of flowers would limit honey production and the bees\' food supply.']
+  ]);
+
+  const b2 = "When twelve-year-old Elena's bicycle chain kept slipping off, she grew frustrated with fixing it over and over. Instead of asking her father to buy a new bike, she decided to figure out why it kept happening. She studied how the gears and chain worked together, testing different chain tensions in the garage. After several failed attempts, she realized the chain needed a small guard to keep it aligned. She built one out of an old plastic container lid. It worked perfectly. Elena's science teacher was so impressed that she entered Elena's invention in the regional science fair, where it won second place.";
+  const b2q = readingComp(b2, [
+    ['What is the main idea of this passage?', ['A determined girl solves a bicycle problem through her own investigation', 'Elena asks her father to buy a new bike', 'Elena loses a science fair competition', 'A bicycle shop repairs Elena\'s chain'], 0, 'The passage follows Elena\'s independent problem-solving process to fix her bike chain.'],
+    ['What problem was Elena having with her bicycle?', ['The chain kept slipping off', 'The tires kept going flat', 'The brakes did not work', 'The seat was broken'], 0, 'The passage opens by stating "Elena\'s bicycle chain kept slipping off."'],
+    ['What material did Elena use to build her solution?', ['An old plastic container lid', 'A piece of metal from a toolbox', 'Rubber from an old tire', 'Wood from the garage'], 0, 'The text says she "built one out of an old plastic container lid."'],
+    ['Where did Elena test different chain tensions?', ['In the garage', 'At school', 'At a bike shop', 'At the science fair'], 0, 'The passage states she was "testing different chain tensions in the garage."'],
+    ['Based on the passage, what character trait best describes Elena?', ['Persistent and resourceful', 'Careless and impatient', 'Uninterested in solving problems', 'Dependent on others for help'], 0, 'Her repeated attempts and self-built solution despite failures show persistence and resourcefulness.'],
+    ['In this passage, the word "aligned" most likely means...', ['positioned correctly in a straight line', 'colored a certain way', 'made of a certain material', 'moving very quickly'], 0, 'A chain guard that keeps the chain "aligned" keeps it correctly positioned so it doesn\'t slip.'],
+    ['What happened right before Elena built her chain guard?', ['She realized the chain needed something to keep it aligned', 'She won the science fair', 'She asked her father for a new bike', 'She gave up on fixing the bike'], 0, 'The realization about needing a guard directly precedes her building one.'],
+    ['Why did the author most likely include the detail that Elena had "several failed attempts"?', ['To show that solving problems often takes persistence, not instant success', 'To suggest Elena should have given up', 'To criticize Elena\'s effort', 'To explain how bicycles are manufactured'], 0, 'This detail emphasizes the realistic, effortful process behind her eventual success.'],
+    ['What was the result of Elena entering her invention in the science fair?', ['She won second place', 'She won first place', 'She did not place at all', 'The fair was cancelled'], 0, 'The passage ends by stating her invention "won second place."'],
+    ['If Elena encounters another mechanical problem in the future, what would she most likely do based on this passage?', ['Try to investigate and solve it herself', 'Immediately ask someone else to fix it', 'Ignore the problem entirely', 'Give up without trying'], 0, 'Her demonstrated pattern of independent problem-solving suggests she would approach future problems the same way.']
+  ]);
+
+  const b3 = "Each fall, millions of monarch butterflies leave the northern United States and Canada and fly all the way to central Mexico, a journey of up to 3,000 miles. No single butterfly makes the entire round trip; instead, it takes several generations to complete the full migration cycle. Scientists still aren't sure exactly how the butterflies navigate such a precise path, though they believe the sun's position and the Earth's magnetic field both play a role. Once in Mexico, millions of monarchs cluster together on fir trees to stay warm through the winter before starting the journey north again in spring.";
+  const b3q = readingComp(b3, [
+    ['What is the main idea of this passage?', ['Monarch butterflies make a remarkable, multi-generation migration each year', 'Monarch butterflies never leave North America', 'Scientists fully understand how monarchs navigate', 'Monarch butterflies live only in Mexico'], 0, 'The passage explains the monarch migration process and the mystery surrounding how they navigate it.'],
+    ['About how far do monarch butterflies travel during migration?', ['Up to 3,000 miles', 'About 100 miles', 'About 500 miles', 'Over 10,000 miles'], 0, 'The text states the journey is "up to 3,000 miles."'],
+    ['Does a single butterfly complete the entire round trip?', ['No, it takes several generations', 'Yes, the same butterfly makes the whole trip', 'No butterflies survive the trip', 'Only male butterflies complete the trip'], 0, 'The passage explicitly states "no single butterfly makes the entire round trip."'],
+    ['What do scientists believe helps monarchs navigate?', ['The sun\'s position and the Earth\'s magnetic field', 'Sound signals from other butterflies', 'Following roads and highways', 'Scent trails left by other insects'], 0, 'The passage says scientists believe "the sun\'s position and the Earth\'s magnetic field both play a role."'],
+    ['Based on the passage, what can you infer about the difficulty of studying monarch navigation?', ['It remains a partial mystery even to scientists', 'Scientists have completely solved this mystery', 'It is an extremely simple topic to study', 'No one has ever studied it'], 0, 'The passage states scientists "still aren\'t sure exactly how" monarchs navigate, implying ongoing uncertainty.'],
+    ['In this passage, the word "cluster" most likely means...', ['to gather closely together in a group', 'to fly separately in different directions', 'to sleep alone', 'to fight with one another'], 0, 'Monarchs "cluster together on fir trees," meaning they gather closely in groups.'],
+    ['What do monarchs do once they arrive in Mexico?', ['They cluster on fir trees to stay warm through winter', 'They immediately fly back north', 'They build nests in the ground', 'They stop migrating permanently'], 0, 'The passage states they "cluster together on fir trees to stay warm through the winter."'],
+    ['Why did the author most likely write this passage?', ['To inform readers about the remarkable monarch migration', 'To persuade readers to protect butterflies', 'To describe how to catch a butterfly', 'To compare monarchs to other insects'], 0, 'This is an informational passage focused on explaining the migration phenomenon.'],
+    ['What happens in spring, according to the passage?', ['The monarchs start their journey north again', 'The monarchs remain in Mexico permanently', 'New monarchs are born in Canada', 'The migration ends completely'], 0, 'The passage ends by noting they begin "the journey north again in spring."'],
+    ['Based on the passage, why might it take several generations to complete the full migration cycle?', ['Individual butterflies likely do not live long enough to complete the whole round trip', 'Butterflies refuse to fly more than once', 'Only some butterflies are allowed to migrate', 'The migration route changes every year'], 0, 'Since no single butterfly makes the whole round trip, it is reasonable to infer their lifespans are shorter than the full migration cycle requires.']
+  ]);
+
+  const b4 = "Diego had loved playing piano since he was six years old, but the thought of performing in front of an audience made his stomach twist into knots. When his teacher signed him up for the spring recital, Diego almost quit lessons altogether. Instead, his teacher suggested he practice performing for smaller audiences first — his family, then a few neighbors. Each small performance made the next one feel less frightening. By the night of the recital, Diego was still nervous, but he walked on stage anyway. Halfway through his piece, he realized he had stopped thinking about the audience and was simply enjoying the music.";
+  const b4q = readingComp(b4, [
+    ['What is the main idea of this passage?', ['Diego gradually overcomes his fear of performing through small steps', 'Diego quits piano lessons permanently', 'Diego\'s teacher forces him to perform against his will', 'Diego dislikes playing piano'], 0, 'The passage follows Diego\'s gradual process of overcoming stage fright.'],
+    ['How old was Diego when he started playing piano?', ['Six', 'Twelve', 'Ten', 'Four'], 0, 'The text states Diego "had loved playing piano since he was six years old."'],
+    ['What strategy did Diego\'s teacher suggest?', ['Practicing for smaller audiences first', 'Quitting piano lessons', 'Skipping the recital entirely', 'Playing a much easier song'], 0, 'The teacher suggested he "practice performing for smaller audiences first."'],
+    ['Who did Diego perform for before the recital?', ['His family, then a few neighbors', 'Only his piano teacher', 'A large crowd at school', 'No one at all'], 0, 'The passage states he practiced for "his family, then a few neighbors."'],
+    ['Based on the passage, how did Diego most likely feel right before walking on stage?', ['Still nervous, but willing to try anyway', 'Completely calm and fearless', 'Angry at his teacher', 'Excited with no worry at all'], 0, 'The text says "Diego was still nervous, but he walked on stage anyway."'],
+    ['In this passage, the phrase "twist into knots" most likely describes...', ['a feeling of nervousness or anxiety', 'a feeling of extreme happiness', 'a feeling of physical hunger', 'a feeling of boredom'], 0, 'His stomach twisting into knots at the thought of performing describes nervous anxiety.'],
+    ['What happened halfway through Diego\'s performance?', ['He stopped thinking about the audience and enjoyed the music', 'He forgot how to play and stopped', 'He left the stage early', 'He asked to restart the song'], 0, 'The passage states "halfway through his piece, he realized he had stopped thinking about the audience."'],
+    ['Why did the author most likely write this passage?', ['To show that facing fears gradually can help build confidence', 'To explain how to play piano', 'To describe a music teacher\'s daily routine', 'To compare piano to other instruments'], 0, 'The passage\'s focus on Diego\'s gradual, successful process of overcoming fear points to this theme.'],
+    ['What almost happened when Diego was first signed up for the recital?', ['He almost quit piano lessons altogether', 'He immediately felt confident', 'He asked to perform two songs instead of one', 'He switched to a different instrument'], 0, 'The text states Diego "almost quit lessons altogether" upon learning about the recital.'],
+    ['If Diego is asked to perform again next year, what would he most likely do based on this passage?', ['Use the same gradual practice strategy to prepare', 'Refuse to perform at all', 'Quit piano lessons immediately', 'Perform without any preparation'], 0, 'Since the gradual practice strategy worked well for him, he would likely rely on it again for future performances.']
+  ]);
+
+  const b5 = "The Johnson family visited Mammoth Cave National Park during their summer vacation. Their guide explained that Mammoth Cave is the longest known cave system in the world, with over 400 miles of passageways mapped so far, and explorers believe there could be many more miles still undiscovered. As they walked deeper into the cave, the temperature stayed a cool 54 degrees year-round, no matter the season outside. The guide pointed out strange rock formations called stalactites, which hang from the ceiling, and stalagmites, which rise from the floor, both formed over thousands of years by slowly dripping water.";
+  const b5q = readingComp(b5, [
+    ['What is the main idea of this passage?', ['A family learns about the remarkable features of Mammoth Cave', 'A family gets lost inside a cave', 'Mammoth Cave was recently discovered', 'The Johnson family dislikes cave exploring'], 0, 'The passage describes what the family learns while touring Mammoth Cave.'],
+    ['How many miles of passageways have been mapped in Mammoth Cave?', ['Over 400 miles', 'About 50 miles', 'About 1,000 miles', 'Exactly 100 miles'], 0, 'The text states there are "over 400 miles of passageways mapped so far."'],
+    ['What is the temperature inside the cave year-round?', ['A cool 54 degrees', 'A hot 90 degrees', 'Freezing, at 20 degrees', 'It changes with the seasons'], 0, 'The passage states the temperature "stayed a cool 54 degrees year-round."'],
+    ['What are rock formations that hang from the ceiling called?', ['Stalactites', 'Stalagmites', 'Boulders', 'Crystals'], 0, 'The passage defines stalactites as those "which hang from the ceiling."'],
+    ['Based on the passage, what can you infer about how long it takes for these rock formations to form?', ['They form very slowly, over a very long time', 'They form within a single day', 'They form instantly when water touches rock', 'They do not actually form from water'], 0, 'The passage states they were "formed over thousands of years by slowly dripping water."'],
+    ['In this passage, the word "passageways" most likely refers to...', ['tunnels or paths inside the cave', 'doors leading outside the cave', 'rooms used for camping', 'a type of rock formation'], 0, 'Passageways in a cave system refer to the connected tunnels/paths one can walk through.'],
+    ['What is the difference between a stalactite and a stalagmite, according to the passage?', ['Stalactites hang from the ceiling, while stalagmites rise from the floor', 'They are the exact same thing', 'Stalactites are found only outside caves', 'Stalagmites are always larger'], 0, 'The passage directly contrasts the two: one hangs from the ceiling, the other rises from the floor.'],
+    ['Why did the author most likely write this passage?', ['To share interesting facts about a real natural landmark', 'To persuade readers to avoid visiting caves', 'To tell a fictional adventure story', 'To explain how to build a cave'], 0, 'This is an informational passage sharing real facts learned during a family\'s cave visit.'],
+    ['According to the guide, is it likely that all of Mammoth Cave has been explored?', ['No, there could be many more miles still undiscovered', 'Yes, every passage has already been mapped', 'The cave has no more passages left to find', 'The cave was completely explored in one day'], 0, 'The passage notes "explorers believe there could be many more miles still undiscovered."'],
+    ['If the Johnson family visited a different cave next year, what might they expect based on this passage?', ['A relatively cool, stable temperature inside, regardless of the season outside', 'A cave that changes temperature dramatically with the seasons', 'No interesting rock formations at all', 'A completely mapped and fully explored cave'], 0, 'Since Mammoth Cave stayed a stable cool temperature year-round, this is a general feature of deep caves that would likely apply elsewhere too.']
+  ]);
+
+  const b6 = "In 1876, Alexander Graham Bell made history when he successfully transmitted the first clear telephone call. His famous first words, spoken to his assistant in another room, were reportedly, \"Mr. Watson, come here, I want to see you.\" At the time, many people doubted the telephone would ever become widely useful, assuming the telegraph was good enough for sending messages. Bell disagreed, believing that hearing a person's actual voice would change how people communicated forever. Within fifty years, telephone lines connected millions of homes across the country, proving that Bell's confidence in his invention was well placed.";
+  const b6q = readingComp(b6, [
+    ['What is the main idea of this passage?', ['Alexander Graham Bell\'s telephone invention eventually proved doubters wrong', 'The telegraph was more useful than the telephone', 'Bell\'s assistant invented the telephone', 'Telephones were an immediate failure'], 0, 'The passage traces Bell\'s invention from initial doubt to eventual widespread success.'],
+    ['In what year did Bell make his famous first telephone call?', ['1876', '1900', '1850', '1920'], 0, 'The passage states this occurred "in 1876."'],
+    ['What were Bell\'s famous first words on the telephone?', ['"Mr. Watson, come here, I want to see you."', '"Hello, can you hear me?"', '"This is a historic moment."', '"The telephone is working perfectly."'], 0, 'The passage directly quotes these as his "famous first words."'],
+    ['Why did some people doubt the telephone would be useful?', ['They assumed the telegraph was good enough already', 'They thought it was too expensive to build', 'They believed it was dangerous to use', 'They preferred writing letters'], 0, 'The passage states people were doubtful, "assuming the telegraph was good enough for sending messages."'],
+    ['Based on the passage, what did Bell believe made the telephone special?', ['Hearing a person\'s actual voice would change communication', 'It was cheaper than the telegraph', 'It worked without electricity', 'It could send messages faster than mail'], 0, 'The passage states Bell believed "hearing a person\'s actual voice would change how people communicated forever."'],
+    ['In this passage, the word "transmitted" most likely means...', ['sent or carried from one place to another', 'destroyed completely', 'kept hidden and secret', 'written down on paper'], 0, 'Transmitting a call means sending/carrying it from one location to another, matching how the telephone works.'],
+    ['What evidence in the passage shows that Bell\'s telephone eventually succeeded?', ['Telephone lines connected millions of homes within fifty years', 'The telegraph completely replaced the telephone', 'No one ever used the telephone after 1876', 'Bell gave up on the invention shortly after'], 0, 'The passage states "within fifty years, telephone lines connected millions of homes across the country."'],
+    ['Why did the author most likely write this passage?', ['To show how an inventor\'s confidence was eventually proven right', 'To explain how to use a telephone', 'To compare Bell to other inventors', 'To criticize people who doubted new inventions'], 0, 'The passage\'s structure — doubt followed by eventual proof of success — centers on this theme.'],
+    ['What happened right after Bell made the first successful call?', ['His words to Watson became a famous historic moment', 'The telephone was immediately banned', 'Bell stopped working on telephones', 'The telegraph was invented in response'], 0, 'His first words are described as historically famous, marking that moment\'s significance.'],
+    ['Based on the passage, how might people today view an inventor whose new idea is initially doubted by others?', ['The idea could still turn out to be highly successful, just like the telephone', 'The doubted idea will always fail', 'New inventions are never doubted by anyone', 'Doubt from others always means the idea is wrong'], 0, 'The passage\'s central lesson — that Bell\'s doubted invention became hugely successful — suggests initial doubt does not predict failure.']
+  ]);
+
+  trackB.subjects.reading.levels.forEach(levelArr=>{
+    levelArr.push(...b1q, ...b2q, ...b3q, ...b4q, ...b5q, ...b6q);
+  });
+})();
+
+(function addReadingComprehensionPassagesC(){
+  const c1 = "Every year, the average American household throws away hundreds of pounds of recyclable material — paper, plastic, glass, and aluminum that could have been repurposed instead of buried in a landfill. Recycling one aluminum can, for example, saves enough energy to power a television for three hours, yet nearly half of all cans in the United States are still thrown away rather than recycled. Critics sometimes argue that recycling programs cost cities too much money to operate. However, studies show that landfills themselves are far more expensive to maintain over time, since they require constant land, monitoring, and environmental cleanup. Communities that invest in strong recycling infrastructure often see those costs balance out within a few years, all while reducing pollution and conserving natural resources for future generations.";
+  const c1q = readingComp(c1, [
+    ['What is the main argument of this passage?', ['Recycling is worth the investment despite its costs', 'Recycling should be banned in most cities', 'Landfills are cheaper than recycling programs', 'Aluminum cans cannot be recycled'], 0, 'The passage argues that recycling\'s benefits and long-term cost savings outweigh critics\' concerns.'],
+    ['How much energy does recycling one aluminum can save, according to the passage?', ['Enough to power a television for three hours', 'Enough to power a house for a week', 'No meaningful amount of energy', 'Enough to charge a phone once'], 0, 'The passage states this "saves enough energy to power a television for three hours."'],
+    ['What argument do critics of recycling programs make?', ['That recycling programs cost cities too much money', 'That recycling is bad for the environment', 'That recycling creates more pollution than landfills', 'That aluminum cannot be reused'], 0, 'The passage states "critics sometimes argue that recycling programs cost cities too much money to operate."'],
+    ['How does the passage respond to that criticism?', ['It argues landfills are actually more expensive to maintain long-term', 'It agrees recycling should be stopped', 'It ignores the criticism entirely', 'It claims cost does not matter at all'], 0, 'The passage counters with "studies show that landfills themselves are far more expensive to maintain over time."'],
+    ['Based on the passage, what can you infer about the author\'s opinion on recycling?', ['The author supports recycling programs', 'The author opposes all recycling efforts', 'The author has no opinion either way', 'The author believes recycling is impossible'], 0, 'The passage\'s structure — presenting and rebutting criticism — reveals a clear supportive stance toward recycling.'],
+    ['In this passage, the word "repurposed" most likely means...', ['used again for a new purpose instead of thrown away', 'destroyed completely', 'sold for a high price', 'buried permanently underground'], 0, 'Materials that are "repurposed instead of buried" are being reused for a new purpose rather than discarded.'],
+    ['What evidence does the passage use to counter the cost criticism?', ['That landfills require constant land, monitoring, and environmental cleanup', 'That recycling has no costs at all', 'That most cities have already stopped recycling', 'That aluminum is the only material worth recycling'], 0, 'The passage specifically cites landfill costs like "constant land, monitoring, and environmental cleanup" as the counter-evidence.'],
+    ['Why did the author most likely write this passage?', ['To persuade readers that recycling is a worthwhile investment', 'To provide neutral facts with no particular viewpoint', 'To argue that landfills are better than recycling', 'To explain how aluminum cans are manufactured'], 0, 'The passage\'s persuasive structure — addressing and rebutting a counterargument — shows its purpose is to convince readers.'],
+    ['According to the passage, what percentage of aluminum cans in the U.S. are recycled?', ['About half, since "nearly half" are still thrown away', 'Almost all of them', 'None of them', 'Exactly one quarter'], 0, 'The passage states "nearly half of all cans in the United States are still thrown away," implying roughly half are recycled.'],
+    ['If a city is deciding whether to invest in a stronger recycling program, what would this passage suggest they consider?', ['The long-term cost savings compared to landfill maintenance', 'Only the immediate short-term costs', 'Whether other cities have recycling programs', 'The opinions of landfill companies only'], 0, 'The passage\'s central argument is that long-term costs favor recycling over landfill maintenance, which is the key consideration it recommends.']
+  ]);
+
+  const c2 = "The pyramids of Giza, built more than 4,500 years ago, remain one of the most astonishing engineering achievements in human history. The Great Pyramid, built for the pharaoh Khufu, originally stood 481 feet tall and was constructed from over two million limestone blocks, some weighing as much as nine tons. Archaeologists still debate exactly how ancient Egyptians moved and lifted such massive stones without modern machinery, though leading theories involve wooden sledges, ramps, and thousands of coordinated laborers. Contrary to popular myths, most historians now agree the pyramids were built by paid workers rather than enslaved people, based on evidence found in nearby worker villages, including bakeries, medical facilities, and burial sites honoring the builders.";
+  const c2q = readingComp(c2, [
+    ['What is the main idea of this passage?', ['The pyramids of Giza represent a remarkable and still partly mysterious engineering achievement', 'The pyramids were built entirely by machines', 'Historians agree on every detail of pyramid construction', 'The pyramids were built within a single year'], 0, 'The passage focuses on the pyramids\' impressive construction and the ongoing mysteries surrounding it.'],
+    ['How tall did the Great Pyramid originally stand?', ['481 feet', '100 feet', '1,000 feet', '250 feet'], 0, 'The passage states it "originally stood 481 feet tall."'],
+    ['About how many limestone blocks were used to build the Great Pyramid?', ['Over two million', 'About one thousand', 'About ten thousand', 'Exactly one million'], 0, 'The text states it was "constructed from over two million limestone blocks."'],
+    ['What common myth does this passage correct?', ['That the pyramids were built by enslaved people', 'That the pyramids are made of limestone', 'That the pyramids were built for a pharaoh', 'That the pyramids are over 4,000 years old'], 0, 'The passage states most historians "now agree the pyramids were built by paid workers rather than enslaved people," correcting a popular myth.'],
+    ['Based on the passage, what evidence supports the idea that pyramid builders were paid workers?', ['Worker villages with bakeries, medical facilities, and honorary burial sites', 'Ancient written contracts found near the pyramids', 'Statues depicting the workers as wealthy nobles', 'No evidence is mentioned in the passage'], 0, 'The passage cites "evidence found in nearby worker villages, including bakeries, medical facilities, and burial sites honoring the builders."'],
+    ['In this passage, the word "astonishing" most likely means...', ['extremely impressive and surprising', 'completely ordinary', 'disappointing', 'poorly constructed'], 0, 'Calling the pyramids "astonishing" reflects how impressive and surprising this engineering feat is.'],
+    ['What do leading theories suggest about how the stones were moved?', ['Wooden sledges, ramps, and thousands of coordinated laborers', 'Advanced machinery similar to modern cranes', 'Trained animals pulling carts', 'Magic or supernatural forces, according to the passage'], 0, 'The passage lists these as the "leading theories" for how the massive stones were transported.'],
+    ['Why did the author most likely include the detail about worker villages?', ['To provide evidence supporting the paid-worker theory over the enslaved-labor myth', 'To describe where pharaohs lived', 'To explain how limestone is quarried', 'To argue that the pyramids should be rebuilt'], 0, 'This detail directly supports the historical correction made earlier in the passage.'],
+    ['Do archaeologists fully agree on how the stones were lifted and moved?', ['No, they still debate the exact methods', 'Yes, there is complete agreement', 'No one has ever studied this question', 'The passage does not address this at all'], 0, 'The passage states "archaeologists still debate exactly how ancient Egyptians moved and lifted such massive stones."'],
+    ['Based on this passage, what might a historian do if new evidence about pyramid construction were discovered?', ['Consider revising current theories based on the new evidence', 'Ignore the new evidence completely', 'Refuse to discuss the pyramids further', 'Assume the new evidence must be false'], 0, 'Since the passage shows historians already revised the enslaved-labor myth based on evidence, it\'s reasonable to infer they would continue doing so with new findings.']
+  ]);
+
+  const c3 = "Elena had trained for eight months to prepare for her first major mountain climb, but nothing could have fully prepared her for the exhaustion she felt at 12,000 feet. Her lungs burned with every breath in the thin air, and her legs felt like they belonged to someone else. Her climbing partner, Marcus, noticed her slowing pace and suggested they turn back before the weather worsened. Elena hesitated, torn between her body's protests and her determination to reach the summit she had dreamed about for years. She took a long look at the darkening clouds gathering to the west, then made her decision: they would descend now and attempt the summit again next season, when conditions were safer. It wasn't the ending she had imagined, but it felt like the right one.";
+  const c3q = readingComp(c3, [
+    ['What is the main idea of this passage?', ['Elena chooses safety over her personal goal when conditions turn dangerous', 'Elena successfully reaches the summit', 'Marcus abandons Elena on the mountain', 'Elena regrets ever attempting the climb'], 0, 'The passage centers on Elena\'s difficult but wise decision to turn back for safety.'],
+    ['How long had Elena trained for this climb?', ['Eight months', 'One year', 'Two weeks', 'Three months'], 0, 'The passage states she "had trained for eight months."'],
+    ['At what altitude does the passage describe Elena\'s exhaustion?', ['12,000 feet', '5,000 feet', '20,000 feet', '1,000 feet'], 0, 'The text specifies "the exhaustion she felt at 12,000 feet."'],
+    ['What did Marcus suggest they do?', ['Turn back before the weather worsened', 'Continue climbing faster', 'Set up camp immediately', 'Split up and climb separately'], 0, 'The passage states Marcus "suggested they turn back before the weather worsened."'],
+    ['Based on the passage, what internal conflict was Elena experiencing?', ['Her body\'s exhaustion versus her determination to reach the summit', 'Her fear of Marcus versus her desire to climb alone', 'Her dislike of mountains versus her love of exercise', 'Her wish to quit climbing forever versus her love of the sport'], 0, 'The passage describes her as "torn between her body\'s protests and her determination to reach the summit."'],
+    ['In this passage, the phrase "her body\'s protests" most likely refers to...', ['the physical signs of exhaustion and strain she was feeling', 'an argument she had with Marcus', 'a formal complaint she filed', 'her excitement about the climb'], 0, 'This phrase describes her physical exhaustion (burning lungs, weak legs) as her body "protesting" the strain.'],
+    ['What did Elena decide to do after looking at the darkening clouds?', ['Descend now and attempt the summit again next season', 'Push forward despite the danger', 'Ask Marcus to continue without her', 'Set up an emergency camp on the mountain'], 0, 'The passage states she decided "they would descend now and attempt the summit again next season."'],
+    ['Why did the author most likely end the passage with "it felt like the right one"?', ['To show Elena found peace with a difficult but wise decision', 'To suggest Elena regretted her choice deeply', 'To indicate the climb was easy after all', 'To hint that Marcus made the decision, not Elena'], 0, 'This closing line emphasizes that despite disappointment, Elena felt her choice was ultimately correct.'],
+    ['What happened right before Elena made her final decision?', ['She looked at the darkening clouds gathering to the west', 'She reached the summit', 'Marcus left without her', 'She collapsed from exhaustion'], 0, 'The passage states she "took a long look at the darkening clouds" immediately before deciding.'],
+    ['Based on this passage, what might Elena do differently when she attempts the climb again next season?', ['Prepare with awareness of how weather and exhaustion can affect a climb', 'Avoid climbing with a partner next time', 'Attempt the climb in even worse weather', 'Give up on mountain climbing entirely'], 0, 'Having learned from this experience about weather risk and physical limits, she would likely apply that awareness to her next attempt.']
+  ]);
+
+  const c4 = "As concerns about climate change grow, many countries are shifting toward renewable energy sources like solar, wind, and hydroelectric power. Unlike fossil fuels, which release greenhouse gases when burned, renewable sources generate electricity without directly polluting the atmosphere. Solar panel costs have dropped by more than 80 percent over the past decade, making solar energy increasingly competitive with traditional power plants. Skeptics point out that solar and wind power depend on weather conditions, creating challenges for consistent energy supply. Engineers are addressing this limitation by developing better battery storage systems, which can store excess energy generated on sunny or windy days for use when conditions are less favorable. While the transition to renewable energy involves real technical challenges, most energy experts agree it represents a necessary long-term shift.";
+  const c4q = readingComp(c4, [
+    ['What is the main argument of this passage?', ['Renewable energy is a necessary shift despite real technical challenges', 'Renewable energy has no drawbacks whatsoever', 'Fossil fuels are better than renewable energy', 'Solar power is currently impossible to use'], 0, 'The passage acknowledges challenges but concludes renewable energy represents "a necessary long-term shift."'],
+    ['How much have solar panel costs dropped over the past decade?', ['More than 80 percent', 'About 10 percent', 'About 25 percent', 'They have not changed'], 0, 'The passage states costs "have dropped by more than 80 percent over the past decade."'],
+    ['What criticism do skeptics raise about solar and wind power?', ['That they depend on weather conditions, creating supply challenges', 'That they are too expensive to ever be useful', 'That they produce more pollution than fossil fuels', 'That no countries are willing to use them'], 0, 'The passage states skeptics note these sources "depend on weather conditions, creating challenges for consistent energy supply."'],
+    ['How are engineers addressing the weather-dependency limitation?', ['By developing better battery storage systems', 'By building more fossil fuel plants instead', 'By ignoring the problem entirely', 'By reducing how much renewable energy is used'], 0, 'The passage states engineers are "developing better battery storage systems" to store excess energy for later use.'],
+    ['Based on the passage, what can you infer about the relationship between fossil fuels and greenhouse gases?', ['Burning fossil fuels releases greenhouse gases, unlike renewable sources', 'Fossil fuels produce no emissions at all', 'Renewable sources produce more greenhouse gases than fossil fuels', 'There is no connection between the two'], 0, 'The passage explicitly contrasts fossil fuels, "which release greenhouse gases when burned," with cleaner renewable sources.'],
+    ['In this passage, the word "competitive" most likely means...', ['able to compete effectively in price or performance', 'aggressive and hostile', 'extremely expensive', 'completely unavailable'], 0, 'Solar energy becoming "competitive with traditional power plants" means it can now compete effectively on cost/performance.'],
+    ['What solution does the passage offer for inconsistent renewable energy supply?', ['Battery storage systems that save excess energy for later use', 'Simply using less electricity overall', 'Relying only on fossil fuels during bad weather', 'Building renewable energy plants only in sunny locations'], 0, 'Battery storage is presented as the specific engineering solution to the weather-dependency challenge.'],
+    ['Why did the author most likely write this passage?', ['To present a balanced case for the shift toward renewable energy', 'To argue that renewable energy should never be used', 'To describe how solar panels are physically manufactured', 'To compare wind power to hydroelectric power in detail'], 0, 'The passage presents both benefits and challenges, ultimately building a balanced but persuasive case.'],
+    ['Do most energy experts agree with the shift to renewable energy, according to the passage?', ['Yes, most agree it represents a necessary long-term shift', 'No, most experts oppose the shift entirely', 'The passage says experts have no opinion', 'Only a small minority support renewable energy'], 0, 'The passage explicitly states "most energy experts agree it represents a necessary long-term shift."'],
+    ['Based on this passage, what might happen to renewable energy adoption if battery storage technology continues to improve?', ['The weather-dependency challenge would become less of an obstacle, likely increasing adoption', 'Renewable energy would become completely unnecessary', 'Fossil fuel use would immediately end worldwide', 'Solar and wind power would stop working altogether'], 0, 'Since battery storage directly addresses the main limitation discussed, continued improvement would likely reduce that obstacle and support wider adoption.']
+  ]);
+
+  const c5 = "On December 17, 1903, on a windswept beach in Kitty Hawk, North Carolina, Orville and Wilbur Wright achieved what many scientists of their era believed was impossible: powered, controlled human flight. Their first flight lasted only twelve seconds and covered just 120 feet, shorter than the wingspan of a modern passenger jet. Few witnesses were present, and most newspapers at the time barely mentioned the event, skeptical that two bicycle mechanics from Ohio had truly solved the puzzle of flight. The brothers, however, understood the significance of what they had accomplished. Over the following years, they continued refining their designs, eventually developing aircraft that could fly for over half an hour, silencing their doubters and launching the age of aviation.";
+  const c5q = readingComp(c5, [
+    ['What is the main idea of this passage?', ['The Wright brothers achieved a historic first flight that was initially doubted but ultimately proved transformative', 'The Wright brothers immediately became world-famous after their first flight', 'Newspapers widely celebrated the Wright brothers\' achievement right away', 'The Wright brothers gave up on flight after their first attempt'], 0, 'The passage traces the doubted first flight through to its eventual widespread significance.'],
+    ['How long did the Wright brothers\' first flight last?', ['Twelve seconds', 'Thirty minutes', 'Five minutes', 'One hour'], 0, 'The passage states "their first flight lasted only twelve seconds."'],
+    ['Where did the first flight take place?', ['Kitty Hawk, North Carolina', 'Dayton, Ohio', 'A major U.S. airport', 'A scientific laboratory'], 0, 'The passage specifies "a windswept beach in Kitty Hawk, North Carolina."'],
+    ['How did most newspapers initially react to the achievement?', ['They barely mentioned it, being skeptical', 'They celebrated it as major front-page news', 'They interviewed the brothers extensively', 'They immediately declared it a hoax'], 0, 'The passage states "most newspapers at the time barely mentioned the event, skeptical" of the claim.'],
+    ['Based on the passage, why were people skeptical of the Wright brothers\' claim?', ['They were seen as just bicycle mechanics, not scientists, attempting something many thought impossible', 'The brothers refused to show anyone their aircraft', 'No flight had ever been attempted before', 'The brothers had a history of making false claims'], 0, 'The passage notes doubt centered on "two bicycle mechanics from Ohio" solving a problem many scientists thought impossible.'],
+    ['In this passage, the word "significance" most likely means...', ['importance or meaningfulness', 'physical size or weight', 'financial cost', 'geographic location'], 0, 'Understanding the "significance" of their accomplishment means understanding its importance.'],
+    ['What did the Wright brothers do after their first short flight?', ['They continued refining their designs over the following years', 'They abandoned the project entirely', 'They sold their design to another inventor', 'They never attempted to fly again'], 0, 'The passage states "over the following years, they continued refining their designs."'],
+    ['Why did the author most likely include the comparison to a modern passenger jet\'s wingspan?', ['To help readers understand just how short the first flight really was', 'To argue that modern jets are less impressive', 'To explain how passenger jets are built', 'To criticize the Wright brothers\' design'], 0, 'This comparison provides a relatable scale to emphasize how modest that historic first flight actually was.'],
+    ['What eventually happened to the doubts about the Wright brothers\' achievement?', ['Their improved aircraft eventually silenced the doubters', 'The doubts were never resolved', 'The brothers admitted their claim was false', 'Another inventor proved them wrong'], 0, 'The passage states their improved aircraft, flying "for over half an hour," ended up "silencing their doubters."'],
+    ['Based on this passage, what lesson might a young inventor take from the Wright brothers\' story?', ['Persisting through doubt and continuing to improve an idea can lead to eventual recognition', 'Public doubt always means an idea is not worth pursuing', 'Only trained scientists can achieve major breakthroughs', 'One failed early attempt means an idea should be abandoned'], 0, 'The Wright brothers\' persistence despite initial doubt and their eventual success supports this lesson about perseverance.']
+  ]);
+
+  const c6 = "Social media platforms have become a central part of many teenagers' daily lives, offering ways to connect with friends, share creativity, and access information instantly. However, a growing body of research suggests this constant connectivity comes with real costs. Studies have linked heavy social media use to increased rates of anxiety and disrupted sleep among teens, partly because notifications and endless scrolling make it difficult to mentally disconnect. Some researchers argue that comparing one's own life to the carefully curated posts of others can also harm self-esteem. Rather than calling for teens to abandon social media entirely, many experts recommend setting specific time limits, turning off notifications during certain hours, and being mindful of how a platform makes you feel after using it. The goal, they suggest, isn't elimination but balance.";
+  const c6q = readingComp(c6, [
+    ['What is the main argument of this passage?', ['Social media has real benefits and costs, so balance rather than elimination is the recommended approach', 'Teenagers should stop using social media entirely', 'Social media has no negative effects on teens', 'Research shows social media only benefits teenagers'], 0, 'The passage presents both benefits and costs before concluding "the goal...isn\'t elimination but balance."'],
+    ['What benefits of social media does the passage mention?', ['Connecting with friends, sharing creativity, and accessing information instantly', 'Improving sleep quality', 'Reducing anxiety completely', 'Eliminating the need for in-person friendships'], 0, 'The passage opens by listing these as ways social media benefits teens.'],
+    ['What have studies linked heavy social media use to?', ['Increased anxiety and disrupted sleep', 'Improved academic performance', 'Better physical health', 'Stronger family relationships'], 0, 'The passage states studies "have linked heavy social media use to increased rates of anxiety and disrupted sleep."'],
+    ['According to the passage, why might comparing oneself to others\' posts harm self-esteem?', ['Because those posts are carefully curated, not a full picture of someone\'s life', 'Because most posts are completely fake', 'Because social media companies force these comparisons', 'The passage does not explain a reason'], 0, 'The passage specifically notes the issue is comparing to "the carefully curated posts of others," which don\'t reflect full reality.'],
+    ['Based on the passage, what can you infer about why notifications might be harmful?', ['They make it difficult to mentally disconnect from the platform', 'They always contain false information', 'They are required by law', 'They have no real effect on users'], 0, 'The passage directly connects notifications and scrolling to difficulty "mentally disconnecting," which can affect sleep and anxiety.'],
+    ['In this passage, the word "curated" most likely means...', ['carefully selected and presented, often to look better than reality', 'randomly generated with no thought', 'completely false and invented', 'automatically created by a computer'], 0, 'A "curated" post is one that is carefully selected/arranged, often to present an idealized version of life.'],
+    ['What solution do experts recommend, according to the passage?', ['Setting time limits and turning off notifications during certain hours', 'Deleting all social media accounts', 'Using social media as much as possible', 'Only using social media before bed'], 0, 'The passage lists these specific recommendations from experts.'],
+    ['Why did the author most likely write this passage?', ['To present a balanced view of social media\'s effects and offer practical guidance', 'To convince readers that social media is entirely harmless', 'To argue that all technology should be banned for teens', 'To promote a specific social media platform'], 0, 'The passage\'s balanced structure — benefits, costs, and practical recommendations — reflects this even-handed purpose.'],
+    ['Does the passage argue that teens should quit social media completely?', ['No, it recommends balance rather than elimination', 'Yes, it strongly argues for quitting entirely', 'The passage takes no position at all', 'It suggests only adults should use social media'], 0, 'The passage explicitly states "the goal...isn\'t elimination but balance."'],
+    ['Based on this passage, what might a teenager do to apply its advice in daily life?', ['Set specific limits on daily social media use and notice how it affects their mood', 'Check social media as often as possible throughout the day', 'Ignore all research about social media effects', 'Avoid ever comparing their posts to others without changing anything else'], 0, 'This directly reflects the practical recommendations the passage lists: time limits and mindfulness about how the platform affects you.']
+  ]);
+
+  trackC.subjects.reading.levels.forEach(levelArr=>{
+    levelArr.push(...c1q, ...c2q, ...c3q, ...c4q, ...c5q, ...c6q);
+  });
+})();
+
+(function addReadingComprehensionPassagesAdult(){
+  const ad1 = "Modern research on workplace productivity has increasingly challenged the assumption that longer hours automatically translate to greater output. A widely cited study conducted in Sweden found that reducing the workday from eight hours to six, while keeping pay the same, led to measurable increases in employee focus and job satisfaction, along with modest reductions in reported stress. Critics of shortened workweeks argue that fewer hours simply shift the same workload into a more compressed and stressful window, potentially undermining any wellbeing benefits. Proponents counter that most knowledge workers are only genuinely productive for a fraction of a standard workday, with the remaining hours consumed by distractions, meetings, and diminishing mental energy. Rather than treating hours worked as an end in itself, some organizations have begun measuring output and outcomes directly, restructuring schedules around when employees are naturally most effective rather than a fixed, traditional block of time.";
+  const ad1q = readingComp(ad1, [
+    ['What is the central argument of this passage?', ['The relationship between hours worked and productivity is more complicated than commonly assumed', 'Longer workdays always produce better results', 'The six-hour workday has been universally adopted', 'Productivity research has reached no useful conclusions'], 0, 'The passage challenges the assumption that longer hours mean greater output, presenting evidence on both sides.'],
+    ['What did the Swedish study find when the workday was reduced to six hours?', ['Increases in focus and job satisfaction, with modest stress reduction', 'A dramatic drop in overall productivity', 'No measurable change of any kind', 'Employee pay had to be reduced'], 0, 'The passage states this "led to measurable increases in employee focus and job satisfaction, along with modest reductions in reported stress."'],
+    ['What concern do critics raise about shortened workweeks?', ['That the same workload gets compressed into a more stressful window', 'That employees would be paid too much', 'That six-hour days are illegal', 'That no research has ever been conducted on this topic'], 0, 'Critics argue that "fewer hours simply shift the same workload into a more compressed and stressful window."'],
+    ['According to proponents mentioned in the passage, why might a full eight-hour day not be fully productive?', ['Much of it is consumed by distractions, meetings, and diminishing mental energy', 'Workers are legally required to take frequent breaks', 'Eight-hour days do not actually exist in most workplaces', 'Employees are usually paid hourly regardless of output'], 0, 'The passage states productivity is often limited "with the remaining hours consumed by distractions, meetings, and diminishing mental energy."'],
+    ['In this passage, the word "proponents" most likely refers to...', ['people who support or advocate for an idea', 'people who strongly oppose an idea', 'government officials', 'workers who have quit their jobs'], 0, 'Proponents of shortened workweeks are those who support/advocate for that idea, contrasted with the critics mentioned earlier.'],
+    ['What alternative approach does the passage describe some organizations adopting?', ['Measuring output and outcomes directly rather than hours worked', 'Eliminating all scheduled work hours entirely', 'Increasing the standard workday to ten hours', 'Refusing to track productivity at all'], 0, 'The passage describes organizations "measuring output and outcomes directly, restructuring schedules around when employees are naturally most effective."'],
+    ['Why did the author most likely write this passage?', ['To present a balanced, evidence-based examination of workday-length debates', 'To argue definitively that six-hour workdays are always superior', 'To promote a specific company\'s scheduling software', 'To criticize all forms of modern employment'], 0, 'The passage weighs both supporting and critical perspectives, reflecting a balanced analytical purpose.'],
+    ['Based on the passage, what might an organization consider before shortening its workday?', ['Whether the change would genuinely reduce workload or simply compress it', 'Only whether employees would prefer more free time', 'Whether other companies have already made this change', 'Nothing, since the passage presents this as a simple decision'], 0, 'The critics\' concern about compressed workload directly highlights a key consideration for any organization weighing this change.']
+  ]);
+
+  const ad2 = "Long before the internet became a household necessity, its origins trace back to a Cold War-era research project called ARPANET, funded by the U.S. Department of Defense in the late 1960s. Unlike the centralized computer networks of the era, ARPANET was designed to be decentralized, so that if one connection point failed, information could still travel through alternate paths. This design, intended partly as a safeguard against catastrophic failure, laid the technical foundation for what would eventually become the modern internet. It took decades of further development, including the creation of standardized communication protocols and the invention of the World Wide Web in 1989, before the technology became accessible to ordinary consumers. What began as a specialized research tool used by a handful of universities eventually transformed nearly every aspect of daily life, from commerce to communication, within a single generation.";
+  const ad2q = readingComp(ad2, [
+    ['What is the main idea of this passage?', ['The internet evolved from a specialized military research project into a transformative everyday technology', 'The internet was invented by consumers in the 1990s', 'ARPANET failed and had no lasting influence', 'The World Wide Web and the internet are the exact same thing'], 0, 'The passage traces the internet\'s origin from ARPANET to its eventual widespread transformative impact.'],
+    ['What organization funded ARPANET?', ['The U.S. Department of Defense', 'A private technology company', 'A group of universities acting alone', 'The United Nations'], 0, 'The passage states it was "funded by the U.S. Department of Defense."'],
+    ['Why was ARPANET designed to be decentralized?', ['So information could still travel through alternate paths if one connection failed', 'To make it easier for consumers to use', 'To reduce the cost of the project', 'Because centralized networks were illegal at the time'], 0, 'The passage explains this design meant "if one connection point failed, information could still travel through alternate paths."'],
+    ['In what year was the World Wide Web invented, according to the passage?', ['1989', '1969', '2000', '1975'], 0, 'The passage states this occurred with "the invention of the World Wide Web in 1989."'],
+    ['Based on the passage, what can you infer about the original users of ARPANET?', ['They were a small, specialized group, likely researchers at a few universities', 'They were millions of everyday consumers', 'They were exclusively military personnel', 'The passage indicates no one ever used ARPANET'], 0, 'The passage describes it as "a specialized research tool used by a handful of universities" in its early days.'],
+    ['In this passage, the word "decentralized" most likely means...', ['not controlled from a single central point', 'extremely expensive to build', 'illegal under U.S. law', 'accessible only to the military'], 0, 'A decentralized network is one not dependent on or controlled from a single central point, matching the described failure-resistant design.'],
+    ['Why did the author most likely include the detail about ARPANET\'s failure-resistant design?', ['To explain a key technical feature that shaped the internet\'s later development', 'To argue that ARPANET was a complete failure', 'To describe unrelated military strategy', 'To criticize modern internet infrastructure'], 0, 'This detail is presented as foundational, explaining a design choice that "laid the technical foundation for what would eventually become the modern internet."'],
+    ['Based on the passage, how long did it take for the internet to transform daily life after ARPANET began?', ['Several decades, transforming daily life within about a generation', 'Less than a single year', 'It has not yet transformed daily life', 'Over two centuries'], 0, 'The passage notes it "took decades of further development" before becoming widely accessible, ultimately transforming life "within a single generation."']
+  ]);
+
+  const ad3 = "Financial advisors frequently emphasize the importance of building an emergency fund before pursuing more ambitious investment strategies. The reasoning is straightforward: without accessible savings to cover unexpected expenses, such as medical bills or emergency home repairs, individuals are often forced to rely on high-interest debt or to prematurely withdraw from long-term investment accounts, potentially incurring penalties or losses. Most advisors recommend setting aside three to six months of essential living expenses in an easily accessible account before allocating additional savings toward retirement accounts or the stock market. Critics of this conventional advice argue that in an era of historically low savings account interest rates, money sitting in an emergency fund effectively loses value to inflation over time. Still, most financial professionals maintain that the psychological and practical security of having accessible funds outweighs the modest opportunity cost, particularly for individuals early in their financial journey.";
+  const ad3q = readingComp(ad3, [
+    ['What is the main argument of this passage?', ['Building an emergency fund is worthwhile despite the opportunity cost of lost investment returns', 'Emergency funds are a waste of money and should be avoided', 'Everyone should invest all their savings in the stock market immediately', 'Financial advisors universally disagree about savings strategy'], 0, 'The passage concludes that "most financial professionals maintain" the security of an emergency fund "outweighs the modest opportunity cost."'],
+    ['How many months of expenses do most advisors recommend saving in an emergency fund?', ['Three to six months', 'One week', 'Ten years', 'One month'], 0, 'The passage states advisors "recommend setting aside three to six months of essential living expenses."'],
+    ['What might happen to someone without an emergency fund who faces an unexpected expense?', ['They might rely on high-interest debt or prematurely withdraw from investments', 'They would automatically receive government assistance', 'Nothing, since unexpected expenses rarely occur', 'Their employer would cover the cost'], 0, 'The passage states such individuals are "often forced to rely on high-interest debt or to prematurely withdraw from long-term investment accounts."'],
+    ['What criticism do some people raise about conventional emergency fund advice?', ['That the money loses value to inflation given low savings account interest rates', 'That emergency funds are illegal in some states', 'That no one actually needs emergency savings', 'That advisors are paid to give this advice regardless of merit'], 0, 'The passage notes critics argue money in an emergency fund "effectively loses value to inflation over time" due to low interest rates.'],
+    ['Based on the passage, what can you infer about "opportunity cost" in this context?', ['The potential investment returns given up by keeping money in low-interest savings instead', 'The literal price paid to open a savings account', 'A cost that only applies to wealthy individuals', 'A benefit rather than a cost'], 0, 'The passage frames this as the tradeoff of "modest opportunity cost" versus security, referring to the investment gains foregone.'],
+    ['In this passage, the word "prematurely" most likely means...', ['happening earlier than planned or ideal', 'happening much later than expected', 'happening exactly on schedule', 'happening without any consequence'], 0, 'Withdrawing "prematurely" from investments means doing so earlier than planned, which the passage notes can incur "penalties or losses."'],
+    ['Why did the author most likely write this passage?', ['To explain the reasoning behind common financial advice while acknowledging valid criticism of it', 'To argue that financial advisors should never be trusted', 'To promote a specific investment product', 'To claim that inflation does not actually affect savings'], 0, 'The passage presents the conventional reasoning, a genuine criticism, and a balanced conclusion — reflecting an explanatory, even-handed purpose.'],
+    ['Based on the passage, who might benefit most from prioritizing an emergency fund early on?', ['Individuals early in their financial journey, as the passage specifically notes', 'Only people who are already wealthy', 'People who have no expenses at all', 'Only retired individuals'], 0, 'The passage specifically states the security benefit applies "particularly for individuals early in their financial journey."']
+  ]);
+
+  const ad4 = "The philosophy of Stoicism, developed in ancient Greece and later embraced widely in Rome, centers on a deceptively simple idea: individuals cannot control external events, but they can control their own responses to those events. Stoic philosophers such as Epictetus and Marcus Aurelius argued that suffering often arises not from circumstances themselves, but from how one chooses to interpret and react to them. This is not, as is sometimes assumed, a philosophy of passive resignation or suppressing emotion entirely. Rather, Stoicism encourages practitioners to distinguish clearly between what lies within their control, such as their own judgments and actions, and what does not, such as other people's opinions or unpredictable outcomes. In recent years, elements of Stoic thought have found renewed popularity in fields like cognitive behavioral therapy, which similarly emphasizes that changing one's interpretation of a situation can meaningfully change one's emotional experience of it.";
+  const ad4q = readingComp(ad4, [
+    ['What is the central idea of Stoic philosophy, according to this passage?', ['People cannot control external events but can control their responses to them', 'People should suppress all emotion at all times', 'External events determine happiness entirely', 'Stoicism teaches complete passivity toward life'], 0, 'The passage opens by stating this is the "deceptively simple idea" at Stoicism\'s core.'],
+    ['Which two Stoic philosophers are named in the passage?', ['Epictetus and Marcus Aurelius', 'Plato and Aristotle', 'Socrates and Seneca', 'Confucius and Buddha'], 0, 'The passage names "Epictetus and Marcus Aurelius" as example Stoic philosophers.'],
+    ['According to Stoic philosophers, where does suffering often originate?', ['From how one interprets and reacts to circumstances, not the circumstances themselves', 'Entirely from external events beyond anyone\'s control', 'From a lack of material wealth', 'From spending too much time thinking'], 0, 'The passage states suffering "often arises not from circumstances themselves, but from how one chooses to interpret and react to them."'],
+    ['What common misconception about Stoicism does the passage correct?', ['That it teaches passive resignation or suppressing emotion entirely', 'That it originated in ancient Rome instead of Greece', 'That no philosophers actually practiced it', 'That it has no connection to modern psychology'], 0, 'The passage explicitly states "this is not, as is sometimes assumed, a philosophy of passive resignation or suppressing emotion entirely."'],
+    ['Based on the passage, what would Stoicism categorize as within a person\'s control?', ['One\'s own judgments and actions', "Other people's opinions", 'Unpredictable outcomes', 'The weather and natural events'], 0, 'The passage lists "their own judgments and actions" as an example of what lies within personal control.'],
+    ['In this passage, the word "practitioners" most likely refers to...', ['people who actively follow or apply Stoic philosophy', 'ancient Roman government officials', 'medical doctors', 'people who oppose Stoicism'], 0, 'Practitioners of Stoicism are those who actively apply its principles, as distinguished from the philosophers who developed it.'],
+    ['What modern field does the passage connect to Stoic philosophy?', ['Cognitive behavioral therapy', 'Modern architecture', 'International law', 'Computer science'], 0, 'The passage states Stoic ideas "have found renewed popularity in fields like cognitive behavioral therapy."'],
+    ['Why did the author most likely include the connection to cognitive behavioral therapy?', ['To show that this ancient philosophy has meaningful, lasting relevance in modern practice', 'To argue that ancient philosophy has no modern value', 'To criticize modern psychology as unoriginal', 'To suggest cognitive behavioral therapy is outdated'], 0, 'This connection demonstrates the philosophy\'s continued relevance, supporting the passage\'s broader point about Stoic ideas.']
+  ]);
+
+  trackAdult.subjects.reading.levels.forEach(levelArr=>{
+    levelArr.push(...ad1q, ...ad2q, ...ad3q, ...ad4q);
+  });
+})();
 
 
 
@@ -2256,26 +2705,6 @@ expandMathContent(350);
   ];
   trackB.subjects.science.levels[1].push(...waterCycleQsB);
 
-  // ---- SOCIAL STUDIES (Track C): schematic U.S. geographic regions map, matching the
-  // verified FCPS Grade 6 standard on locating/comparing North American geographic regions ----
-  const regionsMapDiagram = `<svg viewBox="0 0 340 180" width="320" xmlns="http://www.w3.org/2000/svg">
-    <rect width="340" height="180" rx="10" fill="#F5F2FF"/>
-    <rect x="10" y="20" width="60" height="140" fill="#B14AFF" opacity="0.5"/><text x="40" y="95" text-anchor="middle" font-size="10" font-weight="700" fill="#241c48">Rocky Mtns</text>
-    <rect x="70" y="20" width="70" height="140" fill="#4D8DFF" opacity="0.5"/><text x="105" y="95" text-anchor="middle" font-size="10" font-weight="700" fill="#241c48">Great Plains</text>
-    <rect x="140" y="20" width="70" height="140" fill="#00D9C0" opacity="0.5"/><text x="175" y="95" text-anchor="middle" font-size="9" font-weight="700" fill="#241c48">Interior Lowlands</text>
-    <rect x="210" y="20" width="55" height="140" fill="#FF9F1C" opacity="0.5"/><text x="237" y="95" text-anchor="middle" font-size="9" font-weight="700" fill="#241c48">Appalachian Mtns</text>
-    <rect x="265" y="20" width="65" height="140" fill="#FF4D6D" opacity="0.5"/><text x="297" y="95" text-anchor="middle" font-size="10" font-weight="700" fill="#241c48">Coastal Plain</text>
-    <text x="170" y="14" text-anchor="middle" font-size="11" font-weight="800" fill="#241c48">U.S. Geographic Regions (West → East)</text>
-    <line x1="10" y1="165" x2="330" y2="165" stroke="#8b87a8" stroke-width="1"/>
-    <text x="10" y="176" font-size="8" fill="#8b87a8">West</text><text x="310" y="176" font-size="8" fill="#8b87a8">East</text>
-  </svg>`;
-  const regionsQs = [
-    Q('According to this map, which region is located along the Atlantic coast, farthest east?',['Coastal Plain','Rocky Mountains','Great Plains','Interior Lowlands'],0,'The Coastal Plain (Tidewater) region borders the Atlantic Ocean on the eastern edge of the country.'),
-    Q('According to this map, which region is located farthest west?',['Rocky Mountains','Coastal Plain','Appalachian Mountains','Interior Lowlands'],0,'The Rocky Mountains are shown on the far western side of this map.'),
-    Q('According to this map, which mountain range lies between the Interior Lowlands and the Coastal Plain?',['Appalachian Mountains','Rocky Mountains','Great Plains','Basin and Range'],0,'The Appalachian Mountains are shown positioned between the Interior Lowlands and the Coastal Plain.')
-  ];
-  regionsQs.forEach(q=> q.diagram = regionsMapDiagram);
-  trackC.subjects.history.levels[1].push(...regionsQs);
 })();
 
 /* =========================================================================
@@ -2307,7 +2736,10 @@ function defaultProfile(grade){
     hp:null, hpDate:null, // persistent HP for the day, carries across battles until the date changes
     dayStartSnapshot:null, dayStartSnapshotDate:null, // captured fresh each day so "Reset Today" can fully undo the day's progress
     todayAskedIds:[], todayAskedDate:null, // tracks which questions were shown today, so a daily reset doesn't repeat them
-    relics:{math:null, science:null, history:null, reading:null, writing:null} // null | 'normal' | 'shiny' — first-time boss-defeat rewards
+    relics:{math:null, science:null, history:null, reading:null, writing:null}, // null | 'normal' | 'shiny' — first-time boss-defeat rewards
+    ownedGear:[], // ids of purchased gear items
+    equippedGear:{helmet:null, armor:null, shield:null, gloves:null, boots:null}, // cosmetic-only equipment
+    gearWallet:0 // spendable XP for gear — credited alongside xpTotal but never reduces it (so buying gear never lowers your rank/title)
   };
 }
 
@@ -2531,6 +2963,7 @@ function awardXP(p, amount){
   const remaining = Math.max(0, cap - log.xpEarned);
   const granted = Math.min(amount, remaining);
   p.xpTotal += granted;
+  p.gearWallet = (p.gearWallet||0) + granted;
   log.xpEarned += granted;
   return granted;
 }
@@ -3117,6 +3550,8 @@ function render(){
   if(state.screen==='sparring-pick'){ app.innerHTML = renderSparringPick(); attachSparringPickEvents(); attachHeaderEvents(); return; }
   if(state.screen==='sparring'){ app.innerHTML = renderSparring(); attachSparringEvents(); attachHeaderEvents(); return; }
   if(state.screen==='sparring-result'){ app.innerHTML = renderSparringResult(); attachSparringResultEvents(); attachHeaderEvents(); return; }
+  if(state.screen==='gear-shop'){ app.innerHTML = renderGearShop(); attachGearShopEvents(); attachHeaderEvents(); return; }
+  if(state.screen==='character-sheet'){ app.innerHTML = renderCharacterSheet(); attachCharacterSheetEvents(); attachHeaderEvents(); return; }
   if(state.screen==='review'){ app.innerHTML = renderReview(); attachReviewEvents(); attachHeaderEvents(); return; }
   if(state.screen==='review-result'){ app.innerHTML = renderReviewResult(); attachReviewResultEvents(); attachHeaderEvents(); return; }
   if(state.screen==='practice'){ app.innerHTML = renderPractice(); attachPracticeEvents(); attachHeaderEvents(); return; }
@@ -3362,6 +3797,95 @@ const WEAPONS = [
   {id:'staff', label:'Staff', emoji:'🪄'},
   {id:'dagger', label:'Dagger', emoji:'🗡️'}
 ];
+
+/* =========================================================================
+   GEAR CATALOG — purely cosmetic equipment purchasable with earned XP.
+   Costs deducted from p.gearWallet (a spendable pool credited alongside
+   xpTotal), never from xpTotal itself, so buying gear never lowers a
+   player's displayed rank or leaderboard position. Selling refunds 50% of
+   the ORIGINAL purchase cost, rounded down.
+   ========================================================================= */
+const GEAR_SLOTS = ['helmet','armor','shield','gloves','boots'];
+const GEAR_SLOT_META = {
+  helmet:{label:'Helmet', icon:'🪖'}, armor:{label:'Armor', icon:'🛡️'}, shield:{label:'Shield', icon:'🔰'},
+  gloves:{label:'Gloves', icon:'🧤'}, boots:{label:'Boots', icon:'🥾'}
+};
+const GEAR_CATALOG = [
+  // Helmets
+  {id:'helm-leather', slot:'helmet', name:'Leather Cap', cost:1500, color:'#B8630A', glow:false},
+  {id:'helm-feather', slot:'helmet', name:'Feathered Cap', cost:2500, color:'#FF9F1C', glow:false},
+  {id:'helm-iron', slot:'helmet', name:'Iron Helm', cost:3500, color:'#8B94A8', glow:false},
+  {id:'helm-horned', slot:'helmet', name:'Horned Helm', cost:5500, color:'#B14AFF', glow:false},
+  {id:'helm-crystal', slot:'helmet', name:'Crystal Circlet', cost:9500, color:'#4D8DFF', glow:true},
+  // Armor
+  {id:'armor-cloth', slot:'armor', name:'Cloth Tunic', cost:1500, color:'#8B94A8', glow:false},
+  {id:'armor-leather', slot:'armor', name:'Leather Vest', cost:3000, color:'#B8630A', glow:false},
+  {id:'armor-chain', slot:'armor', name:'Chainmail', cost:5000, color:'#9BA3B5', glow:false},
+  {id:'armor-plate', slot:'armor', name:'Plate Armor', cost:8000, color:'#D8D8E8', glow:false},
+  {id:'armor-dragon', slot:'armor', name:'Dragon Scale Mail', cost:13000, color:'#FF4D6D', glow:true},
+  // Shields
+  {id:'shield-wood', slot:'shield', name:'Wooden Buckler', cost:1500, color:'#8A5A2B', glow:false},
+  {id:'shield-iron', slot:'shield', name:'Iron Round Shield', cost:3500, color:'#8B94A8', glow:false},
+  {id:'shield-kite', slot:'shield', name:'Kite Shield', cost:5500, color:'#00A88F', glow:false},
+  {id:'shield-tower', slot:'shield', name:'Tower Shield', cost:8000, color:'#B8630A', glow:false},
+  {id:'shield-aegis', slot:'shield', name:'Radiant Aegis', cost:11500, color:'#FFD166', glow:true},
+  // Gloves
+  {id:'gloves-cloth', slot:'gloves', name:'Cloth Gloves', cost:1000, color:'#8B94A8', glow:false},
+  {id:'gloves-leather', slot:'gloves', name:'Leather Gauntlets', cost:2500, color:'#B8630A', glow:false},
+  {id:'gloves-iron', slot:'gloves', name:'Iron Gauntlets', cost:4500, color:'#9BA3B5', glow:false},
+  {id:'gloves-spiked', slot:'gloves', name:'Spiked Gauntlets', cost:6500, color:'#FF4D6D', glow:false},
+  {id:'gloves-gold', slot:'gloves', name:'Golden Gauntlets', cost:9500, color:'#FFD166', glow:true},
+  // Boots
+  {id:'boots-sandals', slot:'boots', name:'Simple Sandals', cost:1000, color:'#B8630A', glow:false},
+  {id:'boots-leather', slot:'boots', name:'Leather Boots', cost:2500, color:'#8A5A2B', glow:false},
+  {id:'boots-iron', slot:'boots', name:'Iron Greaves', cost:4500, color:'#8B94A8', glow:false},
+  {id:'boots-winged', slot:'boots', name:'Winged Boots', cost:7500, color:'#4D8DFF', glow:true},
+  {id:'boots-crystal', slot:'boots', name:'Crystal Boots', cost:9500, color:'#B14AFF', glow:true}
+];
+function gearItemById(id){ return GEAR_CATALOG.find(g=>g.id===id); }
+
+function buyGearItem(p, itemId){
+  const item = gearItemById(itemId);
+  if(!item) return {ok:false, reason:'Item not found'};
+  if(p.ownedGear.includes(itemId)) return {ok:false, reason:'Already owned'};
+  if((p.gearWallet||0) < item.cost) return {ok:false, reason:'Not enough XP'};
+  p.gearWallet -= item.cost;
+  p.ownedGear.push(itemId);
+  return {ok:true};
+}
+function sellGearItem(p, itemId){
+  const item = gearItemById(itemId);
+  if(!item) return {ok:false, reason:'Item not found'};
+  if(!p.ownedGear.includes(itemId)) return {ok:false, reason:'Not owned'};
+  const refund = Math.floor(item.cost * 0.5);
+  p.ownedGear = p.ownedGear.filter(id=>id!==itemId);
+  p.gearWallet = (p.gearWallet||0) + refund;
+  if(p.equippedGear[item.slot] === itemId) p.equippedGear[item.slot] = null;
+  return {ok:true, refund};
+}
+function equipGearItem(p, itemId){
+  const item = gearItemById(itemId);
+  if(!item || !p.ownedGear.includes(itemId)) return {ok:false};
+  p.equippedGear[item.slot] = itemId;
+  return {ok:true};
+}
+function unequipGearSlot(p, slot){
+  p.equippedGear[slot] = null;
+}
+
+/* Small, position-tuned SVG icon per gear slot, tinted to the specific
+   item's color. Premium ("glow") items get a soft ring accent so a shiny
+   upgrade is visually obvious even at this small scale. */
+function gearIconSVG(slot, color, glow){
+  const shapes = {
+    helmet: `<path d="M-9,-2 A9,9 0 0 1 9,-2 L9,4 L6,4 L6,-1 A6,6 0 0 0 -6,-1 L-6,4 L-9,4 Z" fill="${color}" stroke="#1c1533" stroke-width="0.6"/>`,
+    shield: `<path d="M0,-8 L6,-5 L6,2 Q6,7 0,9 Q-6,7 -6,2 L-6,-5 Z" fill="${color}" stroke="#1c1533" stroke-width="0.6"/>`,
+    gloves: `<circle r="4.5" fill="${color}" stroke="#1c1533" stroke-width="0.6"/><rect x="-1.8" y="-7" width="3.6" height="4.5" rx="1.3" fill="${color}" stroke="#1c1533" stroke-width="0.6"/>`,
+    boots: `<path d="M-4,-7 L3.5,-7 L3.5,2 L6.5,6 L-5,6 L-5,2 Z" fill="${color}" stroke="#1c1533" stroke-width="0.6"/>`
+  };
+  const glowRing = glow ? `<circle r="11" fill="none" stroke="${color}" stroke-width="1" opacity="0.65" class="node-ring-pulse"/>` : '';
+  return `${glowRing}${shapes[slot]||''}`;
+}
 
 function renderSetupName(){
   const track = getActiveTrack();
@@ -3732,7 +4256,10 @@ function relicHealAmount(p, levelIdx, shiny){
   return Math.round(RELIC_BASE_HEAL * relicPowerMultiplier(p, levelIdx) * (shiny ? 1.5 : 1));
 }
 function relicDamageAmount(p, correctDamageBase, levelIdx, shiny){
-  return Math.round(correctDamageBase * RELIC_BASE_DAMAGE_HITS * relicPowerMultiplier(p, levelIdx) * (shiny ? 1.5 : 1));
+  const raw = correctDamageBase * RELIC_BASE_DAMAGE_HITS * relicPowerMultiplier(p, levelIdx) * (shiny ? 1.5 : 1);
+  // Hard cap: relics should meaningfully help, not one-shot a boss. Capped
+  // well under 100 HP regardless of how the day/tier multipliers scale up.
+  return Math.min(90, Math.round(raw));
 }
 /* Consumes the relic (returns its shiny-ness so the caller can compute the
    effect before it's gone), or null if that slot was already empty. */
@@ -3777,6 +4304,8 @@ function renderDashboard(){
     <span class="back-link" id="switchLink">↺ Switch explorer</span>
     <span class="back-link" id="resetTodayBtn" style="margin-left:16px;">🔄 Reset Today</span>
     <span class="back-link" id="editCharacterBtn" style="margin-left:16px;">✏️ Edit Character</span>
+    <span class="back-link" id="gearShopLink" style="margin-left:16px;">🎽 Gear Shop</span>
+    <span class="back-link" id="characterSheetLink" style="margin-left:16px;">📜 Character Sheet</span>
     <h2 class="display" style="margin-top:0;">${p.avatarEmoji?p.avatarEmoji+' ':''}${p.name}'s Realm Map</h2>
     <p style="color:#5a5248;">${track.tagline} — currently ranked <strong>${title}</strong></p>
     <p style="color:#5a5248;font-size:13px;margin-top:-6px;">Tap a realm on the map to battle its boss — in any order you like. Beat all 5, then take on the Final Boss!</p>
@@ -3907,6 +4436,18 @@ function attachDashboardEvents(){
     state.tempAvatar = { emoji: p.avatarEmoji, color: p.avatarColor, bodyShape: p.bodyShape, weapon: p.weapon };
     state.editingExistingPlayer = true;
     state.screen = 'setup-name';
+    render();
+  });
+  const gearShopLink = document.getElementById('gearShopLink');
+  if(gearShopLink) gearShopLink.addEventListener('click', ()=>{
+    Sound.unlock(); Sound.click();
+    state.screen = 'gear-shop';
+    render();
+  });
+  const characterSheetLink = document.getElementById('characterSheetLink');
+  if(characterSheetLink) characterSheetLink.addEventListener('click', ()=>{
+    Sound.unlock(); Sound.click();
+    state.screen = 'character-sheet';
     render();
   });
   const collectionCard = document.getElementById('collectionPreviewCard');
@@ -4257,7 +4798,7 @@ const CHART_THEMES_HISTORY = [
 ];
 
 function genChartQuestion(chartType, theme){
-  const numCats = chartType==='pie' ? (3+Math.floor(Math.random()*2)) : (3+Math.floor(Math.random()*3));
+  const numCats = chartType==='pie' ? (4+Math.floor(Math.random()*2)) : (4+Math.floor(Math.random()*3));
   const cats = shuffle(theme.categories).slice(0, Math.min(numCats, theme.categories.length));
   let data, diagramSpec;
   const chartLabel = chartType==='pictograph' ? 'pictograph' : chartType==='line' ? 'line graph' : chartType==='pie' ? 'circle graph' : 'bar graph';
@@ -4295,54 +4836,78 @@ function genChartQuestion(chartType, theme){
   const total = data.reduce((s,d)=>s+d.value,0);
   const catList = cats.join(', ');
   const unitTxt = theme.unit ? ' '+theme.unit : '';
+  const meanExact = total/data.length;
+  const meanRounded = Math.round(meanExact*10)/10;
 
   const qTypePool = chartType==='pie'
-    ? ['pct-specific','pct-combo','pct-highest']
-    : ['specific-value','highest','lowest','difference','total'];
+    ? ['pct-combo','pct-remaining','pct-rank','pct-highest']
+    : ['range','mean','above-mean','rank','difference','total'];
   const qType = choose(qTypePool);
 
   let stem, correctAns, distractors, explain;
-  if(qType==='specific-value'){
-    const target = choose(data);
-    stem = `The "${theme.title}" ${chartLabel} compares ${catList}. What is the value shown for "${target.label}"?`;
-    correctAns = String(target.value);
-    distractors = [String(target.value+randInt(2,8)), String(Math.max(0,target.value-randInt(2,8))), String(target.value+randInt(9,15))];
-    explain = `"${target.label}" shows a value of ${target.value}${unitTxt}.`;
-  } else if(qType==='highest'){
+  if(qType==='highest'){
     stem = `Looking at the "${theme.title}" ${chartLabel} (comparing ${catList}), which category has the HIGHEST value?`;
     correctAns = highest.label;
     distractors = data.filter(d=>d.label!==highest.label).map(d=>d.label);
     explain = `"${highest.label}" has the highest value (${highest.value}${unitTxt}).`;
-  } else if(qType==='lowest'){
-    stem = `Looking at the "${theme.title}" ${chartLabel} (comparing ${catList}), which category has the LOWEST value?`;
-    correctAns = lowest.label;
-    distractors = data.filter(d=>d.label!==lowest.label).map(d=>d.label);
-    explain = `"${lowest.label}" has the lowest value (${lowest.value}${unitTxt}).`;
+  } else if(qType==='rank'){
+    const second = sorted[1];
+    stem = `Looking at the "${theme.title}" ${chartLabel} (comparing ${catList}), which category has the SECOND-HIGHEST value?`;
+    correctAns = second.label;
+    distractors = data.filter(d=>d.label!==second.label).map(d=>d.label);
+    explain = `Ranked highest to lowest: ${sorted.map(d=>d.label+' ('+d.value+')').join(', ')} — "${second.label}" is second.`;
   } else if(qType==='difference'){
     const [a,b] = shuffle(data).slice(0,2);
     const diff = Math.abs(a.value-b.value);
     stem = `On the "${theme.title}" ${chartLabel}, what is the difference between "${a.label}" and "${b.label}"?`;
     correctAns = String(diff);
-    distractors = [String(diff+randInt(2,6)), String(Math.max(0,diff-randInt(2,6)) || diff+1), String(a.value+b.value)];
+    distractors = [String(a.value+b.value), String(diff+randInt(2,6)), String(Math.max(0,diff-randInt(2,6)) || diff+1)];
     explain = `|${a.value} − ${b.value}| = ${diff}${unitTxt}.`;
+  } else if(qType==='range'){
+    const range = highest.value - lowest.value;
+    stem = `On the "${theme.title}" ${chartLabel} (${catList}), what is the RANGE (highest value minus lowest value) of the data shown?`;
+    correctAns = String(range);
+    distractors = [String(highest.value), String(total-range), String(range+randInt(2,6))];
+    explain = `Highest ("${highest.label}", ${highest.value}) minus lowest ("${lowest.label}", ${lowest.value}) = ${range}${unitTxt}.`;
   } else if(qType==='total'){
     stem = `On the "${theme.title}" ${chartLabel} (${catList}), what is the total of all categories combined?`;
     correctAns = String(total);
-    distractors = [String(total+randInt(3,10)), String(Math.max(0,total-randInt(3,10))), String(highest.value*data.length)];
+    distractors = [String(total - lowest.value), String(total+randInt(3,10)), String(highest.value*data.length)];
     explain = `Adding all values together: ${data.map(d=>d.value).join(' + ')} = ${total}${unitTxt}.`;
-  } else if(qType==='pct-specific'){
-    const target = choose(data);
-    stem = `The "${theme.title}" circle graph shows ${catList}. What percentage is "${target.label}"?`;
-    correctAns = target.value+'%';
-    distractors = data.filter(d=>d.label!==target.label).map(d=>d.value+'%');
-    explain = `"${target.label}" is labeled ${target.value}% on the circle graph.`;
+  } else if(qType==='mean'){
+    stem = `On the "${theme.title}" ${chartLabel} (${catList}), what is the MEAN (average) of the values shown?`;
+    correctAns = String(meanRounded);
+    const meanMinusOne = Math.round((total/(data.length-1))*10)/10;
+    distractors = [String(total), String(meanMinusOne), String(Math.round((meanExact+randInt(2,5))*10)/10)];
+    explain = `Mean = total ÷ number of categories = ${total} ÷ ${data.length} = ${meanRounded}${unitTxt}. (A common mistake is forgetting to divide, or dividing by the wrong count.)`;
+  } else if(qType==='above-mean'){
+    const aboveCount = data.filter(d=>d.value>meanExact).length;
+    stem = `On the "${theme.title}" ${chartLabel} (${catList}), how many categories have a value ABOVE the mean (average)?`;
+    correctAns = String(aboveCount);
+    const alt1 = Math.max(0, Math.min(data.length, aboveCount+1));
+    const alt2 = Math.max(0, Math.min(data.length, aboveCount-1));
+    distractors = [String(alt1), String(alt2), String(data.length)];
+    explain = `The mean is ${meanRounded}${unitTxt}. ${aboveCount} of the ${data.length} categories are above that value.`;
   } else if(qType==='pct-combo'){
     const [a,b] = shuffle(data).slice(0,2);
     const sum = a.value+b.value;
     stem = `On the "${theme.title}" circle graph, what percentage is "${a.label}" and "${b.label}" combined?`;
     correctAns = sum+'%';
-    distractors = [(sum+5)+'%', Math.max(0,sum-5)+'%', (100-sum)+'%'];
+    distractors = [(100-sum)+'%', (sum+5)+'%', Math.max(0,sum-5)+'%'];
     explain = `${a.value}% + ${b.value}% = ${sum}%.`;
+  } else if(qType==='pct-remaining'){
+    const [a,b] = shuffle(data).slice(0,2);
+    const remaining = 100-a.value-b.value;
+    stem = `On the "${theme.title}" circle graph, what percentage is NEITHER "${a.label}" NOR "${b.label}"?`;
+    correctAns = remaining+'%';
+    distractors = [(a.value+b.value)+'%', (100-a.value)+'%', (100-b.value)+'%'];
+    explain = `100% − ${a.value}% − ${b.value}% = ${remaining}%. (A common mistake is only subtracting one of the two categories.)`;
+  } else if(qType==='pct-rank'){
+    const second = sorted[1];
+    stem = `On the "${theme.title}" circle graph (${catList}), which category has the SECOND-LARGEST percentage?`;
+    correctAns = second.label;
+    distractors = data.filter(d=>d.label!==second.label).map(d=>d.label);
+    explain = `Ranked largest to smallest: ${sorted.map(d=>d.label+' ('+d.value+'%)').join(', ')} — "${second.label}" is second.`;
   } else {
     stem = `On the "${theme.title}" circle graph (${catList}), which category has the LARGEST percentage?`;
     correctAns = highest.label;
@@ -4379,12 +4944,11 @@ function expandChartContent(perTierAdd){
     G(()=>genChartQuestion('line', choose(CHART_THEMES_SCIENCE)),'chart-line'),
     G(()=>genChartQuestion('pie', choose(CHART_THEMES_SCIENCE)),'chart-pie')
   ];
-  const historyGenerators = [
-    G(()=>genChartQuestion('bar', choose(CHART_THEMES_HISTORY)),'chart-bar'),
-    G(()=>genChartQuestion('pictograph', choose(CHART_THEMES_HISTORY)),'chart-pictograph'),
-    G(()=>genChartQuestion('line', choose(CHART_THEMES_HISTORY)),'chart-line'),
-    G(()=>genChartQuestion('pie', choose(CHART_THEMES_HISTORY)),'chart-pie')
-  ];
+  // Charts are exclusively math/science content now — no history/social
+  // studies charts. Reallocating that density into math+science also means
+  // both subjects have MORE diagram questions per tier than before, making
+  // them show up more reliably (including during the Final Boss, which
+  // picks a random subject each question).
   [trackA, trackB, trackC, trackAdult].forEach(track=>{
     track.subjects.math.levels.forEach(levelArr=>{
       fillMathLevelToTarget(levelArr, mathGenerators, levelArr.length + perTierAdd);
@@ -4392,12 +4956,9 @@ function expandChartContent(perTierAdd){
     track.subjects.science.levels.forEach(levelArr=>{
       fillMathLevelToTarget(levelArr, scienceGenerators, levelArr.length + perTierAdd);
     });
-    track.subjects.history.levels.forEach(levelArr=>{
-      fillMathLevelToTarget(levelArr, historyGenerators, levelArr.length + perTierAdd);
-    });
   });
 }
-expandChartContent(146);
+expandChartContent(250);
 
 function buildDiagramFromSpec(spec){
   if(spec.type==='bar') return barChartSVG(spec.data, spec.title);
@@ -4522,15 +5083,31 @@ function weaponIconSVG(weaponId, color){
   return icons[weaponId] || icons.sword;
 }
 
-function playerPortraitHTML(emoji, color, idAttr, bodyShapeId, weaponId){
+function playerPortraitHTML(emoji, color, idAttr, bodyShapeId, weaponId, equippedGear){
   const shape = BODY_SHAPES.find(b=>b.id===bodyShapeId) || BODY_SHAPES[1];
   const weapon = WEAPONS.find(w=>w.id===weaponId) || WEAPONS[0];
   const c = color || '#7C5CFF';
+  const gear = equippedGear || {};
+  const armorItem = gear.armor ? gearItemById(gear.armor) : null;
+  const helmetItem = gear.helmet ? gearItemById(gear.helmet) : null;
+  const shieldItem = gear.shield ? gearItemById(gear.shield) : null;
+  const glovesItem = gear.gloves ? gearItemById(gear.gloves) : null;
+  const bootsItem = gear.boots ? gearItemById(gear.boots) : null;
+  // Armor renders as a colored ring around the whole body (it covers the
+  // torso, so a badge in one spot wouldn't represent it well); the other
+  // four slots render as small positioned icon badges around the portrait.
+  const armorRing = armorItem ? `<circle r="34.5" fill="none" stroke="${armorItem.color}" stroke-width="3" opacity="0.85" ${armorItem.glow?'class="node-ring-pulse"':''}/>` : '';
+  const helmetBadge = helmetItem ? `<g transform="translate(0,-29)">${gearIconSVG('helmet', helmetItem.color, helmetItem.glow)}</g>` : '';
+  const shieldBadge = shieldItem ? `<g transform="translate(-24,-6)">${gearIconSVG('shield', shieldItem.color, shieldItem.glow)}</g>` : '';
+  const glovesBadge = glovesItem ? `<g transform="translate(17,17)">${gearIconSVG('gloves', glovesItem.color, glovesItem.glow)}</g>` : '';
+  const bootsBadge = bootsItem ? `<g transform="translate(0,29)">${gearIconSVG('boots', bootsItem.color, bootsItem.glow)}</g>` : '';
   return `<div id="${idAttr}" class="combatant-icon player-portrait" style="transform:scaleX(${shape.scaleX}) scaleY(${shape.scaleY});">
     <svg viewBox="-40 -40 80 80" width="100%" height="100%">
       <circle r="38" fill="${c}" opacity="0.3" class="player-aura"/>
       <circle r="32" fill="${c}22" stroke="${c}" stroke-width="2.5"/>
+      ${armorRing}
       <g transform="translate(20,-14) rotate(20)">${weaponIconSVG(weapon.id, c)}</g>
+      ${helmetBadge}${shieldBadge}${glovesBadge}${bootsBadge}
     </svg>
     <span class="player-emoji-badge">${emoji||'🧑‍🚀'}</span>
   </div>`;
@@ -4720,7 +5297,7 @@ function renderBattle(){
     <div class="battle-arena ${s.playerHP>0 && s.playerHP<30 ? 'low-hp':''}">
       ${battleBackdropSVG(s.subject)}
       <div class="combatant">
-        ${playerPortraitHTML(p.avatarEmoji, p.avatarColor, 'playerIcon', p.bodyShape, p.weapon)}
+        ${playerPortraitHTML(p.avatarEmoji, p.avatarColor, 'playerIcon', p.bodyShape, p.weapon, p.equippedGear)}
         <div class="combatant-label">You</div>
         ${hpBarHTML(s.playerHP, PLAYER_MAX_HP, 'playerHPBar', 'player')}
       </div>
@@ -5237,7 +5814,7 @@ function renderFinalBoss(){
     <div class="battle-arena dark ${bs.playerHP>0 && bs.playerHP<30 ? 'low-hp':''}">
       ${battleBackdropSVG('boss')}
       <div class="combatant">
-        ${playerPortraitHTML(p.avatarEmoji, p.avatarColor, 'fbPlayerIcon', p.bodyShape, p.weapon)}
+        ${playerPortraitHTML(p.avatarEmoji, p.avatarColor, 'fbPlayerIcon', p.bodyShape, p.weapon, p.equippedGear)}
         <div class="combatant-label">You</div>
         ${hpBarHTML(bs.playerHP, PLAYER_MAX_HP, 'fbPlayerHPBar', 'player')}
       </div>
@@ -5797,6 +6374,25 @@ function attachEarningsEvents(){
    activity, accuracy by subject (flagging weak spots), streaks, badges,
    and earnings — accessible from the player-select screen.
    ========================================================================= */
+/* Builds the last 7 calendar days of accuracy data for a player, including
+   days with zero activity (shown as gaps rather than skipped), so parents
+   can see real play patterns, not just days they happened to log in. */
+function last7DaysData(p){
+  const days = [];
+  for(let i=6;i>=0;i--){
+    const d = new Date();
+    d.setDate(d.getDate()-i);
+    const dateStr = d.toISOString().slice(0,10);
+    const log = p.dailyLog[dateStr];
+    let correct=0, total=0;
+    if(log){ Object.values(log.subjects).forEach(s=>{ correct+=s.correct; total+=s.total; }); }
+    const acc = total>0 ? Math.round(100*correct/total) : 0;
+    const label = d.toLocaleDateString('en-US',{weekday:'short'});
+    days.push({label, acc, total, dateStr});
+  }
+  return days;
+}
+
 function renderParentDashboard(){
   const today = todayStr();
   const cards = (state.playerIds.length===0 ? [] : state.playerIds).map(tid=>{
@@ -5811,14 +6407,47 @@ function renderParentDashboard(){
     const totalCorrect = Object.values(p.correctBySubject).reduce((a,b)=>a+b,0);
     const overallAcc = totalAnswered ? Math.round(100*totalCorrect/totalAnswered) : 0;
 
-    const subjectRows = SUBJECTS.map(s=>{
+    // ---- Cumulative performance table (all-time totals per subject) ----
+    const cumulativeRows = SUBJECTS.map(s=>{
       const c = p.correctBySubject[s.key], t = p.answeredBySubject[s.key];
       const acc = t ? Math.round(100*c/t) : null;
-      const needsFocus = acc!==null && acc<60 && t>=5;
-      const todaySub = todayLog ? todayLog.subjects[s.key] : null;
-      const todayStr2 = todaySub && todaySub.total>0 ? ` (today: ${todaySub.correct}/${todaySub.total})` : '';
-      return `<div class="summary-stat"><span>${s.icon} ${s.name}${todayStr2}</span><strong style="${needsFocus?'color:var(--coral);':''}">${acc===null?'—':acc+'%'}${needsFocus?' 🔍 needs focus':''}</strong></div>`;
+      return `<div class="summary-stat"><span>${s.icon} ${s.name}</span><strong>${t?`${c}/${t} correct (${acc}%)`:'No attempts yet'}</strong></div>`;
     }).join('');
+
+    // ---- Today's performance table (today only, per subject) ----
+    const todayRows = SUBJECTS.map(s=>{
+      const ts = todayLog ? todayLog.subjects[s.key] : null;
+      if(!ts || ts.total===0) return `<div class="summary-stat"><span>${s.icon} ${s.name}</span><strong style="color:var(--text-dim);">Not played today</strong></div>`;
+      const acc = Math.round(100*ts.correct/ts.total);
+      return `<div class="summary-stat"><span>${s.icon} ${s.name}</span><strong>${ts.correct}/${ts.total} correct (${acc}%)</strong></div>`;
+    }).join('');
+
+    // ---- Last 7 days trend chart ----
+    const week = last7DaysData(p);
+    const anyActivity = week.some(d=>d.total>0);
+    const weekChart = anyActivity ? lineChartSVG(week.map(d=>({x:d.label, y:d.acc})), `${p.name}'s Accuracy — Last 7 Days`) : null;
+    const daysPlayedThisWeek = week.filter(d=>d.total>0).length;
+
+    // ---- Areas of focus: low accuracy (with a real sample size) OR neglected (not played in 3+ days) ----
+    const focusItems = [];
+    SUBJECTS.forEach(s=>{
+      const c = p.correctBySubject[s.key], t = p.answeredBySubject[s.key];
+      const acc = t ? Math.round(100*c/t) : null;
+      if(acc!==null && acc<70 && t>=8) focusItems.push(`<li><strong>${s.icon} ${s.name}</strong> — ${acc}% accuracy over ${t} questions. Consider a few rounds in the Practice Zone.</li>`);
+    });
+    const last3 = week.slice(-3);
+    SUBJECTS.forEach(s=>{
+      const touchedRecently = last3.some(d=>{
+        const log = p.dailyLog[d.dateStr];
+        return log && log.subjects[s.key] && log.subjects[s.key].total>0;
+      });
+      if(!touchedRecently && p.answeredBySubject[s.key]>0){
+        focusItems.push(`<li><strong>${s.icon} ${s.name}</strong> — not played in the last 3 days.</li>`);
+      }
+    });
+    const focusHTML = focusItems.length
+      ? `<ul style="margin:0;padding-left:20px;">${focusItems.join('')}</ul>`
+      : `<p style="margin:0;color:var(--teal);font-weight:700;">✅ No specific concerns — accuracy and recent activity look healthy across all subjects.</p>`;
 
     const bossesToday = todayLog ? todayLog.bossesDefeated.length : 0;
     const finalBossToday = todayLog ? todayLog.finalBossResult : null;
@@ -5835,12 +6464,22 @@ function renderParentDashboard(){
         <div class="stat-pill"><div class="num">${p.badges.length}</div><div class="lbl">Badges</div></div>
       </div>
 
-      <div class="section-title" style="margin-top:16px;font-size:16px;">Today's Progress</div>
+      <div class="section-title" style="margin-top:16px;font-size:16px;">🎯 Areas of Focus</div>
+      <div class="card" style="background:var(--panel-tint);">${focusHTML}</div>
+
+      <div class="section-title" style="margin-top:16px;font-size:16px;">📅 Last 7 Days</div>
+      ${weekChart ? `
+        <div class="diagram-box" style="margin-bottom:8px;">${weekChart}</div>
+        <p style="margin:0 0 12px;font-size:12.5px;color:var(--text-dim);">Played ${daysPlayedThisWeek} of the last 7 days.</p>
+      ` : `<p style="color:var(--text-dim);font-size:13px;">No activity in the last 7 days.</p>`}
+
+      <div class="section-title" style="margin-top:16px;font-size:16px;">☀️ Today's Performance</div>
       <div class="summary-stat"><span>Bosses defeated today</span><strong>${bossesToday} / 5</strong></div>
       <div class="summary-stat"><span>Final Boss</span><strong>${finalBossToday==='won'?'👑 Defeated':finalBossToday==='lost'?'Attempted, not yet defeated':'Not attempted'}</strong></div>
+      ${todayRows}
 
-      <div class="section-title" style="margin-top:16px;font-size:16px;">Accuracy by Subject (all-time)</div>
-      ${subjectRows}
+      <div class="section-title" style="margin-top:16px;font-size:16px;">📊 Cumulative Performance (all-time)</div>
+      ${cumulativeRows}
 
       <div class="section-title" style="margin-top:16px;font-size:16px;">Earnings Ledger</div>
       <div class="summary-stat"><span>Unredeemed rewards</span><strong>${totalEarnings} min total</strong></div>
@@ -6149,6 +6788,185 @@ function attachSparringResultEvents(){
 }
 
 /* =========================================================================
+   GEAR SHOP — cosmetic equipment purchasable with earned XP (spent from
+   gearWallet, never from xpTotal, so buying never lowers a player's rank).
+   ========================================================================= */
+function renderGearShop(){
+  const p = getActiveProfile();
+  const wallet = p.gearWallet||0;
+
+  const slotSections = GEAR_SLOTS.map(slot=>{
+    const meta = GEAR_SLOT_META[slot];
+    const items = GEAR_CATALOG.filter(g=>g.slot===slot);
+    const equippedId = p.equippedGear[slot];
+    const itemRows = items.map(item=>{
+      const owned = p.ownedGear.includes(item.id);
+      const equipped = equippedId===item.id;
+      const canAfford = wallet >= item.cost;
+      const refund = Math.floor(item.cost*0.5);
+      let actionHTML;
+      if(equipped){
+        actionHTML = `<button class="btn ghost" data-unequip-slot="${slot}" style="min-width:auto;">Unequip</button>`;
+      } else if(owned){
+        actionHTML = `<button class="btn brass" data-equip="${item.id}" style="min-width:auto;">Equip</button> <button class="btn ghost" data-sell="${item.id}" style="min-width:auto;color:var(--coral);border-color:var(--coral);">Sell +${refund}</button>`;
+      } else {
+        actionHTML = `<button class="btn ${canAfford?'brass':'ghost'}" data-buy="${item.id}" style="min-width:auto;" ${canAfford?'':'disabled'}>Buy ${item.cost} XP</button>`;
+      }
+      return `<div class="gear-item-row ${equipped?'equipped':''}">
+        <div class="gear-item-icon"><svg viewBox="-13 -13 26 26" width="34" height="34">${gearIconSVG(slot, item.color, item.glow)}</svg></div>
+        <div class="gear-item-info">
+          <strong>${item.name}</strong>${equipped?' <span style="color:var(--teal);font-size:11px;font-weight:800;">EQUIPPED</span>':''}
+          <div style="font-size:11.5px;color:var(--text-dim);">${owned?'Owned':item.cost+' XP'}</div>
+        </div>
+        <div class="gear-item-actions">${actionHTML}</div>
+      </div>`;
+    }).join('');
+    return `<div class="card" style="margin-bottom:14px;">
+      <div class="section-title" style="margin-top:0;">${meta.icon} ${meta.label}</div>
+      ${itemRows}
+    </div>`;
+  }).join('');
+
+  return `
+  ${renderHeader()}
+  <div class="card setup-card" style="margin-bottom:16px;">
+    <span class="back-link" id="gearShopBackLink">← Back</span>
+    <h2 class="display" style="margin-top:0;">🎽 Gear Shop</h2>
+    <p>Purely cosmetic gear — helmets, armor, shields, gloves, and boots to customize your look. Bought with earned XP, and selling refunds 50% of what you paid. Buying never lowers your rank.</p>
+    <div style="display:flex;align-items:center;gap:18px;margin-top:10px;">
+      <div style="width:76px;height:76px;flex-shrink:0;">${playerPortraitHTML(p.avatarEmoji, p.avatarColor, 'gearPreviewIcon', p.bodyShape, p.weapon, p.equippedGear)}</div>
+      <div class="stat-pill" style="margin:0;"><div class="num">${wallet}</div><div class="lbl">Spendable XP</div></div>
+    </div>
+  </div>
+  ${slotSections}`;
+}
+function attachGearShopEvents(){
+  document.getElementById('gearShopBackLink').addEventListener('click', ()=>{ state.screen='dashboard'; render(); });
+  const p = getActiveProfile();
+
+  app.querySelectorAll('[data-buy]').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      Sound.unlock();
+      const result = buyGearItem(p, btn.getAttribute('data-buy'));
+      if(result.ok){ Sound.badge(); fireConfetti(14); await saveProfile(state.activePlayerId, p); render(); }
+      else { Sound.click(); }
+    });
+  });
+  app.querySelectorAll('[data-sell]').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      Sound.unlock();
+      const result = sellGearItem(p, btn.getAttribute('data-sell'));
+      if(result.ok){ Sound.click(); await saveProfile(state.activePlayerId, p); render(); }
+    });
+  });
+  app.querySelectorAll('[data-equip]').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      Sound.unlock(); Sound.click();
+      equipGearItem(p, btn.getAttribute('data-equip'));
+      await saveProfile(state.activePlayerId, p);
+      render();
+    });
+  });
+  app.querySelectorAll('[data-unequip-slot]').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      Sound.unlock(); Sound.click();
+      unequipGearSlot(p, btn.getAttribute('data-unequip-slot'));
+      await saveProfile(state.activePlayerId, p);
+      render();
+    });
+  });
+}
+
+/* =========================================================================
+   CHARACTER SHEET — a big, detailed view of the character built to admire
+   a fully-geared-up look. Reuses playerPortraitHTML at a much larger size
+   (its SVG scales cleanly with the viewBox, so gear detail that reads as
+   small badges at 76px in battle reads clearly here without any new art).
+   ========================================================================= */
+function renderCharacterSheet(){
+  const p = getActiveProfile();
+  const track = getActiveTrack();
+  const title = xpToTitle(p.xpTotal);
+  const totalAnswered = Object.values(p.answeredBySubject).reduce((a,b)=>a+b,0);
+  const totalCorrect = Object.values(p.correctBySubject).reduce((a,b)=>a+b,0);
+  const overallAcc = totalAnswered ? Math.round(100*totalCorrect/totalAnswered) : 0;
+
+  const gearRows = GEAR_SLOTS.map(slot=>{
+    const meta = GEAR_SLOT_META[slot];
+    const itemId = p.equippedGear[slot];
+    const item = itemId ? gearItemById(itemId) : null;
+    return `<div class="summary-stat">
+      <span>${meta.icon} ${meta.label}</span>
+      <strong style="${item?'':'color:var(--text-dim);font-weight:600;'}">${item ? item.name : 'Empty slot'}</strong>
+    </div>`;
+  }).join('');
+
+  const relicSlots = SUBJECT_ORDER.map(key=>{
+    const r = p.relics[key];
+    const def = RELIC_DEFS[key];
+    if(!r) return `<div class="relic-slot locked" style="padding:10px 6px;"><div style="font-size:24px;">🔒</div><strong style="font-size:11px;">${def.name}</strong></div>`;
+    return `<div class="relic-slot ${r==='shiny'?'shiny':''}" style="padding:10px 6px;">
+      ${relicIconSVG(key, r==='shiny', 40)}
+      <strong style="font-size:11px;">${def.name}</strong>
+      ${r==='shiny' ? `<span style="font-size:9.5px;font-weight:800;color:#B8860B;">✨ SHINY</span>` : ''}
+    </div>`;
+  }).join('');
+
+  const earnedBadges = BADGE_DEFS.filter(b=>p.badges.includes(b.id));
+
+  return `
+  ${renderHeader()}
+  <div class="card setup-card" style="margin-bottom:16px;">
+    <span class="back-link" id="charSheetBackLink">← Back</span>
+    <h2 class="display" style="margin-top:0;">📜 Character Sheet</h2>
+    <p>${track.tagline}</p>
+  </div>
+
+  <div class="card" style="text-align:center;margin-bottom:16px;background:linear-gradient(180deg,#F1EDFF,#FFFFFF);">
+    <div style="width:220px;height:220px;margin:0 auto;">${playerPortraitHTML(p.avatarEmoji, p.avatarColor, 'charSheetIcon', p.bodyShape, p.weapon, p.equippedGear)}</div>
+    <h2 class="display" style="margin:8px 0 2px;">${p.name}</h2>
+    <p style="margin:0;font-weight:700;color:var(--violet);">${title} · ${track.label}</p>
+  </div>
+
+  <div class="card" style="margin-bottom:16px;">
+    <div class="stats-row">
+      <div class="stat-pill"><div class="num">${p.xpTotal}</div><div class="lbl">Total XP</div></div>
+      <div class="stat-pill"><div class="num">${p.gearWallet||0}</div><div class="lbl">Spendable XP</div></div>
+      <div class="stat-pill"><div class="num">${p.streak}</div><div class="lbl">Day Streak</div></div>
+      <div class="stat-pill"><div class="num">${p.totalDaysPlayed||0}</div><div class="lbl">Days Played</div></div>
+      <div class="stat-pill"><div class="num">${overallAcc}%</div><div class="lbl">Accuracy</div></div>
+      <div class="stat-pill"><div class="num">${p.badges.length}</div><div class="lbl">Badges</div></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:16px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <div class="section-title" style="margin:0;">🎽 Equipped Gear</div>
+      <span class="back-link" id="charSheetGearShopLink">Change gear →</span>
+    </div>
+    ${gearRows}
+  </div>
+
+  <div class="card" style="margin-bottom:16px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <div class="section-title" style="margin:0;">🎁 Relic Collection</div>
+      <span class="back-link" id="charSheetCollectionLink">View collection →</span>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:10px;">${relicSlots}</div>
+  </div>
+
+  <div class="card">
+    <div class="section-title" style="margin-top:0;">🏆 Passport (Badges)</div>
+    ${earnedBadges.length ? `<div class="passport">${earnedBadges.map(b=>`<div class="stamp"><div class="emoji">${b.emoji}</div>${b.label}</div>`).join('')}</div>` : `<p style="color:var(--text-dim);margin:0;">No badges earned yet — keep playing to start your collection!</p>`}
+  </div>`;
+}
+function attachCharacterSheetEvents(){
+  document.getElementById('charSheetBackLink').addEventListener('click', ()=>{ state.screen='dashboard'; render(); });
+  document.getElementById('charSheetGearShopLink').addEventListener('click', ()=>{ Sound.unlock(); Sound.click(); state.screen='gear-shop'; render(); });
+  document.getElementById('charSheetCollectionLink').addEventListener('click', ()=>{ Sound.unlock(); Sound.click(); state.screen='collection'; render(); });
+}
+
+/* =========================================================================
    INIT
    ========================================================================= */
 async function init(){
@@ -6172,6 +6990,7 @@ init();
 </script>
 </body>
 </html>
+
 
 
 
