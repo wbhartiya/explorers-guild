@@ -3042,7 +3042,7 @@ function initFirebase(){
 initFirebase();
 
 function firebaseHandlesKey(key){
-  return firebaseReady && (key==='playerIds' || key.indexOf('profile:')===0);
+  return firebaseReady && (key==='playerIds' || key==='challenges' || key.indexOf('profile:')===0);
 }
 
 const Store = (function(){
@@ -3132,6 +3132,100 @@ async function loadProfile(playerId){
 }
 async function saveProfile(playerId, profile){
   await Store.set('profile:'+playerId, JSON.stringify(profile));
+}
+async function loadChallenges(){
+  const raw = await Store.get('challenges');
+  if(raw){ try{ return JSON.parse(raw); }catch(e){} }
+  return [];
+}
+async function saveChallenges(challenges){
+  await Store.set('challenges', JSON.stringify(challenges));
+}
+
+/* =========================================================================
+   SIBLING CHALLENGES
+   A challenge is a shared object (not nested in either player's profile)
+   stored in the top-level 'challenges' collection, since it must be
+   visible to both the initiator and the recipient regardless of which
+   profile is currently active. The XP stake is drawn from gearWallet, not
+   xpTotal — losing a friendly challenge should never demote a player's
+   displayed rank or leaderboard position, the same reasoning that led to
+   gearWallet existing in the first place for gear purchases.
+   ========================================================================= */
+const CHALLENGE_STAKE = 100;
+const CHALLENGE_QUESTION_COUNT = 5;
+
+function challengeInvolvesPlayer(c, playerId){ return c.fromPlayerId===playerId || c.toPlayerId===playerId; }
+function activeChallengesForPlayer(playerId){
+  return state.challenges.filter(c => (c.status==='pending'||c.status==='active') && challengeInvolvesPlayer(c, playerId));
+}
+function playerHasActiveChallengeInSubject(playerId, subject){
+  return activeChallengesForPlayer(playerId).some(c => c.subject===subject);
+}
+
+/* Up to 5 simultaneous challenges per player — one per subject, matching
+   the 5 realms, so a player can have a challenge going in every subject
+   at once but never two at the same time in the same subject. */
+function createChallenge(fromId, toId, subject){
+  if(fromId===toId) return {ok:false, reason:'You can\'t challenge yourself!'};
+  if(playerHasActiveChallengeInSubject(fromId, subject)) return {ok:false, reason:'You already have a challenge going in this subject.'};
+  if(playerHasActiveChallengeInSubject(toId, subject)) return {ok:false, reason:'They already have a challenge going in this subject.'};
+  if(activeChallengesForPlayer(fromId).length >= 5) return {ok:false, reason:'You already have the maximum of 5 active challenges (one per subject).'};
+  const challenge = {
+    id: 'chal_'+Date.now()+'_'+Math.floor(Math.random()*100000),
+    subject, fromPlayerId: fromId, toPlayerId: toId,
+    status: 'pending', // pending -> active (accepted) -> completed
+    fromScore: null, toScore: null,
+    createdAt: Date.now(), resolvedAt: null, winnerId: null
+  };
+  state.challenges.push(challenge);
+  return {ok:true, challenge};
+}
+function acceptChallenge(challengeId){
+  const c = state.challenges.find(x=>x.id===challengeId);
+  if(!c || c.status!=='pending') return {ok:false};
+  c.status = 'active';
+  return {ok:true};
+}
+function declineChallenge(challengeId){
+  state.challenges = state.challenges.filter(x=>x.id!==challengeId);
+  return {ok:true};
+}
+/* Records one player's round score. Comparison — and the whole point of
+   this function's name — can only happen once BOTH scores are in, which
+   itself can only happen after acceptance moved the challenge to 'active'.
+   That's what enforces "must be accepted in order to compare score." */
+async function submitChallengeScore(challengeId, playerId, correctCount){
+  const c = state.challenges.find(x=>x.id===challengeId);
+  if(!c || c.status!=='active') return null;
+  if(c.fromPlayerId===playerId) c.fromScore = correctCount;
+  else if(c.toPlayerId===playerId) c.toScore = correctCount;
+  if(c.fromScore!==null && c.toScore!==null){
+    await resolveChallenge(c);
+  } else {
+    await saveChallenges(state.challenges);
+  }
+  return c;
+}
+async function resolveChallenge(c){
+  c.status = 'completed';
+  c.resolvedAt = Date.now();
+  const fromP = state.profiles[c.fromPlayerId] || await loadProfile(c.fromPlayerId);
+  const toP = state.profiles[c.toPlayerId] || await loadProfile(c.toPlayerId);
+  if(c.fromScore > c.toScore){
+    c.winnerId = c.fromPlayerId;
+    fromP.gearWallet = (fromP.gearWallet||0) + CHALLENGE_STAKE;
+    toP.gearWallet = Math.max(0, (toP.gearWallet||0) - CHALLENGE_STAKE);
+  } else if(c.toScore > c.fromScore){
+    c.winnerId = c.toPlayerId;
+    toP.gearWallet = (toP.gearWallet||0) + CHALLENGE_STAKE;
+    fromP.gearWallet = Math.max(0, (fromP.gearWallet||0) - CHALLENGE_STAKE);
+  } else {
+    c.winnerId = 'tie'; // no stakes exchanged on a tie
+  }
+  state.profiles[c.fromPlayerId] = fromP;
+  state.profiles[c.toPlayerId] = toP;
+  await Promise.all([saveProfile(c.fromPlayerId, fromP), saveProfile(c.toPlayerId, toP), saveChallenges(state.challenges)]);
 }
 async function loadPlayerIds(){
   const raw = await Store.get('playerIds');
@@ -3491,6 +3585,7 @@ let state = {
   activePlayerId: null,
   playerIds: [], // ordered list of player IDs (dynamic — any number of players)
   profiles: {}, // playerId -> profile
+  challenges: [], // shared sibling-challenge collection, loaded at init()
   session: null // {subject, levelIdx, queueByLevel, timeLeft, timerId, correctCount, answeredCount, currentQ, awaitingNext, showStretch, xpEarned}
 };
 
@@ -3552,6 +3647,8 @@ function render(){
   if(state.screen==='sparring-result'){ app.innerHTML = renderSparringResult(); attachSparringResultEvents(); attachHeaderEvents(); return; }
   if(state.screen==='gear-shop'){ app.innerHTML = renderGearShop(); attachGearShopEvents(); attachHeaderEvents(); return; }
   if(state.screen==='character-sheet'){ app.innerHTML = renderCharacterSheet(); attachCharacterSheetEvents(); attachHeaderEvents(); return; }
+  if(state.screen==='challenge-pick'){ app.innerHTML = renderChallengePick(); attachChallengePickEvents(); attachHeaderEvents(); return; }
+  if(state.screen==='challenge-battle'){ app.innerHTML = renderChallengeBattle(); attachChallengeBattleEvents(); attachHeaderEvents(); return; }
   if(state.screen==='review'){ app.innerHTML = renderReview(); attachReviewEvents(); attachHeaderEvents(); return; }
   if(state.screen==='review-result'){ app.innerHTML = renderReviewResult(); attachReviewResultEvents(); attachHeaderEvents(); return; }
   if(state.screen==='practice'){ app.innerHTML = renderPractice(); attachPracticeEvents(); attachHeaderEvents(); return; }
@@ -4388,6 +4485,18 @@ function renderDashboard(){
     </div>
   </div>
 
+  <div class="section-title">⚔️ Sibling Challenges</div>
+  ${renderChallengesCard()}
+  <div class="card" style="cursor:pointer;" id="startChallengeCard">
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <div>
+        <p style="margin:0;font-weight:800;">Challenge a sibling to a head-to-head match!</p>
+        <p style="margin:4px 0 0;font-size:12.5px;color:var(--text-dim);">Pick a subject, both play 5 questions — winner gets ${CHALLENGE_STAKE} bonus XP, loser loses it. Up to 5 challenges at once, one per subject.</p>
+      </div>
+      <span class="btn ghost" style="min-width:auto;flex-shrink:0;margin-left:12px;">Challenge →</span>
+    </div>
+  </div>
+
   <div class="section-title" style="color:var(--coral);">⚠️ Danger Zone</div>
   <div class="card" style="border:2px solid var(--coral);background:#FFF5F5;">
     <p style="margin:0 0 10px;font-size:13.5px;color:var(--text-dim);">This permanently erases <strong>${p.name}'s</strong> entire history — all XP, badges, streaks, and unredeemed rewards. This cannot be undone.</p>
@@ -4461,6 +4570,43 @@ function attachDashboardEvents(){
     Sound.unlock(); Sound.click();
     state.screen = 'sparring-pick';
     render();
+  });
+  const startChallengeCard = document.getElementById('startChallengeCard');
+  if(startChallengeCard) startChallengeCard.addEventListener('click', ()=>{
+    Sound.unlock(); Sound.click();
+    state.challengeDraft = null;
+    state.screen = 'challenge-pick';
+    render();
+  });
+  app.querySelectorAll('[data-accept-chal]').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      Sound.unlock(); Sound.click();
+      acceptChallenge(btn.getAttribute('data-accept-chal'));
+      await saveChallenges(state.challenges);
+      render();
+    });
+  });
+  app.querySelectorAll('[data-decline-chal]').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      Sound.unlock(); Sound.click();
+      declineChallenge(btn.getAttribute('data-decline-chal'));
+      await saveChallenges(state.challenges);
+      render();
+    });
+  });
+  app.querySelectorAll('[data-play-chal]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      Sound.unlock(); Sound.click();
+      startChallengeRound(btn.getAttribute('data-play-chal'));
+    });
+  });
+  app.querySelectorAll('[data-dismiss-chal]').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      Sound.unlock(); Sound.click();
+      state.challenges = state.challenges.filter(c=>c.id!==btn.getAttribute('data-dismiss-chal'));
+      await saveChallenges(state.challenges);
+      render();
+    });
   });
   // The map is the single source of navigation for battles now — every node
   // (including the Final Boss) carries data-subject, routed correctly here.
@@ -6967,16 +7113,238 @@ function attachCharacterSheetEvents(){
 }
 
 /* =========================================================================
+   SIBLING CHALLENGE UI
+   ========================================================================= */
+function renderChallengesCard(){
+  const myId = state.activePlayerId;
+  const incoming = state.challenges.filter(c => c.status==='pending' && c.toPlayerId===myId);
+  const awaitingMyPlay = state.challenges.filter(c => c.status==='active' && challengeInvolvesPlayer(c, myId) &&
+    ((c.fromPlayerId===myId && c.fromScore===null) || (c.toPlayerId===myId && c.toScore===null)));
+  const waitingOnOpponent = state.challenges.filter(c => c.status==='active' && challengeInvolvesPlayer(c, myId) &&
+    ((c.fromPlayerId===myId && c.fromScore!==null) || (c.toPlayerId===myId && c.toScore!==null)));
+  const completed = state.challenges.filter(c => c.status==='completed' && challengeInvolvesPlayer(c, myId));
+
+  if(!incoming.length && !awaitingMyPlay.length && !waitingOnOpponent.length && !completed.length) return '';
+
+  const incomingHTML = incoming.map(c=>{
+    const fromP = state.profiles[c.fromPlayerId];
+    const subjMeta = SUBJECTS.find(x=>x.key===c.subject);
+    return `<div class="gear-item-row">
+      <div class="gear-item-info"><strong>${fromP?fromP.name:'Someone'}</strong> challenged you in ${subjMeta.icon} ${subjMeta.name}!</div>
+      <div class="gear-item-actions">
+        <button class="btn brass" data-accept-chal="${c.id}" style="min-width:auto;">Accept</button>
+        <button class="btn ghost" data-decline-chal="${c.id}" style="min-width:auto;">Decline</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  const awaitingHTML = awaitingMyPlay.map(c=>{
+    const opponentId = c.fromPlayerId===myId ? c.toPlayerId : c.fromPlayerId;
+    const opponent = state.profiles[opponentId];
+    const subjMeta = SUBJECTS.find(x=>x.key===c.subject);
+    return `<div class="gear-item-row">
+      <div class="gear-item-info"><strong>${subjMeta.icon} ${subjMeta.name}</strong> vs ${opponent?opponent.name:'opponent'} — your turn to play!</div>
+      <div class="gear-item-actions"><button class="btn brass" data-play-chal="${c.id}" style="min-width:auto;">Play Now</button></div>
+    </div>`;
+  }).join('');
+
+  const waitingHTML = waitingOnOpponent.map(c=>{
+    const opponentId = c.fromPlayerId===myId ? c.toPlayerId : c.fromPlayerId;
+    const opponent = state.profiles[opponentId];
+    const subjMeta = SUBJECTS.find(x=>x.key===c.subject);
+    return `<div class="gear-item-row">
+      <div class="gear-item-info"><strong>${subjMeta.icon} ${subjMeta.name}</strong> vs ${opponent?opponent.name:'opponent'} — <span style="color:var(--text-dim);">waiting for them to play</span></div>
+    </div>`;
+  }).join('');
+
+  const completedHTML = completed.map(c=>{
+    const opponentId = c.fromPlayerId===myId ? c.toPlayerId : c.fromPlayerId;
+    const opponent = state.profiles[opponentId];
+    const subjMeta = SUBJECTS.find(x=>x.key===c.subject);
+    const myScore = c.fromPlayerId===myId ? c.fromScore : c.toScore;
+    const theirScore = c.fromPlayerId===myId ? c.toScore : c.fromScore;
+    const won = c.winnerId===myId;
+    const tied = c.winnerId==='tie';
+    return `<div class="gear-item-row">
+      <div class="gear-item-info">
+        <strong>${tied?'🤝 Tied':(won?'🏆 You won!':'😔 You lost')}</strong> vs ${opponent?opponent.name:'opponent'} in ${subjMeta.icon} ${subjMeta.name} (${myScore}-${theirScore})
+        ${tied?'':(won?` <span style="color:var(--teal);font-weight:700;">+${CHALLENGE_STAKE} XP</span>`:` <span style="color:var(--coral);font-weight:700;">−${CHALLENGE_STAKE} XP</span>`)}
+      </div>
+      <div class="gear-item-actions"><button class="btn ghost" data-dismiss-chal="${c.id}" style="min-width:auto;">Dismiss</button></div>
+    </div>`;
+  }).join('');
+
+  return `<div class="card" style="margin-bottom:16px;">
+    ${incomingHTML}${awaitingHTML}${waitingHTML}${completedHTML}
+  </div>`;
+}
+
+function renderChallengePick(){
+  const myId = state.activePlayerId;
+  const others = state.playerIds.filter(id => id!==myId && state.profiles[id] && state.profiles[id].name);
+  const draft = state.challengeDraft || {};
+
+  if(!draft.opponentId){
+    const rows = others.map(id=>{
+      const p = state.profiles[id];
+      return `<button class="btn ghost" style="width:100%;margin-bottom:10px;justify-content:flex-start;" data-pick-opponent="${id}">${p.avatarEmoji||'🧭'} ${p.name}</button>`;
+    }).join('');
+    return `
+    ${renderHeader()}
+    <div class="card setup-card" style="margin-bottom:16px;">
+      <span class="back-link" id="challengePickBackLink1">← Back</span>
+      <h2 class="display" style="margin-top:0;">⚔️ Challenge a Sibling</h2>
+      <p>Step 1 of 2: Who do you want to challenge?</p>
+    </div>
+    <div class="card">${others.length ? rows : '<p style="color:var(--text-dim);margin:0;">No other explorers to challenge yet — create another player first.</p>'}</div>`;
+  }
+
+  const opponent = state.profiles[draft.opponentId];
+  const subjectRows = SUBJECTS.map(s=>{
+    const blocked = playerHasActiveChallengeInSubject(myId, s.key) || playerHasActiveChallengeInSubject(draft.opponentId, s.key);
+    return `<button class="btn ${blocked?'ghost':'brass'}" style="width:100%;margin-bottom:10px;justify-content:flex-start;" data-pick-subject="${s.key}" ${blocked?'disabled':''}>${s.icon} ${s.name}${blocked?' — already has an active challenge':''}</button>`;
+  }).join('');
+  return `
+  ${renderHeader()}
+  <div class="card setup-card" style="margin-bottom:16px;">
+    <span class="back-link" id="challengePickBackLink2">← Choose a different sibling</span>
+    <h2 class="display" style="margin-top:0;">⚔️ Challenge ${opponent.name}</h2>
+    <p>Step 2 of 2: Pick a subject. You'll both play ${CHALLENGE_QUESTION_COUNT} questions — winner gets ${CHALLENGE_STAKE} bonus XP, loser loses ${CHALLENGE_STAKE} XP. They'll need to accept before it counts.</p>
+  </div>
+  <div class="card">${subjectRows}</div>`;
+}
+function attachChallengePickEvents(){
+  const myId = state.activePlayerId;
+  const draft = state.challengeDraft || {};
+  if(!draft.opponentId){
+    document.getElementById('challengePickBackLink1').addEventListener('click', ()=>{ state.screen='dashboard'; state.challengeDraft=null; render(); });
+    app.querySelectorAll('[data-pick-opponent]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        Sound.unlock(); Sound.click();
+        state.challengeDraft = { opponentId: btn.getAttribute('data-pick-opponent') };
+        render();
+      });
+    });
+  } else {
+    document.getElementById('challengePickBackLink2').addEventListener('click', ()=>{ state.challengeDraft=null; render(); });
+    app.querySelectorAll('[data-pick-subject]').forEach(btn=>{
+      btn.addEventListener('click', async ()=>{
+        Sound.unlock();
+        const subject = btn.getAttribute('data-pick-subject');
+        const result = createChallenge(myId, draft.opponentId, subject);
+        if(result.ok){
+          Sound.badge();
+          await saveChallenges(state.challenges);
+          state.challengeDraft = null;
+          state.screen = 'dashboard';
+          render();
+        } else {
+          Sound.click();
+          window.alert(result.reason);
+        }
+      });
+    });
+  }
+}
+
+function startChallengeRound(challengeId){
+  const c = state.challenges.find(x=>x.id===challengeId);
+  if(!c) return;
+  const p = getActiveProfile();
+  const track = getActiveTrack();
+  const levels = track.subjects[c.subject].levels;
+  const targetLevel = p.levelBySubject[c.subject] || 0;
+  const usedQuestions = new Set();
+  const avoidIds = getTodayAskedSet(p);
+  const questions = [];
+  for(let i=0;i<CHALLENGE_QUESTION_COUNT;i++){
+    const picked = pickNextUniqueQuestion(levels, targetLevel, usedQuestions, avoidIds, []);
+    questions.push(picked.q);
+    usedQuestions.add(picked.q);
+    recordAskedToday(p, picked.q._id);
+  }
+  state.challengeRound = { challengeId, questions, idx:0, correctCount:0, awaitingNext:false, chosenIdx:null };
+  state.screen = 'challenge-battle';
+  if(SETTINGS.musicOn){ Sound.unlock(); Sound.startAmbient(c.subject); startMusicRotation(); }
+  render();
+}
+
+function renderChallengeBattle(){
+  const s = state.challengeRound;
+  const c = state.challenges.find(x=>x.id===s.challengeId);
+  const subjMeta = SUBJECTS.find(x=>x.key===c.subject);
+  const q = s.questions[s.idx];
+  const dots = s.questions.map((_,i)=>{
+    if(i<s.idx) return '✅';
+    if(i===s.idx) return '⚔️';
+    return '⬜';
+  }).join(' ');
+  return `
+  ${renderHeader()}
+  <div class="card">
+    <div class="session-header">
+      <span class="level-chip" style="background:linear-gradient(135deg,#FF2E63,#B14AFF);color:#fff;">⚔️ CHALLENGE · ${subjMeta.icon} ${subjMeta.name}</span>
+    </div>
+    <p style="font-weight:700;color:var(--violet);margin:8px 0;">Question ${s.idx+1} of ${CHALLENGE_QUESTION_COUNT} — ${dots}</p>
+    <div class="q-card">
+      ${renderQuestionBody(q)}
+      <div id="chalChoicesWrap">
+        ${q.c.map((choice,i)=>`<button class="choice" data-idx="${i}">${choice}</button>`).join('')}
+      </div>
+      <div id="chalExplainWrap"></div>
+      <div id="chalNextWrap" style="margin-top:16px;"></div>
+    </div>
+  </div>`;
+}
+function attachChallengeBattleEvents(){
+  const s = state.challengeRound;
+  app.querySelectorAll('#chalChoicesWrap .choice').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      if(s.awaitingNext) return;
+      Sound.unlock();
+      const idx = parseInt(btn.getAttribute('data-idx'));
+      s.awaitingNext = true; s.chosenIdx = idx;
+      const q = s.questions[s.idx];
+      const correct = idx === q.a;
+      app.querySelectorAll('#chalChoicesWrap .choice').forEach((b,i)=>{
+        b.disabled = true;
+        if(i===q.a) b.classList.add('correct');
+        else if(i===idx) b.classList.add('incorrect');
+      });
+      document.getElementById('chalExplainWrap').innerHTML = `<div class="explain">${correct?'✅ Correct! ':'❌ '}${q.n}</div>`;
+      if(correct){ s.correctCount += 1; Sound.correct(); } else { Sound.incorrect(); }
+      if(s.idx >= CHALLENGE_QUESTION_COUNT-1){
+        document.getElementById('chalNextWrap').innerHTML = `<button class="btn brass" id="chalNextBtn">Finish Challenge</button>`;
+        document.getElementById('chalNextBtn').addEventListener('click', ()=> endChallengeRound());
+      } else {
+        document.getElementById('chalNextWrap').innerHTML = `<button class="btn brass" id="chalNextBtn">Next Question →</button>`;
+        document.getElementById('chalNextBtn').addEventListener('click', ()=>{ s.idx += 1; s.awaitingNext=false; s.chosenIdx=null; render(); });
+      }
+    });
+  });
+}
+async function endChallengeRound(){
+  const s = state.challengeRound;
+  stopMusicRotation();
+  const p = getActiveProfile();
+  await submitChallengeScore(s.challengeId, state.activePlayerId, s.correctCount);
+  await saveProfile(state.activePlayerId, p);
+  state.screen = 'dashboard';
+  render();
+}
+
+/* =========================================================================
    INIT
    ========================================================================= */
 async function init(){
-  addIdsToTrackQuestions(trackA); addIdsToTrackQuestions(trackB); addIdsToTrackQuestions(trackC);
-  const [playerIds, settings] = await Promise.all([migrateLegacyProfilesIfNeeded(), loadSettings()]);
+  addIdsToTrackQuestions(trackA); addIdsToTrackQuestions(trackB); addIdsToTrackQuestions(trackC); addIdsToTrackQuestions(trackAdult);
+  const [playerIds, settings, challenges] = await Promise.all([migrateLegacyProfilesIfNeeded(), loadSettings(), loadChallenges()]);
   state.playerIds = playerIds;
   const profiles = await Promise.all(playerIds.map(id=>loadProfile(id)));
   state.profiles = {};
   playerIds.forEach((id,i)=> state.profiles[id] = profiles[i]);
   SETTINGS = settings;
+  state.challenges = challenges;
   state.screen = 'pick-track';
   render();
   if(SETTINGS.musicOn){
