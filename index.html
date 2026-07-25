@@ -253,37 +253,155 @@
     font-size:19px;border:2px solid; animation:floatY 2.4s ease-in-out infinite;
   }
   .battle-arena{
-    display:flex;align-items:center;gap:14px;margin:14px 0 18px;
-    background:var(--panel-tint);border-radius:16px;padding:16px;
+    display:flex;align-items:flex-end;gap:14px;margin:14px 0 18px;
+    background:#100a26;border-radius:18px;padding:22px 16px 26px;
     position:relative; overflow:hidden; z-index:1;
+    min-height:190px;
+    box-shadow: inset 0 0 60px rgba(0,0,0,0.55), inset 0 -30px 40px rgba(0,0,0,0.45), 0 10px 30px rgba(16,10,38,0.45);
+    border:1px solid rgba(255,255,255,0.08);
   }
-  .battle-arena.dark{background:rgba(255,255,255,0.06);}
+  .battle-arena::after{ /* cinematic vignette + top light shaft */
+    content:''; position:absolute; inset:0; pointer-events:none; z-index:2; border-radius:18px;
+    background: radial-gradient(ellipse at 50% 120%, transparent 40%, rgba(0,0,0,0.42) 100%),
+                linear-gradient(180deg, rgba(255,255,255,0.06), transparent 30%);
+  }
+  .battle-arena.dark{background:#160518;}
   .battle-backdrop{
     position:absolute; inset:0; width:100%; height:100%; z-index:-1;
-    opacity:0.9; border-radius:16px;
+    opacity:1; border-radius:18px;
   }
-  .combatant{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:8px;position:relative;z-index:1;}
-  .combatant-label{font-weight:800;font-size:13.5px;color:var(--text-dark);text-align:center;text-shadow:0 1px 3px rgba(0,0,0,0.4);}
+  .bd-drift{animation:bdDrift 26s linear infinite;}
+  .bd-drift.slow{animation-duration:44s;}
+  @keyframes bdDrift{from{transform:translateX(0);}to{transform:translateX(-600px);}}
+  .bd-twinkle{animation:bdTwinkle 3.2s ease-in-out infinite;}
+  .bd-twinkle.t2{animation-delay:1.1s;} .bd-twinkle.t3{animation-delay:2.2s;}
+  @keyframes bdTwinkle{0%,100%{opacity:.25;}50%{opacity:.95;}}
+  .ember{position:absolute;bottom:-8px;width:5px;height:5px;border-radius:50%;pointer-events:none;z-index:1;
+    animation:emberRise linear infinite; filter:blur(0.5px);}
+  @keyframes emberRise{0%{transform:translateY(0) translateX(0);opacity:0;}12%{opacity:.85;}100%{transform:translateY(-190px) translateX(24px);opacity:0;}}
+  .combatant{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:8px;position:relative;z-index:3;}
+  .combatant-shadow{width:64px;height:12px;border-radius:50%;background:radial-gradient(ellipse, rgba(0,0,0,0.55), transparent 70%);margin-top:-8px;}
+  .combatant-label{font-weight:800;font-size:13.5px;color:#EDE6FF;text-align:center;text-shadow:0 2px 6px rgba(0,0,0,0.8);letter-spacing:0.3px;}
   .battle-arena.dark .combatant-label{color:#EDE6FF;}
   .combatant-icon{
     display:inline-flex;align-items:center;justify-content:center;border-radius:50%;position:relative;
+    animation:idleBreathe 3s ease-in-out infinite;
   }
-  .player-portrait{width:76px;height:76px;}
+  .combatant:last-child .combatant-icon{animation-delay:1.5s;}
+  @keyframes idleBreathe{0%,100%{transform:translateY(0) scale(1);}50%{transform:translateY(-4px) scale(1.02);}}
+  .player-portrait{width:82px;height:82px;filter:drop-shadow(0 6px 10px rgba(0,0,0,0.5));}
   .player-aura{animation:playerAuraPulse 2.4s ease-in-out infinite;}
-  @keyframes playerAuraPulse{0%,100%{opacity:.25;}50%{opacity:.5;}}
-  .player-emoji-badge{position:absolute;font-size:34px;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.4));}
-  .boss-portrait{width:118px;height:118px;filter:drop-shadow(0 0 18px rgba(255,45,99,0.55));}
-  .boss-emoji-badge{position:absolute;font-size:40px;bottom:-2px;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.5));}
+  @keyframes playerAuraPulse{0%,100%{opacity:.25;}50%{opacity:.55;}}
+  .player-emoji-badge{position:absolute;font-size:36px;filter:drop-shadow(0 2px 5px rgba(0,0,0,0.55));}
+  .boss-portrait{width:126px;height:126px;filter:drop-shadow(0 0 26px rgba(255,45,99,0.65)) drop-shadow(0 8px 12px rgba(0,0,0,0.5));}
+  .boss-emoji-badge{position:absolute;font-size:42px;bottom:-2px;filter:drop-shadow(0 2px 5px rgba(0,0,0,0.6));}
   .boss-aura{animation:bossAuraPulse 2s ease-in-out infinite;}
   .boss-aura-ring{animation:bossRingPulse 2.4s ease-in-out infinite;}
-  @keyframes bossAuraPulse{0%,100%{opacity:.28;}50%{opacity:.58;}}
-  @keyframes bossRingPulse{0%,100%{opacity:.3;transform:scale(1);}50%{opacity:.7;transform:scale(1.06);}}
-  .vs-badge{font-family:'Baloo 2',sans-serif;font-weight:800;font-size:15px;color:var(--coral);flex-shrink:0;text-shadow:0 1px 3px rgba(0,0,0,0.4);}
+  @keyframes bossAuraPulse{0%,100%{opacity:.28;}50%{opacity:.62;}}
+  @keyframes bossRingPulse{0%,100%{opacity:.3;transform:scale(1);}50%{opacity:.75;transform:scale(1.07);}}
+  .vs-badge{font-family:'Baloo 2',sans-serif;font-weight:800;font-size:17px;color:#FFD166;flex-shrink:0;
+    text-shadow:0 0 12px rgba(255,209,102,0.8), 0 2px 4px rgba(0,0,0,0.6); align-self:center;
+    animation:vsPulse 1.6s ease-in-out infinite;}
+  @keyframes vsPulse{0%,100%{transform:scale(1);}50%{transform:scale(1.14);}}
   .hp-wrap{display:flex;flex-direction:column;gap:4px;width:100%;}
-  .hp-bar-bg{height:16px;border-radius:999px;background:rgba(0,0,0,0.12);overflow:hidden;}
-  .hp-bar-fill{height:100%;border-radius:999px;transition:width .4s ease;}
-  .hp-bar-fill.player{background:linear-gradient(90deg,#00D9C0,#00A88F);}
-  .hp-bar-fill.boss{background:linear-gradient(90deg,#FF4D6D,#B14AFF);}
+  .hp-bar-bg{height:17px;border-radius:999px;background:rgba(0,0,0,0.55);overflow:hidden;position:relative;
+    border:1px solid rgba(255,255,255,0.18); box-shadow:inset 0 2px 4px rgba(0,0,0,0.6);}
+  .hp-bar-bg::after{ /* segment ticks, like a real game HP gauge */
+    content:''; position:absolute; inset:0; pointer-events:none;
+    background:repeating-linear-gradient(90deg, transparent 0 calc(10% - 1px), rgba(0,0,0,0.35) calc(10% - 1px) 10%);
+  }
+  .hp-bar-fill{height:100%;border-radius:999px;transition:width .45s cubic-bezier(.2,.9,.3,1);position:relative;}
+  .hp-bar-fill::before{ /* glossy top shine */
+    content:''; position:absolute; top:1px; left:2px; right:2px; height:45%;
+    border-radius:999px; background:linear-gradient(180deg, rgba(255,255,255,0.5), transparent);
+  }
+  .hp-bar-fill.player{background:linear-gradient(90deg,#00D9C0,#00A88F);box-shadow:0 0 10px rgba(0,217,192,0.65);}
+  .hp-bar-fill.boss{background:linear-gradient(90deg,#FF4D6D,#B14AFF);box-shadow:0 0 10px rgba(255,77,109,0.65);}
+  .hp-text{text-shadow:0 1px 3px rgba(0,0,0,0.7);color:#EDE6FF;}
+  /* ---- 16-bit pixel renderer frame ---- */
+  .px-frame{
+    position:relative; margin:14px 0 18px; border-radius:6px; overflow:hidden;
+    background:#0a0614; padding:4px;
+    border:2px solid #cdd6f4;
+    box-shadow:0 0 0 2px #0a0614, 0 0 0 4px #4a5a9e, 0 8px 0 rgba(0,0,0,0.45), 0 14px 30px rgba(0,0,0,0.5);
+    image-rendering:pixelated;
+  }
+  .px-frame.boss{border-color:#ffb4c0; box-shadow:0 0 0 2px #12040a, 0 0 0 4px #9e2a40, 0 8px 0 rgba(0,0,0,0.5), 0 14px 34px rgba(255,45,99,0.35);}
+  .px-frame.low-hp{animation:pxDanger 1.1s ease-in-out infinite;}
+  @keyframes pxDanger{0%,100%{box-shadow:0 0 0 2px #12040a, 0 0 0 4px #9e2a40, 0 8px 0 rgba(0,0,0,0.5);}50%{box-shadow:0 0 0 2px #12040a, 0 0 0 4px #ff4d6d, 0 8px 0 rgba(0,0,0,0.5), 0 0 26px rgba(255,77,109,0.65);}}
+  .px-canvas{
+    display:block; width:100%; height:auto;
+    image-rendering:pixelated; image-rendering:crisp-edges; -ms-interpolation-mode:nearest-neighbor;
+  }
+  .px-nameplate{
+    position:absolute; bottom:9px; font-family:'JetBrains Mono',monospace; font-weight:700;
+    font-size:10px; letter-spacing:0.5px; text-transform:uppercase; color:#fff;
+    text-shadow:1px 1px 0 #000, -1px 1px 0 #000; pointer-events:none; z-index:2;
+  }
+  .px-nameplate.left{left:14px;}
+  .px-nameplate.right{right:14px;}
+  /* ---- Combat FX layer ---- */
+  .dmg-number{
+    position:absolute; top:-6px; left:50%; z-index:9; pointer-events:none;
+    font-family:'Baloo 2',sans-serif; font-weight:800; font-size:26px; color:#FFD166;
+    text-shadow:0 0 10px rgba(255,159,28,0.9), 0 2px 3px rgba(0,0,0,0.8);
+    animation:dmgFloat .9s cubic-bezier(.2,.7,.3,1) forwards;
+  }
+  .dmg-number.hurt{color:#FF4D6D;text-shadow:0 0 10px rgba(255,45,99,0.9), 0 2px 3px rgba(0,0,0,0.8);}
+  @keyframes dmgFloat{0%{transform:translate(-50%,0) scale(.5);opacity:0;}18%{transform:translate(-50%,-14px) scale(1.25);opacity:1;}100%{transform:translate(-50%,-52px) scale(1);opacity:0;}}
+  .attack-beam-wrap{
+    position:absolute; height:5px; z-index:8; pointer-events:none;
+    transform-origin:left center;
+  }
+  .attack-beam{
+    width:100%; height:100%; border-radius:999px; transform-origin:left center;
+    background:linear-gradient(90deg, transparent, #fff, transparent);
+    box-shadow:0 0 14px 3px currentColor;
+    animation:beamShot .28s ease-out forwards;
+  }
+  @keyframes beamShot{0%{transform:scaleX(0);opacity:1;}70%{transform:scaleX(1);opacity:1;}100%{transform:scaleX(1);opacity:0;}}
+  .shockwave{
+    position:absolute; top:50%; left:50%; width:20px; height:20px; z-index:8; pointer-events:none;
+    border:3px solid #fff; border-radius:50%; box-shadow:0 0 16px 4px currentColor;
+    animation:shockGrow .45s ease-out forwards;
+  }
+  @keyframes shockGrow{0%{transform:translate(-50%,-50%) scale(.4);opacity:.95;}100%{transform:translate(-50%,-50%) scale(4.2);opacity:0;}}
+  .screen-flash{
+    position:fixed; inset:0; z-index:999; pointer-events:none;
+    animation:screenFlashAnim .32s ease-out forwards;
+  }
+  @keyframes screenFlashAnim{0%{opacity:.5;}100%{opacity:0;}}
+  .effectiveness-pop{
+    position:absolute; top:-26px; left:50%; transform:translateX(-50%);
+    font-family:'JetBrains Mono',monospace; font-weight:800; font-size:12px; white-space:nowrap;
+    padding:2px 6px; border-radius:4px; z-index:12; pointer-events:none;
+    animation:effPop 1.1s ease-out forwards; text-shadow:1px 1px 0 #000;
+  }
+  .effectiveness-pop.super{color:#0a2a12; background:#7dff9a; border:1px solid #0a2a12;}
+  .effectiveness-pop.resist{color:#f0f4ff; background:#3a4a66; border:1px solid #0a1120;}
+  @keyframes effPop{0%{opacity:0;transform:translateX(-50%) translateY(6px) scale(.7);}20%{opacity:1;transform:translateX(-50%) translateY(0) scale(1.1);}80%{opacity:1;}100%{opacity:0;transform:translateX(-50%) translateY(-14px);}}
+  .weakness-hint{
+    display:inline-flex; align-items:center; gap:5px; flex-wrap:wrap;
+    font-size:12px; font-weight:700; color:var(--text-dim);
+    background:var(--panel-tint); border:1px solid var(--line); border-radius:999px;
+    padding:4px 11px; margin:2px 0;
+  }
+  .weakness-hint .wk{color:#1c7a3a;} .weakness-hint .rs{color:#9a3b5a;}
+  .speed-timer-bar{height:12px;border-radius:999px;background:rgba(0,0,0,0.15);overflow:hidden;margin:8px 0;}
+  .speed-timer-fill{height:100%;border-radius:999px;background:linear-gradient(90deg,#00D9C0,#FFD166,#FF4D6D);
+    transition:width .95s linear;}
+  .speed-score-big{font-family:'Baloo 2',sans-serif;font-weight:800;font-size:38px;color:var(--violet);line-height:1;}
+  .coop-turn-banner{
+    display:flex;align-items:center;justify-content:center;gap:8px;
+    font-weight:800;font-size:15px;padding:9px 14px;border-radius:12px;margin:10px 0;
+    background:linear-gradient(135deg,#2A1B4D,#1C1533);color:#F2EFFF;
+  }
+  .coop-roster{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:8px 0;}
+  .coop-chip{display:flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;
+    background:var(--panel-tint);border:1px solid var(--line);font-weight:700;font-size:12.5px;}
+  .coop-chip.active{background:linear-gradient(135deg,#FFD166,#FF9F1C);color:#3a2600;border-color:#FF9F1C;
+    box-shadow:0 0 0 2px rgba(255,209,102,0.4);}
+  .coop-chip .dmg{color:var(--teal);font-variant-numeric:tabular-nums;}
   @keyframes lungeRight{0%{transform:translateX(0);}35%{transform:translateX(16px) scale(1.15);}100%{transform:translateX(0);}}
   @keyframes lungeLeft{0%{transform:translateX(0);}35%{transform:translateX(-16px) scale(1.15);}100%{transform:translateX(0);}}
   @keyframes shakeHit{0%,100%{transform:translateX(0);}20%{transform:translateX(-6px);}40%{transform:translateX(6px);}60%{transform:translateX(-4px);}80%{transform:translateX(4px);}}
@@ -340,8 +458,14 @@
     font-weight:600;
   }
   .choice:hover{border-color:var(--violet); transform:translateX(3px); box-shadow:0 4px 14px rgba(124,92,255,0.18);}
-  .choice.correct{background:linear-gradient(135deg,#DFFBF3,#C8F5E8);border-color:var(--teal); box-shadow:0 4px 16px rgba(0,217,192,0.3);}
-  .choice.incorrect{background:linear-gradient(135deg,#FFE4EA,#FFD1DC);border-color:var(--coral); box-shadow:0 4px 16px rgba(255,77,109,0.25);}
+  .choice.correct{background:linear-gradient(135deg,#DFFBF3,#C8F5E8);border-color:var(--teal);
+    box-shadow:0 0 0 3px rgba(0,217,192,0.35), 0 0 24px rgba(0,217,192,0.55);
+    animation:answerPop .45s cubic-bezier(.3,1.6,.4,1);}
+  @keyframes answerPop{0%{transform:scale(1);}40%{transform:scale(1.04);}100%{transform:scale(1);}}
+  .choice.incorrect{background:linear-gradient(135deg,#FFE4EA,#FFD1DC);border-color:var(--coral);
+    box-shadow:0 0 0 3px rgba(255,77,109,0.3), 0 0 20px rgba(255,77,109,0.45);
+    animation:answerJolt .4s ease;}
+  @keyframes answerJolt{0%,100%{transform:translateX(0);}25%{transform:translateX(-5px);}50%{transform:translateX(5px);}75%{transform:translateX(-3px);}}
   .choice:disabled{cursor:default;}
   .explain{
     margin-top:14px; padding:15px 17px; border-radius:14px; background:var(--panel-tint);
@@ -404,6 +528,52 @@ const SUBJECTS = [
   {key:'writing', name:'Writing Woods',   icon:'✍️'}
 ];
 
+/* Elemental-style weakness ring. Each boss takes DOUBLE damage from the
+   subject it's weak to and HALF from the one it resists, forming a cycle
+   (math→science→history→reading→writing→math) so no single subject is
+   globally best — which is the whole point of adding matchup strategy.
+   The "power" attack used in co-op turns is the boss's own weakness. */
+const BOSS_MATCHUP = {
+  math:    {weakTo:'writing', resists:'science'},
+  science: {weakTo:'math',    resists:'history'},
+  history: {weakTo:'science', resists:'reading'},
+  reading: {weakTo:'history', resists:'writing'},
+  writing: {weakTo:'reading', resists:'math'}
+};
+const ELEMENT_LABEL = {math:'Number', science:'Nature', history:'Time', reading:'Story', writing:'Word'};
+/* Damage multiplier for hitting `bossSubject` using a question from
+   `attackSubject`. In a normal single-subject battle these always match, so
+   the multiplier is 1; it only diverges in co-op, where different players
+   bring different subjects to the same boss. */
+function matchupMultiplier(bossSubject, attackSubject){
+  const m = BOSS_MATCHUP[bossSubject];
+  if(!m) return 1;
+  if(attackSubject === m.weakTo) return 2;
+  if(attackSubject === m.resists) return 0.5;
+  return 1;
+}
+function matchupLabel(bossSubject, attackSubject){
+  const mult = matchupMultiplier(bossSubject, attackSubject);
+  if(mult > 1) return {text:'SUPER EFFECTIVE!', cls:'super'};
+  if(mult < 1) return {text:'Resisted…', cls:'resist'};
+  return null;
+}
+function subjMetaFor(key){ return SUBJECTS.find(x=>x.key===key) || {icon:'❓', name:key}; }
+/* Small hint line teaching the matchup ring. In a single-subject battle you
+   always bring the matching subject (neutral), but showing what the boss is
+   weak/strong against teaches the ring that matters in co-op. */
+function weaknessHintHTML(bossSubject){
+  const m = BOSS_MATCHUP[bossSubject];
+  if(!m) return '';
+  const weak = subjMetaFor(m.weakTo), res = subjMetaFor(m.resists);
+  return `<div class="weakness-hint">
+    <span>🛡️ This boss is</span>
+    <span class="wk">weak to ${weak.icon} ${weak.name} (2× dmg)</span>
+    <span>·</span>
+    <span class="rs">resists ${res.icon} ${res.name} (½ dmg)</span>
+  </div>`;
+}
+
 const SESSION_MINUTES = 20;
 const RANKS = ['Explorer','Adventurer','Master','Legend'];
 
@@ -416,9 +586,12 @@ function Q(q,c,a,n,passage=null,diagram=null,diagramSpec=null){ return {q, c, a,
 const trackA = {
   id:'A', label:'Rising 3rd Grade', tagline:'Every quest levels you up — one adventure at a time!',
   levelNames:['2nd Grade Review','3rd Grade + SOLs','4th Grade Q1–Q2'],
-  // Content mix: 25% 2nd grade review / 50% 3rd grade (incl. SOLs) / 25% 4th grade,
-  // except math, which skews further into 4th grade content per request.
-  mixWeights:{ default:[0.25,0.50,0.25], math:[0.15,0.35,0.50] },
+  // Content mix: questions are sampled across ALL tiers from day one for
+  // topical diversity (rather than starting narrow and widening over the
+  // summer). Grade-level content stays the plurality, but review and
+  // ahead-of-grade ("late summer") topics are mixed in from the first
+  // session. Math skews a little further ahead per request.
+  mixWeights:{ default:[0.30,0.40,0.30], math:[0.22,0.38,0.40] },
   subjects:{
     math:{ levels:[
       [ // L0: 2nd grade review — regrouping, skip counting, comparing, time, shapes
@@ -599,6 +772,8 @@ const trackA = {
 const trackB = {
   id:'B', label:'Rising 4th Grade', tagline:'Every quest levels you up — one adventure at a time!',
   levelNames:['Foundation Review','3rd Grade Mastery','4th Grade Q1–Q2'],
+  // Sample across all tiers from day one for topical variety (see Track A note).
+  mixWeights:{ default:[0.30,0.40,0.30], math:[0.25,0.38,0.37] },
   subjects:{
     math:{ levels:[
       [ // L0: 3rd grade foundational gaps
@@ -776,6 +951,10 @@ const trackB = {
 const trackC = {
   id:'C', label:'Rising 6th Grade', tagline:'Every quest levels you up — one adventure at a time!',
   levelNames:['5th Grade Review','6th Grade Q1–Q2','Algebra I Honors Prep','Geometry Honors Prep'],
+  // Four-tier weights (math has 4 tiers). Advanced honors-prep topics are
+  // pulled forward so 6th graders see the full topical range from day one,
+  // not only late in the summer. Three-tier subjects auto-fit this array.
+  mixWeights:{ default:[0.26,0.34,0.24,0.16], math:[0.24,0.32,0.24,0.20] },
   subjects:{
     math:{ levels:[
       [ // L0: 5th grade review
@@ -965,6 +1144,8 @@ const trackC = {
    ========================================================================= */
 const trackAdult = {
   id:'Adult', label:'Adult Mode', tagline:'Parents, put your own trivia knowledge to the test!',
+  // Adults see all tiers, skewed toward the harder ones, from the first game.
+  mixWeights:{ default:[0.25,0.35,0.40] },
   subjects:{
     math:{ levels:[
       [ // Easy
@@ -3509,12 +3690,45 @@ const Sound = (function(){
   /* Energetic looping background beat: steady kick/hi-hat pulse + a bouncy
      arpeggiated synth riff on top, scheduled at 128 BPM. All synthesized —
      no external audio files. */
+  /* Detuned dual-saw lead through a swept lowpass filter — the classic
+     "real video game" lead sound. Two oscillators a few cents apart give
+     the thick chorused width a single oscillator can never have, and the
+     filter opening then closing over each note is what makes it sing
+     instead of buzz. */
+  function leadVoice(freq, start, dur, peakGain=0.05){
+    const c = getCtx();
+    const t0 = c.currentTime + start;
+    const gain = c.createGain();
+    const filter = c.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.Q.value = 6;
+    filter.frequency.setValueAtTime(500, t0);
+    filter.frequency.exponentialRampToValueAtTime(3200, t0 + dur*0.3);
+    filter.frequency.exponentialRampToValueAtTime(700, t0 + dur);
+    gain.gain.setValueAtTime(0, t0);
+    gain.gain.linearRampToValueAtTime(peakGain, t0 + 0.014);
+    gain.gain.exponentialRampToValueAtTime(0.001, t0 + dur);
+    [0.996, 1.004].forEach(det=>{
+      const osc = c.createOscillator();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(freq*det, t0);
+      osc.connect(filter);
+      osc.start(t0);
+      osc.stop(t0 + dur + 0.05);
+    });
+    filter.connect(gain).connect(c.destination);
+  }
+  /* Snare with real body: a noise crack layered over a short 190Hz thump. */
+  function snare(start, peakGain=0.09){
+    noiseHit(start, 0.12, peakGain, 1600);
+    tone(190, start, 0.09, 'triangle', peakGain*0.6);
+  }
   function startAmbient(subjectKey, forceIdx){
     if(!SETTINGS.musicOn) return;
     stopAmbient();
     const zone = subjectKey || currentZone || 'math';
     const theme = ZONE_THEMES[zone] || ZONE_THEMES.math;
-    const bpm = 128;
+    const bpm = zone==='boss' ? 140 : 126; // boss fights push the tempo like a real final-stage theme
     const stepDur = 60/bpm/2; // 8th notes
     let idx = (forceIdx!==undefined && forceIdx!==null) ? forceIdx : Math.floor(Math.random()*theme.riffs.length);
     if(zone===currentZone && idx===currentVariantIndex && theme.riffs.length>1) idx = (idx+1) % theme.riffs.length;
@@ -3525,19 +3739,32 @@ const Sound = (function(){
     function scheduleStep(){
       if(!SETTINGS.musicOn) return;
       const beatInBar = musicStep % 8;
-      if(theme.kickBeats.includes(beatInBar)) kick(0, 0.15);
-      if(beatInBar % theme.hihatMod === 0) noiseHit(0, 0.04, 0.04, 7500);
+      const bar = Math.floor(musicStep/8);
+      // --- Drums: kick pattern from the theme, snare on the backbeats,
+      //     16th-note hats alternating accented/ghost like a real groove ---
+      if(theme.kickBeats.includes(beatInBar)) kick(0, 0.17);
+      if(beatInBar===2 || beatInBar===6) snare(0, 0.085);
+      if(beatInBar % theme.hihatMod === 0){
+        noiseHit(0, 0.035, 0.045, 8000);
+        noiseHit(stepDur*0.5, 0.03, 0.02, 9000); // ghost 16th between the 8ths
+      }
+      // --- Lead: detuned saw melody (the star of the mix) ---
       const note = riff[beatInBar];
-      tone(note, 0, stepDur*0.92, 'triangle', 0.06);
-      // Harmony layer — a quiet perfect-fifth above the melody note, for a
-      // fuller chord-like sound instead of a single bare melodic line.
-      tone(note*1.5, 0, stepDur*0.85, 'sine', 0.022);
-      // Soft echo — a faint, slightly-delayed repeat of the same note,
-      // giving the loop some sense of space/depth.
-      tone(note, stepDur*0.55, stepDur*0.35, 'sine', 0.018);
-      // Rolling bass layer — a sustained low note every 2 beats (not just
-      // once per bar) gives the loop a fuller, less thin sound throughout.
-      if(beatInBar%2===0) tone(riff[0]/2, 0, stepDur*1.9, 'sine', 0.05);
+      leadVoice(note, 0, stepDur*0.95, zone==='boss' ? 0.06 : 0.05);
+      // Call-and-answer echo an octave up, quiet, half a step later
+      tone(note*2, stepDur*0.5, stepDur*0.4, 'triangle', 0.016);
+      // --- Bass: driving octave pattern (root low / root octave-up
+      //     alternating every 8th) — the engine of a real game loop ---
+      const bassRoot = riff[0]/2;
+      tone(beatInBar%2===0 ? bassRoot : bassRoot*2, 0, stepDur*0.85, 'square', 0.038);
+      tone(bassRoot/2, 0, stepDur*0.9, 'sine', 0.05); // sub layer underneath
+      // --- Pad: one slow filtered chord swell at the top of each bar,
+      //     alternating root and fifth every other bar for movement ---
+      if(beatInBar===0){
+        const padRoot = (bar%2===0) ? riff[0] : riff[0]*1.5;
+        tone(padRoot, 0, stepDur*7.5, 'sine', 0.02);
+        tone(padRoot*1.5, 0, stepDur*7.5, 'sine', 0.014);
+      }
       musicStep++;
       musicSchedulerId = setTimeout(scheduleStep, stepDur*1000);
     }
@@ -3629,6 +3856,10 @@ function xpToTitle(xp){
 const app = document.getElementById('app');
 
 function render(){
+  // render() replaces app.innerHTML wholesale, which detaches the battle
+  // canvas. Stop the animation loop first so it can't keep drawing into an
+  // orphaned element; the battle attach handlers mount a fresh one.
+  PXE.unmount();
   if(state.screen==='loading'){ app.innerHTML = renderLoading(); return; }
   if(state.screen==='pick-track'){ app.innerHTML = renderPickTrack(); attachPickTrackEvents(); attachHeaderEvents(); return; }
   if(state.screen==='pick-grade'){ app.innerHTML = renderPickGrade(); attachPickGradeEvents(); attachHeaderEvents(); return; }
@@ -3651,6 +3882,12 @@ function render(){
   if(state.screen==='challenge-battle'){ app.innerHTML = renderChallengeBattle(); attachChallengeBattleEvents(); attachHeaderEvents(); return; }
   if(state.screen==='review'){ app.innerHTML = renderReview(); attachReviewEvents(); attachHeaderEvents(); return; }
   if(state.screen==='review-result'){ app.innerHTML = renderReviewResult(); attachReviewResultEvents(); attachHeaderEvents(); return; }
+  if(state.screen==='speed-pick'){ app.innerHTML = renderSpeedPick(); attachSpeedPickEvents(); attachHeaderEvents(); return; }
+  if(state.screen==='speed'){ app.innerHTML = renderSpeed(); attachSpeedEvents(); attachHeaderEvents(); return; }
+  if(state.screen==='speed-result'){ app.innerHTML = renderSpeedResult(); attachSpeedResultEvents(); attachHeaderEvents(); return; }
+  if(state.screen==='coop-setup'){ app.innerHTML = renderCoopSetup(); attachCoopSetupEvents(); attachHeaderEvents(); return; }
+  if(state.screen==='coop-battle'){ app.innerHTML = renderCoopBattle(); attachCoopBattleEvents(); attachHeaderEvents(); return; }
+  if(state.screen==='coop-result'){ app.innerHTML = renderCoopResult(); attachCoopResultEvents(); attachHeaderEvents(); return; }
   if(state.screen==='practice'){ app.innerHTML = renderPractice(); attachPracticeEvents(); attachHeaderEvents(); return; }
   if(state.screen==='practice-result'){ app.innerHTML = renderPracticeResult(); attachPracticeResultEvents(); attachHeaderEvents(); return; }
 }
@@ -3693,7 +3930,7 @@ function attachHeaderEvents(){
   const changePlayerBtn = document.getElementById('changePlayerBtn');
   if(changePlayerBtn) changePlayerBtn.addEventListener('click', ()=>{
     Sound.unlock(); Sound.click();
-    if(state.screen==='battle' || state.screen==='finalboss' || state.screen==='practice'){
+    if(state.screen==='battle' || state.screen==='finalboss' || state.screen==='practice' || state.screen==='speed' || state.screen==='coop-battle'){
       const ok = window.confirm('Leave now? Progress on the current activity will end.');
       if(!ok) return;
       const p = getActiveProfile();
@@ -3702,6 +3939,7 @@ function attachHeaderEvents(){
       if(state.battle && state.battle.timerId) clearInterval(state.battle.timerId);
       if(state.finalBoss && state.finalBoss.timerId) clearInterval(state.finalBoss.timerId);
       if(state.practice && state.practice.timerId) clearInterval(state.practice.timerId);
+      if(state.speed && state.speed.timerId){ clearInterval(state.speed.timerId); state.speed.ended = true; }
       Sound.stopAmbient();
       stopMusicRotation();
     }
@@ -4232,6 +4470,41 @@ function renderTrailSVG(track, profile){
     `;
   }).join('');
 
+  // ---- Special-mode outpost zones, sitting on a lower band of the map ----
+  // These are always available (not gated by daily progress) and route to the
+  // multiplayer / practice modes rather than a subject battle.
+  const otherPlayers = state.playerIds.filter(id=>id!==state.activePlayerId && state.profiles[id] && state.profiles[id].name).length;
+  const zoneDefs = [
+    {zone:'training', x:150, y:238, color:'#00D9C0', dark:'#00877A', icon:'⚡', name:'Training Ground', enabled:true},
+    {zone:'coop',     x:425, y:238, color:'#FF9F1C', dark:'#B8630A', icon:'👥', name:'Raid Camp',       enabled:otherPlayers>=1},
+    {zone:'challenge',x:700, y:238, color:'#FF4D6D', dark:'#B8203D', icon:'⚔️', name:'Dueling Arena',   enabled:otherPlayers>=1}
+  ];
+  // branch trail linking the main path down to each outpost
+  const branchTrail = zoneDefs.map(z=>`<path d="M ${z.x},178 Q ${z.x},210 ${z.x},${z.y-40}" fill="none" stroke="#4a4570" stroke-width="4" stroke-dasharray="2 9" stroke-linecap="round" opacity="0.55"/>`).join('');
+  const zoneNodes = zoneDefs.map(z=>{
+    const gradId = 'mapZoneGrad-'+z.zone;
+    const clickable = z.enabled;
+    return `
+    <ellipse cx="${z.x}" cy="${z.y+30}" rx="30" ry="7" fill="#000" opacity="0.28"/>
+    <g class="node-btn ${clickable?'':'node-disabled'}" ${clickable?`data-zone="${z.zone}"`:''} transform="translate(${z.x},${z.y})">
+      <circle r="40" fill="${z.color}" opacity="${clickable?0.20:0.08}" style="color:${z.color}"/>
+      <circle r="33" fill="#151030" opacity="${clickable?0.6:0.8}"/>
+      <defs><linearGradient id="${gradId}" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="${z.color}"/><stop offset="100%" stop-color="${z.dark}"/>
+      </linearGradient></defs>
+      <circle r="24" fill="url(#${gradId})" opacity="${clickable?0.9:0.3}"/>
+      <circle r="33" fill="none" stroke="${clickable?'#ffffff':'#5b5680'}" stroke-width="2" opacity="0.85"/>
+      <circle r="33" fill="none" stroke="${z.color}" stroke-width="1" opacity="${clickable?0.5:0}" class="node-ring-pulse"/>
+      <text x="0" y="9" text-anchor="middle" font-size="24">${clickable?z.icon:'🔒'}</text>
+    </g>
+    <g transform="translate(${z.x},${z.y+44})">
+      <rect x="-58" y="0" width="116" height="25" rx="7" fill="#2a2050" opacity="0.9" stroke="${clickable?z.color:'#4a4570'}" stroke-width="1.5"/>
+      <text x="0" y="17" text-anchor="middle" class="node-label" font-size="11" fill="${clickable?'#F2EFFF':'#8b87a8'}">${z.name}</text>
+    </g>
+    ${!clickable?`<text x="${z.x}" y="${z.y+80}" text-anchor="middle" font-size="9" fill="#8b87a8">Needs 2+ players</text>`:''}
+    `;
+  }).join('');
+
   // player's avatar, standing at the current frontier node (or past the last node if the whole day is done)
   const avEmoji = profile.avatarEmoji || '🧭';
   const avColor = profile.avatarColor || '#7C5CFF';
@@ -4256,7 +4529,7 @@ function renderTrailSVG(track, profile){
 
   return `
   <div class="trail-wrap">
-    <svg class="trail-svg" viewBox="0 0 850 270" xmlns="http://www.w3.org/2000/svg">
+    <svg class="trail-svg" viewBox="0 0 850 340" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <linearGradient id="mapSky" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stop-color="#1b1440"/>
@@ -4268,7 +4541,7 @@ function renderTrailSVG(track, profile){
           <stop offset="100%" stop-color="#120c26" stop-opacity="0.6"/>
         </linearGradient>
       </defs>
-      <rect x="0" y="0" width="850" height="270" rx="18" fill="url(#mapSky)"/>
+      <rect x="0" y="0" width="850" height="340" rx="18" fill="url(#mapSky)"/>
       <g class="map-stars">${stars}</g>
       <!-- parallax mountain layers: far, mid, near -->
       <polygon points="0,100 70,60 150,100 230,50 310,100 850,100 850,270 0,270" fill="#1f1840" opacity="0.4"/>
@@ -4280,7 +4553,9 @@ function renderTrailSVG(track, profile){
       <g class="map-clouds-near" opacity="0.35" fill="#EDE6FF">
         <ellipse cx="700" cy="30" rx="28" ry="8"/><ellipse cx="725" cy="24" rx="18" ry="7"/>
       </g>
-      <rect x="0" y="150" width="850" height="120" fill="url(#mapGround)"/>
+      <rect x="0" y="150" width="850" height="190" fill="url(#mapGround)"/>
+      <line x1="40" y1="200" x2="810" y2="200" stroke="#4a4570" stroke-width="1" stroke-dasharray="3 7" opacity="0.35"/>
+      <text x="425" y="196" text-anchor="middle" font-size="10" fill="#8b87a8" letter-spacing="1.5">✦ SPECIAL OUTPOSTS ✦</text>
       <!-- compass rose -->
       <g transform="translate(802,235)" opacity="0.5">
         <circle r="16" fill="none" stroke="#EDE6FF" stroke-width="1.2"/>
@@ -4291,7 +4566,9 @@ function renderTrailSVG(track, profile){
       <path d="${path}" fill="none" stroke="#4a4570" stroke-width="6" stroke-linecap="round" opacity="0.5"/>
       <path d="${path}" fill="none" stroke="#3a3568" stroke-width="4" stroke-dasharray="2 10" stroke-linecap="round"/>
       <path d="${path}" fill="none" stroke="#00D9C0" stroke-width="2" stroke-dasharray="6 8" stroke-linecap="round" class="trail-path-glow" opacity="0.7"/>
+      ${branchTrail}
       ${nodes}
+      ${zoneNodes}
       ${avatarMarker}
     </svg>
   </div>`;
@@ -4485,17 +4762,7 @@ function renderDashboard(){
     </div>
   </div>
 
-  <div class="section-title">⚔️ Sibling Challenges</div>
-  ${renderChallengesCard()}
-  <div class="card" style="cursor:pointer;" id="startChallengeCard">
-    <div style="display:flex;align-items:center;justify-content:space-between;">
-      <div>
-        <p style="margin:0;font-weight:800;">Challenge a sibling to a head-to-head match!</p>
-        <p style="margin:4px 0 0;font-size:12.5px;color:var(--text-dim);">Pick a subject, both play 5 questions — winner gets ${CHALLENGE_STAKE} bonus XP, loser loses it. Up to 5 challenges at once, one per subject.</p>
-      </div>
-      <span class="btn ghost" style="min-width:auto;flex-shrink:0;margin-left:12px;">Challenge →</span>
-    </div>
-  </div>
+  ${(function(){ const inbox = renderChallengesCard(); return inbox ? `<div class="section-title">⚔️ Challenge Inbox</div>${inbox}<p style="font-size:12px;color:var(--text-dim);margin:-4px 0 0;">Start a new duel, co-op raid, or speed run from the <strong>Special Outposts</strong> on your map above. ↑</p>` : ''; })()}
 
   <div class="section-title" style="color:var(--coral);">⚠️ Danger Zone</div>
   <div class="card" style="border:2px solid var(--coral);background:#FFF5F5;">
@@ -4571,13 +4838,8 @@ function attachDashboardEvents(){
     state.screen = 'sparring-pick';
     render();
   });
-  const startChallengeCard = document.getElementById('startChallengeCard');
-  if(startChallengeCard) startChallengeCard.addEventListener('click', ()=>{
-    Sound.unlock(); Sound.click();
-    state.challengeDraft = null;
-    state.screen = 'challenge-pick';
-    render();
-  });
+  // (Speed Round, Co-op Raid, and Challenge are now launched from the map's
+  // Special Outpost zones — see the [data-zone] handler above.)
   app.querySelectorAll('[data-accept-chal]').forEach(btn=>{
     btn.addEventListener('click', async ()=>{
       Sound.unlock(); Sound.click();
@@ -4616,6 +4878,16 @@ function attachDashboardEvents(){
       if(key==='boss') startFinalBoss(); else startBattle(key);
     });
   });
+  // Special-mode outpost zones on the map (training / co-op / challenge)
+  app.querySelectorAll('[data-zone]').forEach(node=>{
+    node.addEventListener('click', ()=>{
+      Sound.unlock(); Sound.click();
+      const zone = node.getAttribute('data-zone');
+      if(zone==='training'){ state.screen='speed-pick'; render(); }
+      else if(zone==='coop'){ state.coopDraft={selected:[],subject:null}; state.screen='coop-setup'; render(); }
+      else if(zone==='challenge'){ state.challengeDraft=null; state.screen='challenge-pick'; render(); }
+    });
+  });
   const earningsBtn = document.getElementById('earningsBtn');
   if(earningsBtn) earningsBtn.addEventListener('click', ()=>{ state.screen='earnings'; render(); });
   const reviewBtn = document.getElementById('reviewBtn');
@@ -4628,11 +4900,32 @@ function attachDashboardEvents(){
 /* ---------- Battle logic ---------- */
 function shuffle(arr){ const a=arr.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
 
+/* Chooses which difficulty tier to draw the next question from. Weights come
+   from the track's mixWeights (per-subject if present, else default). To give
+   broad TOPICAL COVERAGE from day one, these weights deliberately sample
+   across ALL tiers of a subject — not just the grade-level tier — so that
+   questions meant for "later in the summer" (higher tiers) are mixed in from
+   the very first session. The day-based difficulty ramp lives in boss HP
+   scaling, not here, so pulling harder questions forward doesn't make a boss
+   unbeatable — it just diversifies the topics a player sees.
+
+   Weight arrays are fit to the subject's actual tier count: a subject with
+   fewer tiers than the array truncates and renormalizes; more tiers repeats
+   the last weight. This lets one track intent cover subjects that differ in
+   tier count (e.g. Track C math has 4 tiers, its other subjects have 3). */
+function fitWeightsToTiers(weights, tierCount){
+  let w = weights.slice(0, tierCount);
+  while(w.length < tierCount) w.push(w[w.length-1]); // extend with last weight
+  const sum = w.reduce((a,b)=>a+b, 0) || 1;
+  return w.map(x=>x/sum); // renormalize so it's a valid distribution
+}
 function pickWeightedLevel(track, subjectKey, profile){
   const baseWeights = (track.mixWeights && (track.mixWeights[subjectKey] || track.mixWeights.default)) || null;
   if(!baseWeights) return null;
+  const tierCount = track.subjects[subjectKey].levels.length;
   const momentum = profile ? (profile.subjectMomentum[subjectKey]||0) : 0;
-  const weights = momentumAdjustedWeights(baseWeights, momentum);
+  const fitted = fitWeightsToTiers(baseWeights, tierCount);
+  const weights = momentumAdjustedWeights(fitted, momentum);
   const r = Math.random();
   let acc = 0;
   for(let i=0;i<weights.length;i++){
@@ -5106,6 +5399,396 @@ function expandChartContent(perTierAdd){
 }
 expandChartContent(250);
 
+/* =========================================================================
+   WORD PROBLEMS — math, science, and social studies
+   Applied, real-world scenarios rather than bare computation. Every answer
+   is computed from the SAME numbers used to build the scenario, so
+   correctness is guaranteed by construction (the same self-verifying
+   pattern used by the chart generators).
+
+   Distractors are deliberately built from the specific mistakes a student
+   actually makes on that problem type — forgetting the second step,
+   adding instead of subtracting, using the wrong operand — so guessing by
+   elimination doesn't work.
+
+   Stems embed a name, an item/place, AND the specific numbers, which is
+   what gives each instance enough textual distinctiveness to survive the
+   dedup filter. (An earlier generator batch in this project got silently
+   rejected for producing near-identical stems; this avoids that.)
+   ========================================================================= */
+const WP_NAMES = ['Ava','Ben','Chloe','Diego','Elena','Farid','Grace','Hiro','Imani','Jonas','Kira','Luca','Maya','Noah','Omar','Priya','Rosa','Sam','Tara','Uma','Wren','Yusuf','Zara','Nadia','Theo'];
+const WP_ITEMS = ['stickers','trading cards','marbles','notebooks','pencils','comic books','seashells','bracelets','model rockets','puzzle pieces','baseball cards','keychains'];
+const WP_SNACKS = ['granola bars','apples','muffins','juice boxes','bagels','oranges','cookies','sandwiches'];
+const WP_PLACES = ['the school fair','the summer market','the science museum','the book fair','the community center','the county fair','the sports shop','the craft store'];
+
+/* ---------- MATH ---------- */
+function genWPChange(maxPrice, maxQty){
+  const name = choose(WP_NAMES), item = choose(WP_ITEMS), place = choose(WP_PLACES);
+  const qty = randInt(2, maxQty), price = randInt(2, maxPrice);
+  const cost = qty*price;
+  const bill = (Math.floor(cost/10)+randInt(1,3))*10;
+  const change = bill - cost;
+  const stem = `At ${place}, ${name} buys ${qty} ${item} that cost $${price} each and pays with a $${bill} bill. How much change should ${name} receive?`;
+  const {c,a} = buildMCQ('$'+change, ['$'+cost, '$'+(bill-price), '$'+(change+price)]);
+  return Q(stem, c, a, `First find the total: ${qty} × $${price} = $${cost}. Then subtract from what was paid: $${bill} − $${cost} = $${change}. (Forgetting the second step is the most common mistake here.)`);
+}
+function genWPEqualShare(maxTotal, maxGroups){
+  const name = choose(WP_NAMES), item = choose(WP_SNACKS);
+  const groups = randInt(3, maxGroups), each = randInt(2, Math.max(3, Math.floor(maxTotal/maxGroups)));
+  const leftover = randInt(0, groups-1);
+  const total = groups*each + leftover;
+  const stem = `${name} has ${total} ${item} to share equally among ${groups} friends. How many does each friend get, and how many are left over?`;
+  const {c,a} = buildMCQ(`${each} each, ${leftover} left over`, [`${each+1} each, ${leftover} left over`, `${each} each, ${leftover+1} left over`, `${groups} each, ${each} left over`]);
+  return Q(stem, c, a, `${total} ÷ ${groups} = ${each} with a remainder of ${leftover}. So each friend gets ${each}, and ${leftover} are left over.`);
+}
+function genWPRateDistance(maxRate, maxHours){
+  const name = choose(WP_NAMES);
+  const rate = randInt(8, maxRate), hours = randInt(2, maxHours);
+  const dist = rate*hours;
+  const mode = choose(['bikes','walks','jogs','paddles a canoe','rides a scooter']);
+  const stem = `${name} ${mode} at a steady speed of ${rate} miles per hour for ${hours} hours. How far does ${name} travel in total?`;
+  const {c,a} = buildMCQ(dist+' miles', [(rate+hours)+' miles', (dist+rate)+' miles', Math.round(dist/2)+' miles']);
+  return Q(stem, c, a, `Distance = speed × time = ${rate} × ${hours} = ${dist} miles.`);
+}
+function genWPMultiStepMoney(maxPrice){
+  const name = choose(WP_NAMES), i1 = choose(WP_ITEMS), i2 = choose(WP_SNACKS);
+  const start = randInt(20, 20+maxPrice*3);
+  const p1 = randInt(3, maxPrice), q1 = randInt(2, 4);
+  const p2 = randInt(2, maxPrice);
+  const spent = p1*q1 + p2;
+  const left = start - spent;
+  if(left <= 0) return genWPRateDistance(20, 6);
+  const stem = `${name} starts with $${start}. ${name} buys ${q1} ${i1} at $${p1} each, plus one bag of ${i2} for $${p2}. How much money does ${name} have left?`;
+  const {c,a} = buildMCQ('$'+left, ['$'+spent, '$'+(start-p1*q1), '$'+(left-p2)]);
+  return Q(stem, c, a, `Spent on ${i1}: ${q1} × $${p1} = $${p1*q1}. Total spent: $${p1*q1} + $${p2} = $${spent}. Left: $${start} − $${spent} = $${left}.`);
+}
+function genWPAreaContext(maxSide){
+  const name = choose(WP_NAMES);
+  const L = randInt(4, maxSide), W = randInt(3, maxSide);
+  const area = L*W, perim = 2*(L+W);
+  const thing = choose(['vegetable garden','patio','dog run','sandbox','flower bed']);
+  const askArea = Math.random() < 0.5;
+  if(askArea){
+    const stem = `${name} is building a rectangular ${thing} that measures ${L} feet by ${W} feet. How many square feet of ground will it cover?`;
+    const {c,a} = buildMCQ(area+' square feet', [perim+' square feet', (L+W)+' square feet', (area+L)+' square feet']);
+    return Q(stem, c, a, `Area = length × width = ${L} × ${W} = ${area} square feet. (Adding the sides instead would give the perimeter, not the area.)`);
+  }
+  const stem = `${name} wants to put a fence all the way around a rectangular ${thing} that measures ${L} feet by ${W} feet. How many feet of fencing are needed?`;
+  const {c,a} = buildMCQ(perim+' feet', [area+' feet', (L+W)+' feet', (perim+L)+' feet']);
+  return Q(stem, c, a, `Perimeter = 2 × (length + width) = 2 × (${L} + ${W}) = ${perim} feet. (Multiplying instead would give the area.)`);
+}
+function genWPFractionOfSet(maxTotal){
+  const name = choose(WP_NAMES), item = choose(WP_ITEMS);
+  const denom = choose([2,3,4,5]);
+  const part = randInt(2, Math.max(3, Math.floor(maxTotal/denom)));
+  const total = part*denom;
+  const color = choose(['blue','red','green','gold','silver']);
+  const stem = `${name} has a collection of ${total} ${item}. Exactly 1/${denom} of them are ${color}. How many ${color} ${item} does ${name} have?`;
+  const {c,a} = buildMCQ(String(part), [String(denom), String(total-part), String(part*2)]);
+  return Q(stem, c, a, `1/${denom} of ${total} means ${total} ÷ ${denom} = ${part}.`);
+}
+function genWPUnitRate(maxTotal){
+  const name = choose(WP_NAMES), item = choose(WP_SNACKS);
+  const qty = choose([3,4,5,6,8]);
+  const each = randInt(2, Math.max(3, Math.floor(maxTotal/qty)));
+  const total = qty*each;
+  const stem = `A pack of ${qty} ${item} costs $${total} at ${choose(WP_PLACES)}. At that rate, what does one cost?`;
+  const {c,a} = buildMCQ('$'+each, ['$'+(total-qty), '$'+qty, '$'+(each+1)]);
+  return Q(stem, c, a, `Unit rate = total ÷ number of items = $${total} ÷ ${qty} = $${each} each.`);
+}
+function genWPPercentDiscount(){
+  const name = choose(WP_NAMES);
+  const pct = choose([10,20,25,50]);
+  const base = choose([40,60,80,120,160,200,240]);
+  const off = base*pct/100, final = base-off;
+  const thing = choose(['a bicycle','a tent','a pair of running shoes','a telescope','a guitar','a skateboard']);
+  const stem = `${thing.charAt(0).toUpperCase()+thing.slice(1)} normally costs $${base}. During a sale it is ${pct}% off. How much does ${name} pay?`;
+  const {c,a} = buildMCQ('$'+final, ['$'+off, '$'+(base-pct), '$'+(base+off)]);
+  return Q(stem, c, a, `Discount = ${pct}% of $${base} = $${off}. Sale price = $${base} − $${off} = $${final}. (Answering $${off} gives the amount saved, not the price paid.)`);
+}
+function genWPComparison(maxBase){
+  const n1 = choose(WP_NAMES); let n2 = choose(WP_NAMES); if(n2===n1) n2 = WP_NAMES[(WP_NAMES.indexOf(n1)+3)%WP_NAMES.length];
+  const item = choose(WP_ITEMS);
+  const base = randInt(4, maxBase), mult = randInt(2, 4);
+  const other = base*mult, total = base+other;
+  const stem = `${n1} has ${base} ${item}. ${n2} has ${mult} times as many as ${n1}. How many do they have altogether?`;
+  const {c,a} = buildMCQ(String(total), [String(other), String(base+mult), String(other-base)]);
+  return Q(stem, c, a, `${n2} has ${base} × ${mult} = ${other}. Together: ${base} + ${other} = ${total}. (Answering ${other} gives only ${n2}'s amount.)`);
+}
+function genWPElapsedTime(){
+  const name = choose(WP_NAMES);
+  const startH = randInt(1, 11), startM = choose([0,15,30,45]);
+  const durM = choose([45,50,75,90,105,120,135]);
+  const totalM = startH*60 + startM + durM;
+  const endH = Math.floor(totalM/60), endM = totalM%60;
+  const dispH = ((endH-1)%12)+1;
+  const fmt = (h,m)=> h+':'+String(m).padStart(2,'0');
+  const activity = choose(['a swim meet','a chess tournament','a museum tour','a soccer practice','a piano recital']);
+  const stem = `${name} arrives at ${activity} at ${fmt(startH,startM)} and it lasts ${durM} minutes. What time does it end?`;
+  const {c,a} = buildMCQ(fmt(dispH,endM), [fmt(dispH+1,endM), fmt(dispH,(endM+30)%60), fmt(startH+Math.floor(durM/60), startM)]);
+  return Q(stem, c, a, `${durM} minutes is ${Math.floor(durM/60)} hour(s) and ${durM%60} minutes. Starting at ${fmt(startH,startM)}, it ends at ${fmt(dispH,endM)}.`);
+}
+
+/* ---------- SCIENCE ---------- */
+function genWPPlantGrowth(maxRate, maxWeeks){
+  const name = choose(WP_NAMES);
+  const start = randInt(2, 10), rate = randInt(2, maxRate), weeks = randInt(3, maxWeeks);
+  const grown = rate*weeks, final = start+grown;
+  const plant = choose(['sunflower','bean sprout','tomato seedling','corn stalk','pea vine']);
+  const stem = `For a science experiment, ${name} measures a ${plant} at ${start} cm tall. It grows a steady ${rate} cm each week. How tall will it be after ${weeks} weeks?`;
+  const {c,a} = buildMCQ(final+' cm', [grown+' cm', (start+rate)+' cm', (final+rate)+' cm']);
+  return Q(stem, c, a, `Growth over ${weeks} weeks = ${rate} × ${weeks} = ${grown} cm. Add the starting height: ${start} + ${grown} = ${final} cm. (Answering ${grown} cm forgets the plant's starting height.)`);
+}
+function genWPTemperatureChange(){
+  const startT = randInt(40, 75);
+  const dropRate = randInt(2, 6), hours = randInt(3, 8);
+  const drop = dropRate*hours, endT = startT - drop;
+  const place = choose(['a weather station','a mountain campsite','a field research site','a coastal buoy']);
+  const stem = `At ${place}, the temperature is ${startT}°F at sunset and falls ${dropRate}°F every hour. What will the temperature be ${hours} hours later?`;
+  const {c,a} = buildMCQ(endT+'°F', [drop+'°F', (startT-dropRate)+'°F', (startT+drop)+'°F']);
+  return Q(stem, c, a, `Total drop = ${dropRate} × ${hours} = ${drop}°F. Ending temperature = ${startT} − ${drop} = ${endT}°F.`);
+}
+function genWPRainfall(){
+  const months = shuffle(['March','April','May','June','July']).slice(0,3);
+  const vals = months.map(()=>randInt(20, 90));
+  const total = vals.reduce((s,v)=>s+v,0);
+  const avg = Math.round(total/3);
+  const askAvg = Math.random()<0.5;
+  const listing = months.map((m,i)=>`${m}: ${vals[i]} mm`).join(', ');
+  if(askAvg){
+    const stem = `A weather station recorded this rainfall — ${listing}. What was the average monthly rainfall over these three months?`;
+    const {c,a} = buildMCQ(avg+' mm', [total+' mm', Math.max(...vals)+' mm', Math.round(total/2)+' mm']);
+    return Q(stem, c, a, `Average = total ÷ number of months = (${vals.join(' + ')}) ÷ 3 = ${total} ÷ 3 ≈ ${avg} mm.`);
+  }
+  const stem = `A weather station recorded this rainfall — ${listing}. How much more rain fell in the wettest month than in the driest month?`;
+  const hi = Math.max(...vals), lo = Math.min(...vals), diff = hi-lo;
+  const {c,a} = buildMCQ(diff+' mm', [hi+' mm', total+' mm', (hi+lo)+' mm']);
+  return Q(stem, c, a, `Wettest was ${hi} mm and driest was ${lo} mm. Difference = ${hi} − ${lo} = ${diff} mm.`);
+}
+function genWPAnimalConsumption(maxDaily, maxDays){
+  /* Animal and diet are paired deliberately — picking them independently
+     produced factually wrong scenarios (a horse eating berries, a panda
+     eating fish), which has no place in a science question bank. */
+  const [animal, food] = choose([
+    ['a giant panda','pounds of bamboo'],
+    ['an adult elephant','pounds of grass and leaves'],
+    ['a koala','pounds of eucalyptus leaves'],
+    ['a horse','pounds of hay'],
+    ['a sea otter','pounds of clams and sea urchins'],
+    ['a grizzly bear','pounds of salmon'],
+    ['a cow','pounds of grass'],
+    ['a manatee','pounds of seagrass']
+  ]);
+  const daily = randInt(5, maxDaily), days = randInt(4, maxDays);
+  const total = daily*days;
+  const stem = `A zoologist records that ${animal} eats about ${daily} ${food} each day. About how much will it eat over ${days} days?`;
+  const {c,a} = buildMCQ(total+' pounds', [(daily+days)+' pounds', (total-daily)+' pounds', Math.round(total/2)+' pounds']);
+  return Q(stem, c, a, `${daily} pounds per day × ${days} days = ${total} pounds.`);
+}
+function genWPPopulationEcosystem(){
+  const species = choose(['field mice','frogs','monarch caterpillars','trout','honeybee colonies','songbirds']);
+  const start = choose([120,200,240,320,400,480]);
+  const pct = choose([25,50,75]);
+  const lost = start*pct/100, remaining = start-lost;
+  const cause = choose(['a habitat loss study','a drought season','a pollution event','a severe winter']);
+  const stem = `Researchers counted ${start} ${species} in a wetland. After ${cause}, the population dropped by ${pct}%. How many remain?`;
+  const {c,a} = buildMCQ(String(remaining), [String(lost), String(start-pct), String(start+lost)]);
+  return Q(stem, c, a, `${pct}% of ${start} = ${lost} lost. Remaining = ${start} − ${lost} = ${remaining}. (Answering ${lost} gives the number lost, not the number remaining.)`);
+}
+function genWPWaterUsage(){
+  const name = choose(WP_NAMES);
+  const perUse = randInt(4, 12), uses = randInt(3, 8), days = choose([5,7,10,14]);
+  const total = perUse*uses*days;
+  const stem = `${name} is doing a water-conservation project. A shower uses about ${perUse} liters per minute, and ${name} showers for ${uses} minutes a day. How much water is used over ${days} days?`;
+  const {c,a} = buildMCQ(total+' liters', [(perUse*uses)+' liters', (perUse*days)+' liters', (total*2)+' liters']);
+  return Q(stem, c, a, `Per day: ${perUse} × ${uses} = ${perUse*uses} liters. Over ${days} days: ${perUse*uses} × ${days} = ${total} liters.`);
+}
+function genWPSpeedOfAnimal(){
+  const pairs = [['a cheetah',70],['a peregrine falcon',200],['a pronghorn antelope',55],['a sailfish',68],['a greyhound',45],['a house cat',30]];
+  const [animal, speed] = choose(pairs);
+  const mins = choose([2,3,4,5,6]);
+  const dist = Math.round(speed*mins/60*10)/10;
+  const stem = `${animal.charAt(0).toUpperCase()+animal.slice(1)} can travel about ${speed} miles per hour at top speed. If it kept that speed for ${mins} minutes, roughly how far would it go?`;
+  const {c,a} = buildMCQ(dist+' miles', [speed+' miles', Math.round(speed*mins*10)/10+' miles', Math.round(dist*2*10)/10+' miles']);
+  return Q(stem, c, a, `${mins} minutes is ${mins}/60 of an hour. Distance = ${speed} × ${mins}/60 ≈ ${dist} miles. (Answering ${speed} miles would be the distance in a full hour.)`);
+}
+function genWPEnergyUse(){
+  const device = choose(['an LED bulb','a laptop','a ceiling fan','a small refrigerator','a tablet charger']);
+  const watts = choose([9,15,25,45,60,90]);
+  const hours = randInt(3, 10), days = choose([7,10,14,30]);
+  const totalWh = watts*hours*days;
+  const stem = `${device.charAt(0).toUpperCase()+device.slice(1)} uses ${watts} watts and runs ${hours} hours a day. How many watt-hours of energy does it use in ${days} days?`;
+  const {c,a} = buildMCQ(totalWh+' watt-hours', [(watts*hours)+' watt-hours', (watts*days)+' watt-hours', (totalWh/2)+' watt-hours']);
+  return Q(stem, c, a, `Per day: ${watts} × ${hours} = ${watts*hours} watt-hours. Over ${days} days: ${watts*hours} × ${days} = ${totalWh} watt-hours.`);
+}
+function genWPDensity(){
+  const material = choose(['a granite sample','an aluminum block','an oak block','an iron weight','a plastic cube']);
+  const vol = choose([4,5,8,10,20,25]);
+  const density = choose([2,3,5,7,8]);
+  const mass = vol*density;
+  const askDensity = Math.random()<0.5;
+  if(askDensity){
+    const stem = `In a lab, ${material} has a mass of ${mass} grams and a volume of ${vol} cubic centimeters. What is its density?`;
+    const {c,a} = buildMCQ(density+' g/cm³', [(mass*vol)+' g/cm³', (mass-vol)+' g/cm³', Math.round(vol/density)+' g/cm³']);
+    return Q(stem, c, a, `Density = mass ÷ volume = ${mass} ÷ ${vol} = ${density} g/cm³.`);
+  }
+  const stem = `In a lab, ${material} has a density of ${density} g/cm³ and a volume of ${vol} cubic centimeters. What is its mass?`;
+  const {c,a} = buildMCQ(mass+' grams', [(vol+density)+' grams', Math.round(vol/density)+' grams', (mass*2)+' grams']);
+  return Q(stem, c, a, `Mass = density × volume = ${density} × ${vol} = ${mass} grams.`);
+}
+
+/* ---------- SOCIAL STUDIES ---------- */
+const WP_EVENTS = [
+  ['the Declaration of Independence was signed', 1776],
+  ['the U.S. Constitution was signed', 1787],
+  ['the Louisiana Purchase was completed', 1803],
+  ['the Civil War began', 1861],
+  ['the Civil War ended', 1865],
+  ['the transcontinental railroad was completed', 1869],
+  ['the 19th Amendment gave women the right to vote', 1920],
+  ['the Great Depression began', 1929],
+  ['World War II ended', 1945],
+  ['the Civil Rights Act was passed', 1964],
+  ['the first Moon landing took place', 1969]
+];
+function genWPYearsBetween(){
+  const picks = shuffle(WP_EVENTS).slice(0,2).sort((a,b)=>a[1]-b[1]);
+  const [e1,y1] = picks[0], [e2,y2] = picks[1];
+  const diff = y2-y1;
+  const stem = `In ${y1}, ${e1}. In ${y2}, ${e2}. How many years passed between these two events?`;
+  const {c,a} = buildMCQ(diff+' years', [(diff+10)+' years', (y1+y2-3000)+' years', Math.abs(diff-10)+' years']);
+  return Q(stem, c, a, `${y2} − ${y1} = ${diff} years.`);
+}
+function genWPAnniversary(){
+  const [event, year] = choose(WP_EVENTS);
+  const target = choose([2000, 2020, 2025, 2050]);
+  const diff = target-year;
+  const stem = `In ${year}, ${event}. How many years after that event is the year ${target}?`;
+  const {c,a} = buildMCQ(diff+' years', [(diff+25)+' years', (diff-25)+' years', (target-1776)+' years']);
+  return Q(stem, c, a, `${target} − ${year} = ${diff} years.`);
+}
+function genWPPopulationCompare(){
+  const regions = shuffle(['the Coastal Plain','the Piedmont region','the Great Plains','the Appalachian region','the Pacific Northwest','the Gulf Coast']).slice(0,2);
+  const p1 = randInt(120, 480)*1000, p2 = randInt(120, 480)*1000;
+  if(p1===p2) return genWPYearsBetween();
+  const hi = Math.max(p1,p2), lo = Math.min(p1,p2), diff = hi-lo;
+  const hiRegion = p1>p2 ? regions[0] : regions[1];
+  const stem = `A census recorded ${p1.toLocaleString()} people living in ${regions[0]} and ${p2.toLocaleString()} people in ${regions[1]}. How many more people live in the larger of the two?`;
+  const {c,a} = buildMCQ(diff.toLocaleString()+' people', [(hi+lo).toLocaleString()+' people', hi.toLocaleString()+' people', Math.round(diff/2).toLocaleString()+' people']);
+  return Q(stem, c, a, `${hiRegion} has more. ${hi.toLocaleString()} − ${lo.toLocaleString()} = ${diff.toLocaleString()} people.`);
+}
+function genWPElectionMajority(){
+  const total = choose([120, 200, 240, 300, 400, 500]);
+  const needed = Math.floor(total/2)+1;
+  const got = randInt(Math.floor(total*0.3), Math.floor(total*0.48));
+  const short = needed-got;
+  const office = choose(['student council president','town mayor','class representative','school board member']);
+  const stem = `In an election for ${office}, ${total} votes were cast. A candidate needs more than half the votes to win outright. If one candidate received ${got} votes, how many more votes were needed to reach a majority?`;
+  const {c,a} = buildMCQ(short+' more votes', [(total-got)+' more votes', needed+' more votes', Math.round(short/2)+' more votes']);
+  return Q(stem, c, a, `A majority of ${total} votes is ${needed} votes (more than half). ${needed} − ${got} = ${short} more votes needed.`);
+}
+function genWPTradeGoods(){
+  const good = choose(['barrels of tobacco','bales of cotton','crates of wheat','bolts of cloth','sacks of grain','barrels of molasses']);
+  const perShip = randInt(20, 90), ships = randInt(3, 12);
+  const total = perShip*ships;
+  const port = choose(['Boston','Charleston','Philadelphia','New Orleans','Baltimore','Savannah']);
+  const stem = `A merchant in colonial ${port} loaded ${ships} ships, each carrying ${perShip} ${good}. How many were shipped in total?`;
+  const {c,a} = buildMCQ(String(total), [String(perShip+ships), String(total-perShip), String(Math.round(total/2))]);
+  return Q(stem, c, a, `${ships} ships × ${perShip} each = ${total} ${good}.`);
+}
+function genWPMapScale(){
+  const scale = choose([10, 20, 25, 50]);
+  const inches = choose([2, 3, 4, 5, 6, 8]);
+  const miles = scale*inches;
+  const c1 = choose(['Richmond','Denver','Atlanta','Chicago','Portland','Nashville']);
+  let c2 = choose(['Norfolk','Boulder','Savannah','Milwaukee','Salem','Memphis']);
+  const stem = `On a map, 1 inch represents ${scale} miles. ${c1} and ${c2} are ${inches} inches apart on the map. What is the actual distance between them?`;
+  const {c,a} = buildMCQ(miles+' miles', [(scale+inches)+' miles', Math.round(miles/2)+' miles', (miles+scale)+' miles']);
+  return Q(stem, c, a, `Actual distance = map distance × scale = ${inches} × ${scale} = ${miles} miles.`);
+}
+function genWPBudgetAllocation(){
+  const total = choose([200000, 400000, 500000, 800000, 1000000]);
+  const pct = choose([10, 15, 20, 25, 30, 40]);
+  const amount = total*pct/100;
+  const category = choose(['public schools','road repair','parks and recreation','the public library','emergency services','clean water projects']);
+  const stem = `A town council has a budget of $${total.toLocaleString()} and votes to spend ${pct}% of it on ${category}. How much money is that?`;
+  const {c,a} = buildMCQ('$'+amount.toLocaleString(), ['$'+(total-amount).toLocaleString(), '$'+pct.toLocaleString(), '$'+Math.round(amount/2).toLocaleString()]);
+  return Q(stem, c, a, `${pct}% of $${total.toLocaleString()} = $${amount.toLocaleString()}.`);
+}
+function genWPSettlementGrowth(){
+  const start = choose([150, 200, 320, 450, 600]);
+  const perYear = choose([25, 40, 50, 75, 100]);
+  const years = randInt(4, 12);
+  const final = start + perYear*years;
+  const settlement = choose(['a frontier settlement','a river trading post','a mining town','a railroad town','a coastal village']);
+  const stem = `${settlement.charAt(0).toUpperCase()+settlement.slice(1)} had ${start} residents. Over the next ${years} years, about ${perYear} new residents arrived each year. About how many people lived there at the end of that period?`;
+  const {c,a} = buildMCQ(String(final), [String(perYear*years), String(start+perYear), String(final+perYear)]);
+  return Q(stem, c, a, `New arrivals: ${perYear} × ${years} = ${perYear*years}. Total: ${start} + ${perYear*years} = ${final}. (Answering ${perYear*years} forgets the original residents.)`);
+}
+
+/* Grade-scaled generator sets. Track A keeps numbers small and steps few;
+   Track C and Adult get percentages, rates, and multi-step reasoning. */
+function wordProblemGenerators(tier){
+  const easy = tier==='A', mid = tier==='B', hard = (tier==='C' || tier==='Adult');
+  const math = [
+    G(()=>genWPChange(easy?9:(mid?12:25), easy?5:(mid?8:12)),'wp-money'),
+    G(()=>genWPEqualShare(easy?40:(mid?70:140), easy?5:(mid?7:9)),'wp-division'),
+    G(()=>genWPRateDistance(easy?15:(mid?25:65), easy?5:(mid?7:9)),'wp-rate'),
+    G(()=>genWPAreaContext(easy?12:(mid?20:40)),'wp-geometry'),
+    G(()=>genWPFractionOfSet(easy?24:(mid?40:80)),'wp-fractions'),
+    G(()=>genWPComparison(easy?12:(mid?25:60)),'wp-comparison'),
+    G(()=>genWPElapsedTime(),'wp-time')
+  ];
+  if(!easy){
+    math.push(G(()=>genWPMultiStepMoney(mid?12:25),'wp-multistep'));
+    math.push(G(()=>genWPUnitRate(mid?40:90),'wp-unit-rate'));
+  }
+  if(hard) math.push(G(()=>genWPPercentDiscount(),'wp-percent'));
+
+  const science = [
+    G(()=>genWPPlantGrowth(easy?5:(mid?8:12), easy?6:(mid?9:14)),'wp-growth'),
+    G(()=>genWPTemperatureChange(),'wp-temperature'),
+    G(()=>genWPRainfall(),'wp-data'),
+    G(()=>genWPAnimalConsumption(easy?15:(mid?30:60), easy?7:(mid?12:21)),'wp-consumption'),
+    G(()=>genWPWaterUsage(),'wp-conservation')
+  ];
+  if(!easy) science.push(G(()=>genWPSpeedOfAnimal(),'wp-speed'));
+  if(hard){
+    science.push(G(()=>genWPPopulationEcosystem(),'wp-population'));
+    science.push(G(()=>genWPEnergyUse(),'wp-energy'));
+    science.push(G(()=>genWPDensity(),'wp-density'));
+  }
+
+  const history = [
+    G(()=>genWPYearsBetween(),'wp-chronology'),
+    G(()=>genWPAnniversary(),'wp-chronology'),
+    G(()=>genWPTradeGoods(),'wp-economics'),
+    G(()=>genWPSettlementGrowth(),'wp-growth'),
+    G(()=>genWPMapScale(),'wp-geography')
+  ];
+  if(!easy) history.push(G(()=>genWPElectionMajority(),'wp-civics'));
+  if(hard){
+    history.push(G(()=>genWPPopulationCompare(),'wp-population'));
+    history.push(G(()=>genWPBudgetAllocation(),'wp-economics'));
+  }
+  return {math, science, history};
+}
+
+/* Fills each math/science/history tier so word problems make up ~20% of
+   that tier: adding N/4 to a tier of N lands at N/4 ÷ (N + N/4) = 20%. */
+function expandWordProblems(){
+  [[trackA,'A'], [trackB,'B'], [trackC,'C'], [trackAdult,'Adult']].forEach(([track, tid])=>{
+    const gens = wordProblemGenerators(tid);
+    ['math','science','history'].forEach(subj=>{
+      track.subjects[subj].levels.forEach(levelArr=>{
+        const target = levelArr.length + Math.ceil(levelArr.length/4);
+        fillMathLevelToTarget(levelArr, gens[subj], target);
+      });
+    });
+  });
+}
+expandWordProblems();
+
 function buildDiagramFromSpec(spec){
   if(spec.type==='bar') return barChartSVG(spec.data, spec.title);
   if(spec.type==='pictograph') return pictographSVG(spec.data, spec.title, spec.icon, spec.symbolValue);
@@ -5271,22 +5954,71 @@ function hpBarHTML(current, max, id, colorClass){
    realm is being fought — this is the single biggest driver of "does this
    look like a real illustrated battle" vs. a plain quiz screen. */
 function battleBackdropSVG(subjectKey){
+  /* Each realm is a full layered scene: sky gradient -> celestial glow ->
+     far silhouette layer -> near silhouette layer (drifts slowly for
+     parallax) -> drifting mist band -> lit ground plane. Silhouette
+     layers are drawn twice side-by-side (0-600 and 600-1200) so the
+     drift animation loops seamlessly. */
   const themes = {
-    math: {sky:['#3a2a5c','#1c1440'], deco:`<polygon points="0,140 90,60 180,140" fill="#FF9F1C" opacity="0.18"/><polygon points="140,140 260,40 380,140" fill="#FF9F1C" opacity="0.14"/><polygon points="330,140 430,70 560,140" fill="#FF9F1C" opacity="0.18"/>`},
-    science: {sky:['#0f3d3a','#0a1f2e'], deco:`<circle cx="90" cy="60" r="30" fill="#00D9C0" opacity="0.14"/><circle cx="260" cy="90" r="18" fill="#00D9C0" opacity="0.18"/><circle cx="460" cy="50" r="24" fill="#00D9C0" opacity="0.12"/>`},
-    history: {sky:['#4a1f2c','#241018'], deco:`<rect x="60" y="70" width="14" height="70" fill="#FF4D6D" opacity="0.16"/><rect x="140" y="50" width="14" height="90" fill="#FF4D6D" opacity="0.16"/><rect x="380" y="60" width="14" height="80" fill="#FF4D6D" opacity="0.16"/><rect x="470" y="45" width="14" height="95" fill="#FF4D6D" opacity="0.16"/>`},
-    reading: {sky:['#1c2f5c','#0e1730'], deco:`<ellipse cx="120" cy="100" rx="60" ry="34" fill="#4D8DFF" opacity="0.12"/><ellipse cx="420" cy="80" rx="70" ry="30" fill="#4D8DFF" opacity="0.14"/>`},
-    writing: {sky:['#3a1c52','#1c0e30'], deco:`<path d="M40,140 Q120,20 200,140" stroke="#B14AFF" stroke-width="10" fill="none" opacity="0.14"/><path d="M340,140 Q420,30 500,140" stroke="#B14AFF" stroke-width="10" fill="none" opacity="0.14"/>`},
-    boss: {sky:['#3a0a1a','#12040c'], deco:`<polygon points="0,140 60,60 120,140" fill="#FF2E63" opacity="0.16"/><polygon points="90,140 170,30 250,140" fill="#FF2E63" opacity="0.2"/><polygon points="220,140 300,50 380,140" fill="#FF2E63" opacity="0.16"/><polygon points="350,140 440,40 530,140" fill="#FF2E63" opacity="0.2"/><circle cx="480" cy="40" r="26" fill="#FFD166" opacity="0.15"/>`}
+    math:    {sky:['#3a2a5c','#151033'], glow:'#FFD166', accent:'#FF9F1C', ground:'#241a45',
+      far:`<polygon points="0,150 110,52 220,150" fill="#4a3a78" opacity="0.7"/><polygon points="170,150 300,30 430,150" fill="#4a3a78" opacity="0.7"/><polygon points="380,150 480,62 600,150" fill="#4a3a78" opacity="0.7"/>`,
+      near:`<polygon points="-40,160 80,84 200,160" fill="#2c2054"/><polygon points="150,160 290,66 430,160" fill="#2c2054"/><polygon points="380,160 500,90 640,160" fill="#2c2054"/>`},
+    science: {sky:['#0f3d3a','#07141e'], glow:'#00D9C0', accent:'#00D9C0', ground:'#0e2a2c',
+      far:`<ellipse cx="120" cy="120" rx="90" ry="50" fill="#155a52" opacity="0.6"/><ellipse cx="360" cy="130" rx="110" ry="55" fill="#155a52" opacity="0.6"/><ellipse cx="540" cy="118" rx="80" ry="48" fill="#155a52" opacity="0.6"/>`,
+      near:`<path d="M0,160 L40,96 Q60,80 80,96 L110,160 Z" fill="#0c3833"/><path d="M170,160 L215,78 Q235,60 255,78 L300,160 Z" fill="#0c3833"/><path d="M400,160 L445,90 Q465,72 485,90 L530,160 Z" fill="#0c3833"/>`},
+    history: {sky:['#4a1f2c','#1c0c13'], glow:'#FFB35C', accent:'#FF4D6D', ground:'#2e1420',
+      far:`<rect x="40" y="86" width="90" height="74" fill="#5c2838" opacity="0.65"/><rect x="250" y="70" width="110" height="90" fill="#5c2838" opacity="0.65"/><rect x="460" y="92" width="90" height="68" fill="#5c2838" opacity="0.65"/>`,
+      near:`<rect x="90" y="66" width="16" height="94" fill="#38182a"/><rect x="82" y="58" width="32" height="12" fill="#38182a"/><rect x="200" y="46" width="16" height="114" fill="#38182a"/><rect x="192" y="38" width="32" height="12" fill="#38182a"/><rect x="420" y="58" width="16" height="102" fill="#38182a"/><rect x="412" y="50" width="32" height="12" fill="#38182a"/>`},
+    reading: {sky:['#1c2f5c','#0a0f26'], glow:'#4D8DFF', accent:'#4D8DFF', ground:'#141f42',
+      far:`<ellipse cx="140" cy="112" rx="80" ry="40" fill="#28407a" opacity="0.6"/><ellipse cx="430" cy="96" rx="95" ry="42" fill="#28407a" opacity="0.6"/>`,
+      near:`<path d="M40,160 L60,100 L100,90 L140,100 L160,160 Z" fill="#1a2a56"/><path d="M330,160 L355,84 L400,72 L445,84 L470,160 Z" fill="#1a2a56"/>`},
+    writing: {sky:['#3a1c52','#160a2b'], glow:'#B14AFF', accent:'#B14AFF', ground:'#241239',
+      far:`<path d="M0,150 Q100,58 200,150" stroke="#5a2e88" stroke-width="16" fill="none" opacity="0.55"/><path d="M240,150 Q340,44 440,150" stroke="#5a2e88" stroke-width="16" fill="none" opacity="0.55"/><path d="M420,150 Q510,72 600,150" stroke="#5a2e88" stroke-width="16" fill="none" opacity="0.55"/>`,
+      near:`<path d="M-20,160 Q90,72 200,160" stroke="#3a1c62" stroke-width="24" fill="none"/><path d="M260,160 Q380,56 500,160" stroke="#3a1c62" stroke-width="24" fill="none"/>`},
+    boss:    {sky:['#3a0a1a','#0c0208'], glow:'#FF2E63', accent:'#FF2E63', ground:'#280812',
+      far:`<polygon points="0,150 80,44 160,150" fill="#5c1428" opacity="0.7"/><polygon points="130,150 230,20 330,150" fill="#5c1428" opacity="0.7"/><polygon points="300,150 400,38 500,150" fill="#5c1428" opacity="0.7"/><polygon points="470,150 550,60 630,150" fill="#5c1428" opacity="0.7"/>`,
+      near:`<polygon points="-30,160 70,64 170,160" fill="#38091a"/><polygon points="140,160 260,34 380,160" fill="#38091a"/><polygon points="350,160 460,58 570,160" fill="#38091a"/>`}
   };
   const t = themes[subjectKey] || themes.math;
+  const stars = `<circle cx="70" cy="26" r="1.6" fill="#fff" class="bd-twinkle"/><circle cx="180" cy="16" r="1.2" fill="#fff" class="bd-twinkle t2"/><circle cx="300" cy="30" r="1.8" fill="#fff" class="bd-twinkle t3"/><circle cx="420" cy="14" r="1.3" fill="#fff" class="bd-twinkle"/><circle cx="520" cy="28" r="1.6" fill="#fff" class="bd-twinkle t2"/><circle cx="560" cy="48" r="1.1" fill="#fff" class="bd-twinkle t3"/>`;
   return `<svg class="battle-backdrop" viewBox="0 0 600 160" preserveAspectRatio="none">
-    <defs><linearGradient id="bgGrad-${subjectKey}" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="${t.sky[0]}"/><stop offset="100%" stop-color="${t.sky[1]}"/>
-    </linearGradient></defs>
+    <defs>
+      <linearGradient id="bgGrad-${subjectKey}" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="${t.sky[0]}"/><stop offset="100%" stop-color="${t.sky[1]}"/>
+      </linearGradient>
+      <radialGradient id="moonGlow-${subjectKey}"><stop offset="0%" stop-color="${t.glow}" stop-opacity="0.85"/><stop offset="45%" stop-color="${t.glow}" stop-opacity="0.25"/><stop offset="100%" stop-color="${t.glow}" stop-opacity="0"/></radialGradient>
+      <linearGradient id="groundGrad-${subjectKey}" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="${t.accent}" stop-opacity="0.35"/><stop offset="18%" stop-color="${t.ground}"/><stop offset="100%" stop-color="#000" stop-opacity="0.9"/>
+      </linearGradient>
+    </defs>
     <rect width="600" height="160" fill="url(#bgGrad-${subjectKey})"/>
-    ${t.deco}
+    ${stars}
+    <circle cx="500" cy="34" r="44" fill="url(#moonGlow-${subjectKey})"/>
+    <circle cx="500" cy="34" r="13" fill="${t.glow}" opacity="0.85"/>
+    ${t.far}
+    <g class="bd-drift slow">${t.near}<g transform="translate(600,0)">${t.near}</g></g>
+    <g class="bd-drift" opacity="0.16">
+      <ellipse cx="150" cy="120" rx="140" ry="16" fill="#fff"/><ellipse cx="450" cy="128" rx="160" ry="14" fill="#fff"/>
+      <g transform="translate(600,0)"><ellipse cx="150" cy="120" rx="140" ry="16" fill="#fff"/><ellipse cx="450" cy="128" rx="160" ry="14" fill="#fff"/></g>
+    </g>
+    <rect y="132" width="600" height="28" fill="url(#groundGrad-${subjectKey})"/>
+    <ellipse cx="300" cy="134" rx="240" ry="5" fill="${t.glow}" opacity="0.22"/>
   </svg>`;
+}
+
+/* Drifting ember/spark particles inside the arena, tinted to the realm.
+   Purely decorative atmosphere — spawned as part of the arena markup. */
+function arenaEmbersHTML(subjectKey){
+  const colors = {math:'#FFD166', science:'#00D9C0', history:'#FF9F1C', reading:'#4D8DFF', writing:'#B14AFF', boss:'#FF2E63'};
+  const c = colors[subjectKey] || '#FFD166';
+  let html = '';
+  for(let i=0;i<7;i++){
+    const left = 6 + Math.floor(Math.random()*88);
+    const dur = (4 + Math.random()*4).toFixed(1);
+    const delay = (Math.random()*5).toFixed(1);
+    html += `<span class="ember" style="left:${left}%;background:${c};box-shadow:0 0 6px 2px ${c};animation-duration:${dur}s;animation-delay:-${delay}s;"></span>`;
+  }
+  return html;
 }
 
 /* =========================================================================
@@ -5383,6 +6115,622 @@ function bossMeta(subjectKey){
   return { name: names[subjectKey], icon: emojis[subjectKey] };
 }
 
+/* =========================================================================
+   16-BIT PIXEL GRAPHICS ENGINE
+   A genuine low-resolution renderer rather than a restyling of the vector
+   art. Everything is drawn into a 256x152 buffer — roughly SNES resolution
+   — and upscaled with nearest-neighbour so every pixel stays a hard square.
+
+   The techniques here are the ones the 16-bit era actually used:
+     * Bayer 4x4 ordered dithering to fake gradients from a few flat colours
+     * multiple parallax layers scrolling at different speeds for depth
+     * sprites assembled from primitives, then given a hard dark outline
+       (the single biggest reason SNES sprites read clearly against a busy
+       background)
+     * palette-flash on hit, and a bottom status window drawn in-buffer
+
+   Static layers and sprites are pre-rendered once into offscreen canvases
+   and cached, so the per-frame cost is a handful of drawImage calls.
+   ========================================================================= */
+const PXE = (function(){
+  const W = 256, H = 152, GROUND_Y = 118;
+  const BAYER = [0,8,2,10, 12,4,14,6, 3,11,1,9, 15,7,13,5];
+  const cache = {};           // pre-rendered layers/sprites, keyed by scene
+  let live = null;            // active mount
+  let rafId = null;
+
+  function surf(w,h){
+    const c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    const x = c.getContext && c.getContext('2d');
+    if(x){ x.imageSmoothingEnabled = false; }
+    return {c, x};
+  }
+  function rnd(seed){ let s = seed>>>0 || 1; return ()=>{ s = (s*1664525 + 1013904223)>>>0; return s/4294967296; }; }
+
+  /* Ordered-dither fill: blends two flat colours using the Bayer matrix,
+     which is how 16-bit hardware produced smooth-looking gradients. */
+  function dither(x, x0, y0, w, h, cA, cB, t){
+    for(let y=0;y<h;y++){
+      for(let i=0;i<w;i++){
+        const b = BAYER[((y+y0)&3)*4 + ((i+x0)&3)] / 16;
+        x.fillStyle = (b < t) ? cB : cA;
+        x.fillRect(x0+i, y0+y, 1, 1);
+      }
+    }
+  }
+  /* Sky built from a small ramp of flat colours, dithered between each
+     adjacent pair — no true gradients anywhere. */
+  function sky(x, ramp, h){
+    const bands = ramp.length - 1;
+    for(let y=0;y<h;y++){
+      const p = (y/h)*bands;
+      const i = Math.min(bands-1, Math.floor(p));
+      dither(x, 0, y, W, 1, ramp[i], ramp[i+1], p - i);
+    }
+  }
+  function ellipse(x, cx, cy, rx, ry, col){
+    x.fillStyle = col;
+    for(let y=-ry;y<=ry;y++){
+      const w = Math.floor(rx * Math.sqrt(Math.max(0, 1 - (y*y)/(ry*ry))));
+      x.fillRect(cx-w, cy+y, w*2+1, 1);
+    }
+  }
+  /* Hard 1px outline around every solid pixel — the classic sprite-legibility
+     trick. Done as a post-pass over the finished sprite buffer. */
+  function outline(s, col){
+    if(!s.x) return;
+    const w = s.c.width, h = s.c.height;
+    const d = s.x.getImageData(0,0,w,h).data;
+    const solid = i => d[i*4+3] > 0;
+    const edge = [];
+    for(let y=0;y<h;y++) for(let i=0;i<w;i++){
+      if(solid(y*w+i)) continue;
+      if((i>0   && solid(y*w+i-1)) || (i<w-1 && solid(y*w+i+1)) ||
+         (y>0   && solid((y-1)*w+i)) || (y<h-1 && solid((y+1)*w+i))) edge.push([i,y]);
+    }
+    s.x.fillStyle = col;
+    edge.forEach(([a,b])=> s.x.fillRect(a,b,1,1));
+  }
+  /* Automatic form shading. SNES artists gave every material 3-4 shades so
+     surfaces read as rounded rather than flat. Rather than hand-authoring
+     each shade, this lightens pixels whose upper-left neighbour is empty
+     (catching the light) and darkens those whose lower-right neighbour is
+     empty (falling into shadow) — applied to every sprite uniformly. */
+  function shadePass(s, lift, drop){
+    if(!s.x) return;
+    const w = s.c.width, h = s.c.height;
+    const img = s.x.getImageData(0,0,w,h), d = img.data;
+    const A = i => d[i*4+3] > 0;
+    const src = new Uint8ClampedArray(d);
+    for(let y=0;y<h;y++) for(let i=0;i<w;i++){
+      const k = y*w+i;
+      if(!A(k)) continue;
+      const upEmpty   = (y===0)   || !(src[((y-1)*w+i)*4+3] > 0);
+      const leftEmpty = (i===0)   || !(src[(y*w+i-1)*4+3] > 0);
+      const dnEmpty   = (y===h-1) || !(src[((y+1)*w+i)*4+3] > 0);
+      const rtEmpty   = (i===w-1) || !(src[(y*w+i+1)*4+3] > 0);
+      let adj = 0;
+      if(upEmpty || leftEmpty) adj += lift;
+      if(dnEmpty || rtEmpty)   adj -= drop;
+      if(!adj) continue;
+      for(let ch=0; ch<3; ch++) d[k*4+ch] = Math.max(0, Math.min(255, d[k*4+ch] + adj));
+    }
+    s.x.putImageData(img, 0, 0);
+  }
+
+  /* White-silhouette copy of a sprite, used for the hit flash. */
+  function flashOf(s){
+    const f = surf(s.c.width, s.c.height);
+    if(!f.x) return f;
+    f.x.drawImage(s.c, 0, 0);
+    f.x.globalCompositeOperation = 'source-atop';
+    f.x.fillStyle = '#ffffff';
+    f.x.fillRect(0,0,s.c.width,s.c.height);
+    f.x.globalCompositeOperation = 'source-over';
+    return f;
+  }
+
+  /* ---- Scene definitions: each realm gets its own palette and terrain ---- */
+  const SCENES = {
+    math:    {ramp:['#120c2e','#241a52','#4a2f74','#7a4a86','#c96f7a'], orb:'#ffe9a8', orbGlow:'#f6b45c',
+              far:{body:'#2d2054', top:'#4a3a7d', shade:'#241a45', amp:26, base:104, freq:0.035, seed:11},
+              near:{body:'#1a1136', top:'#33245e', shade:'#120b28', amp:17, base:120, freq:0.06, seed:22},
+              ground:['#2a1c4e','#1a1136'], accent:'#ffd166', deco:'crystal'},
+    science: {ramp:['#04161c','#07303a','#0d5a58','#189c86','#6fd8ae'], orb:'#d8ffe8', orbGlow:'#4fd6a8',
+              far:{body:'#0c3d3c', top:'#186a5c', shade:'#082c2c', amp:22, base:106, freq:0.03, seed:33},
+              near:{body:'#062824', top:'#0f4a40', shade:'#041c19', amp:15, base:121, freq:0.055, seed:44},
+              ground:['#0a3330','#052220'], accent:'#00d9c0', deco:'spore'},
+    history: {ramp:['#1c0a12','#3d1420','#6e2a2a','#a8542f','#e0954a'], orb:'#ffd9a0', orbGlow:'#e8863c',
+              far:{body:'#4a2028', top:'#6e3436', shade:'#38161e', amp:20, base:106, freq:0.028, seed:55},
+              near:{body:'#2e1219', top:'#4a2028', shade:'#1e0b11', amp:13, base:121, freq:0.05, seed:66},
+              ground:['#3a1a20','#241014'], accent:'#ff9f1c', deco:'column'},
+    reading: {ramp:['#060c22','#101f47','#1e3a6e','#3a63a0','#7ba0cf'], orb:'#eaf2ff', orbGlow:'#6f9fe0',
+              far:{body:'#1a2e5c', top:'#2f4d86', shade:'#132244', amp:24, base:104, freq:0.032, seed:77},
+              near:{body:'#101c3d', top:'#1f3462', shade:'#0a1229', amp:14, base:121, freq:0.058, seed:88},
+              ground:['#16244a','#0c1430'], accent:'#4d8dff', deco:'isle'},
+    writing: {ramp:['#150829','#2c1050','#4d1f7a','#7a37a8','#b56fd0'], orb:'#f6e0ff', orbGlow:'#b14aff',
+              far:{body:'#3a1a63', top:'#5a2c8e', shade:'#2a1049', amp:28, base:102, freq:0.038, seed:99},
+              near:{body:'#241041', top:'#3c1c68', shade:'#170a2c', amp:16, base:121, freq:0.062, seed:110},
+              ground:['#2a1450','#180a30'], accent:'#b14aff', deco:'spire'},
+    boss:    {ramp:['#0a0206','#2a0610','#5e0f1c','#9c2418','#e05a1c'], orb:'#ffb27a', orbGlow:'#ff4d2e',
+              far:{body:'#4a0f1c', top:'#7a1f22', shade:'#33090f', amp:32, base:100, freq:0.03, seed:121},
+              near:{body:'#2a060e', top:'#4a1018', shade:'#180307', amp:20, base:121, freq:0.055, seed:132},
+              ground:['#3a0a12','#1c0308'], accent:'#ff2e63', deco:'volcano'}
+  };
+
+  function ridge(x, cfg){
+    const r = rnd(cfg.seed);
+    const o = [r()*100, r()*100, r()*100];
+    for(let i=0;i<W;i++){
+      const h = cfg.base - Math.round(
+        cfg.amp*0.60*Math.sin(i*cfg.freq + o[0]) +
+        cfg.amp*0.28*Math.sin(i*cfg.freq*2.3 + o[1]) +
+        cfg.amp*0.14*Math.sin(i*cfg.freq*4.7 + o[2]));
+      x.fillStyle = cfg.body; x.fillRect(i, h, 1, H-h);
+      x.fillStyle = cfg.top;  x.fillRect(i, h, 1, 2);
+      if(i % 7 === 0){ x.fillStyle = cfg.shade; x.fillRect(i, h+3, 1, Math.min(12, H-h-3)); }
+    }
+  }
+  function decorate(x, kind, s){
+    const r = rnd(7);
+    if(kind==='crystal'){
+      for(let n=0;n<9;n++){
+        const cx = 8 + Math.floor(r()*(W-16)), hgt = 10+Math.floor(r()*16), base = GROUND_Y - 2;
+        for(let y=0;y<hgt;y++){
+          const w = Math.max(1, Math.round((1 - y/hgt) * 4));
+          x.fillStyle = y < hgt*0.45 ? '#8f6fd8' : '#5b3fa0';
+          x.fillRect(cx-w, base-y, w*2, 1);
+        }
+        x.fillStyle = s.accent; x.fillRect(cx-1, base-hgt+1, 1, 3);
+      }
+    } else if(kind==='column'){
+      for(let n=0;n<6;n++){
+        const cx = 14 + n*42 + Math.floor(r()*8), hgt = 26+Math.floor(r()*18), base = GROUND_Y - 2;
+        x.fillStyle = '#7a5a48'; x.fillRect(cx-4, base-hgt, 8, hgt);
+        x.fillStyle = '#9c7a62'; x.fillRect(cx-4, base-hgt, 2, hgt);
+        x.fillStyle = '#5c4034'; x.fillRect(cx+2, base-hgt, 2, hgt);
+        x.fillStyle = '#9c7a62'; x.fillRect(cx-6, base-hgt-3, 12, 3);
+        for(let b=0;b<hgt;b+=7){ x.fillStyle='#5c4034'; x.fillRect(cx-4, base-hgt+b, 8, 1); }
+      }
+    } else if(kind==='spire'){
+      for(let n=0;n<7;n++){
+        const cx = 10 + Math.floor(r()*(W-20)), hgt = 18+Math.floor(r()*22), base = GROUND_Y - 2;
+        for(let y=0;y<hgt;y++){
+          const w = Math.max(1, Math.round((1 - y/hgt) * 3));
+          x.fillStyle = y < hgt*0.4 ? '#7a4ab0' : '#4a2372';
+          x.fillRect(cx-w, base-y, w*2, 1);
+        }
+      }
+    } else if(kind==='spore'){
+      for(let n=0;n<11;n++){
+        const cx = 8+Math.floor(r()*(W-16)), cy = GROUND_Y-4-Math.floor(r()*10), rr = 2+Math.floor(r()*3);
+        ellipse(x, cx, cy, rr, rr, '#125c50');
+        ellipse(x, cx, cy-1, Math.max(1,rr-1), Math.max(1,rr-1), '#1c8a70');
+      }
+    } else if(kind==='isle'){
+      for(let n=0;n<5;n++){
+        const cx = 20+n*50, cy = 60+Math.floor(r()*24), rr = 8+Math.floor(r()*8);
+        ellipse(x, cx, cy, rr, Math.max(2,rr>>1), '#2f4d86');
+        ellipse(x, cx, cy-1, rr-2, Math.max(1,(rr>>1)-1), '#4a6fae');
+        for(let y=1;y<6;y++){ x.fillStyle='#1a2e5c'; x.fillRect(cx-Math.max(1,rr-2-y*2), cy+Math.max(1,rr>>1)+y-1, Math.max(2,(rr-2-y*2)*2), 1); }
+      }
+    } else if(kind==='volcano'){
+      for(let n=0;n<4;n++){
+        const cx = 30+n*66, base = GROUND_Y-2;
+        x.fillStyle='#ff6a2a';
+        for(let y=0;y<8;y++) x.fillRect(cx-2+Math.floor(Math.sin(y)*2), base-y, 2, 1);
+        ellipse(x, cx, base, 5, 2, '#ff9f4a');
+      }
+    }
+  }
+
+  /* Builds all static layers for a realm once, then reuses them. Each
+     parallax layer is rendered at W wide and mirrored into a 2W strip so it
+     scrolls forever with no visible seam. */
+  function buildScene(key){
+    if(cache['sc_'+key]) return cache['sc_'+key];
+    const s = SCENES[key] || SCENES.math;
+    const bg = surf(W, H);
+    if(!bg.x) return null;
+    sky(bg.x, s.ramp, GROUND_Y);
+    // celestial body with a dithered halo
+    const ox = 196, oy = 30;
+    for(let rr=18; rr>10; rr--) dither(bg.x, ox-rr, oy-rr, rr*2, rr*2, 'rgba(0,0,0,0)', s.orbGlow, 0.18);
+    ellipse(bg.x, ox, oy, 9, 9, s.orbGlow);
+    ellipse(bg.x, ox, oy, 7, 7, s.orb);
+    const st = rnd(5);
+    for(let i=0;i<34;i++){ bg.x.fillStyle = i%4 ? '#ffffff' : s.accent; bg.x.fillRect(Math.floor(st()*W), Math.floor(st()*70), 1, 1); }
+
+    const mk = cfg => {
+      const one = surf(W, H); if(!one.x) return null;
+      ridge(one.x, cfg);
+      const two = surf(W*2, H);
+      two.x.drawImage(one.c, 0, 0);
+      two.x.save(); two.x.translate(W*2, 0); two.x.scale(-1, 1); two.x.drawImage(one.c, 0, 0); two.x.restore();
+      return two;
+    };
+    const far = mk(s.far), near = mk(s.near);
+
+    const fg = surf(W, H);
+    dither(fg.x, 0, GROUND_Y, W, H-GROUND_Y, s.ground[0], s.ground[1], 0.5);
+    fg.x.fillStyle = s.accent; fg.x.globalAlpha = 0.35; fg.x.fillRect(0, GROUND_Y, W, 1); fg.x.globalAlpha = 1;
+    const gr = rnd(13);
+    for(let i=0;i<90;i++){ fg.x.fillStyle = s.ground[1]; fg.x.fillRect(Math.floor(gr()*W), GROUND_Y+2+Math.floor(gr()*(H-GROUND_Y-3)), 2, 1); }
+    decorate(fg.x, s.deco, s);
+
+    return cache['sc_'+key] = {bg, far, near, fg, accent:s.accent};
+  }
+
+  /* ---- Hero sprite, assembled from primitives and reflecting equipped gear ---- */
+  function buildHero(cfg){
+    const key = 'hero_'+JSON.stringify(cfg);
+    if(cache[key]) return cache[key];
+    const s = surf(40, 52); if(!s.x) return null;
+    const x = s.x;
+    const skin='#f0c088', skinS='#c08a58', cloth=cfg.color||'#7C5CFF';
+    const clothS = shade(cloth, -34), clothL = shade(cloth, 26);
+    const g = cfg.gear||{};
+    const gc = slot => { const it = g[slot] ? (typeof gearItemById==='function' ? gearItemById(g[slot]) : null) : null; return it ? it.color : null; };
+    const bootC = gc('boots') || '#6b4a2a', armorC = gc('armor'), helmC = gc('helmet'),
+          shieldC = gc('shield'), gloveC = gc('gloves') || skin;
+
+    // cape first, so it sits behind everything (silhouette matters most at
+    // this size — a boxy outline reads as stiff no matter how it's shaded)
+    if(armorC){
+      const cape = shade(armorC, -50), capeL = shade(armorC, -22);
+      for(let i=0;i<20;i++){
+        const yy = 20+i, wdt = 4 + Math.round(i*0.55), off = Math.round(Math.sin(i/6)*2);
+        x.fillStyle = capeL; x.fillRect(9-off-wdt+2, yy, wdt, 1);
+        x.fillStyle = cape;  x.fillRect(9-off-wdt+2, yy, Math.max(1,wdt>>1), 1);
+      }
+    }
+    // legs + boots
+    x.fillStyle = clothS; x.fillRect(15,36,4,8); x.fillRect(21,36,4,8);
+    x.fillStyle = bootC;  x.fillRect(14,44,6,5); x.fillRect(20,44,6,5);
+    x.fillStyle = shade(bootC,-30); x.fillRect(14,47,6,2); x.fillRect(20,47,6,2);
+    // torso
+    x.fillStyle = cloth;  x.fillRect(13,22,14,15);
+    x.fillStyle = clothL; x.fillRect(13,22,3,15);
+    x.fillStyle = clothS; x.fillRect(24,22,3,15);
+    if(armorC){
+      x.fillStyle = armorC; x.fillRect(13,23,14,9);
+      x.fillStyle = shade(armorC,30); x.fillRect(13,23,14,2); x.fillRect(13,23,2,9);
+      x.fillStyle = shade(armorC,-34); x.fillRect(24,25,3,7);
+    }
+    x.fillStyle = '#4a3520'; x.fillRect(13,32,14,2);           // belt
+    x.fillStyle = '#d8a020'; x.fillRect(19,32,2,2);
+    // arms
+    x.fillStyle = cloth;  x.fillRect(10,23,3,9); x.fillRect(27,23,3,9);
+    x.fillStyle = gloveC; x.fillRect(10,31,4,4); x.fillRect(27,31,4,4);
+    // head
+    x.fillStyle = skin;  x.fillRect(15,10,10,11);
+    x.fillStyle = skinS; x.fillRect(22,10,3,11);
+    x.fillStyle = '#20140a'; x.fillRect(17,14,2,2); x.fillRect(21,14,2,2);  // eyes
+    x.fillStyle = skinS; x.fillRect(18,18,4,1);
+    x.fillStyle = skin;  x.fillRect(14,20,12,3);                            // neck/shoulders
+    if(helmC){
+      x.fillStyle = helmC; x.fillRect(14,7,12,6); x.fillRect(13,9,1,5); x.fillRect(26,9,1,5);
+      x.fillStyle = shade(helmC,34); x.fillRect(14,7,12,2);
+      x.fillStyle = shade(helmC,-38); x.fillRect(22,9,4,4);
+      x.fillStyle = '#ff4d6d'; x.fillRect(19,3,2,5);                        // plume
+      x.fillStyle = '#ff8fa3'; x.fillRect(19,3,1,5);
+    } else {
+      x.fillStyle = '#6b3a1c'; x.fillRect(14,7,12,5); x.fillRect(13,9,1,4); x.fillRect(26,9,1,4);
+      x.fillStyle = '#8a5028'; x.fillRect(14,7,12,2);
+    }
+    if(shieldC){
+      x.fillStyle = shieldC; x.fillRect(5,22,7,11);
+      x.fillStyle = shade(shieldC,34); x.fillRect(5,22,7,2); x.fillRect(5,22,2,11);
+      x.fillStyle = shade(shieldC,-38); x.fillRect(10,24,2,9);
+      x.fillStyle = '#f0e0a0'; x.fillRect(7,26,3,3);
+    }
+    // weapon (right hand)
+    const wep = cfg.weapon || 'sword';
+    if(wep==='bow'){
+      x.fillStyle='#8a5028'; for(let i=0;i<16;i++){ const yy=16+i, xx=32+Math.round(Math.sin(i/15*Math.PI)*3); x.fillRect(xx,yy,2,1); }
+      x.fillStyle='#e8e0c8'; x.fillRect(32,16,1,16);
+    } else if(wep==='staff'){
+      x.fillStyle='#8a5028'; x.fillRect(31,12,2,22);
+      ellipse(x,32,10,4,4,'#b14aff'); ellipse(x,32,10,2,2,'#e8c8ff');
+    } else if(wep==='mace'){
+      x.fillStyle='#6b4a2a'; x.fillRect(31,20,2,14);
+      x.fillStyle='#9aa4b8'; x.fillRect(29,13,6,6);
+      x.fillStyle='#c8d0dc'; x.fillRect(29,13,6,2);
+    } else if(wep==='dagger'){
+      x.fillStyle='#d8dce8'; x.fillRect(31,20,2,9);
+      x.fillStyle='#f0f4ff'; x.fillRect(31,20,1,9);
+      x.fillStyle='#8a5028'; x.fillRect(30,29,4,2);
+    } else {
+      x.fillStyle='#c8d0dc'; x.fillRect(31,8,3,22);
+      x.fillStyle='#f0f4ff'; x.fillRect(31,8,1,22);
+      x.fillStyle='#8a5028'; x.fillRect(29,30,7,2);
+      x.fillStyle='#d8a020'; x.fillRect(32,32,1,4);
+    }
+    shadePass(s, 26, 30);
+    outline(s, '#0a0614');
+    const res = {s, flash: flashOf(s)};
+    return cache[key] = res;
+  }
+  function shade(hex, amt){
+    const h = (hex||'#7C5CFF').replace('#','');
+    const n = parseInt(h.length===3 ? h.split('').map(c=>c+c).join('') : h, 16);
+    const cl = v => Math.max(0, Math.min(255, v));
+    return '#' + [cl(((n>>16)&255)+amt), cl(((n>>8)&255)+amt), cl((n&255)+amt)]
+      .map(v=>v.toString(16).padStart(2,'0')).join('');
+  }
+
+  /* ---- Bosses: one distinct pixel silhouette per realm ---- */
+  function buildBoss(key){
+    const ck = 'boss_'+key;
+    if(cache[ck]) return cache[ck];
+    const s = surf(64, 60); if(!s.x) return null;
+    const x = s.x;
+    if(key==='math'){
+      x.fillStyle='#3a2a6e'; x.fillRect(18,22,28,26);
+      x.fillStyle='#5a44a8'; x.fillRect(18,22,28,4); x.fillRect(18,22,4,26);
+      x.fillStyle='#241a4e'; x.fillRect(40,26,6,22);
+      for(let i=0;i<10;i++){ x.fillStyle='#8f6fd8'; x.fillRect(20+i*3, 30+((i%3)*4), 2, 2); }
+      ellipse(x,32,34,6,6,'#ffd166'); ellipse(x,32,34,3,3,'#fff6d0');
+      x.fillStyle='#5a44a8'; x.fillRect(14,14,10,10); x.fillRect(40,14,10,10);
+      x.fillStyle='#8f6fd8'; x.fillRect(14,14,10,3); x.fillRect(40,14,10,3);
+      x.fillStyle='#ff4d6d'; x.fillRect(17,18,3,3); x.fillRect(44,18,3,3);
+      x.fillStyle='#3a2a6e'; x.fillRect(20,48,8,8); x.fillRect(36,48,8,8);
+    } else if(key==='science'){
+      ellipse(x,32,36,20,16,'#12805c');
+      ellipse(x,32,32,17,12,'#1cae78');
+      ellipse(x,32,29,12,7,'#3ee0a0');
+      [16,32,48].forEach((cx,i)=>{ ellipse(x,cx,26-(i===1?4:0),4,4,'#f0fff8'); ellipse(x,cx,26-(i===1?4:0),2,2,'#0a2c22'); });
+      for(let i=0;i<5;i++){ const bx=10+i*11; x.fillStyle='#0f6b4c'; for(let y=0;y<10;y++) x.fillRect(bx+Math.round(Math.sin(y/2+i)*2), 46+y, 3, 1); }
+      x.fillStyle='#7effc8'; x.fillRect(24,40,4,2); x.fillRect(36,40,4,2);
+    } else if(key==='history'){
+      x.fillStyle='#5c3a2a'; x.fillRect(20,24,24,24);
+      x.fillStyle='#8a5a3c'; x.fillRect(20,24,24,3); x.fillRect(20,24,3,24);
+      x.fillStyle='#3a2418'; x.fillRect(38,28,6,20);
+      x.fillStyle='#9aa4b8'; x.fillRect(22,30,20,8);
+      x.fillStyle='#c8d0dc'; x.fillRect(22,30,20,2);
+      x.fillStyle='#7a4a2a'; x.fillRect(23,12,18,12);
+      x.fillStyle='#a06a3a'; x.fillRect(23,12,18,3);
+      x.fillStyle='#ffcf4d'; x.fillRect(26,18,4,3); x.fillRect(34,18,4,3);
+      x.fillStyle='#d8dce8'; x.fillRect(17,6,4,10); x.fillRect(43,6,4,10);
+      x.fillStyle='#8a5028'; x.fillRect(50,14,3,34);
+      x.fillStyle='#c8d0dc'; x.fillRect(46,10,11,8);
+      x.fillStyle='#5c3a2a'; x.fillRect(22,48,8,8); x.fillRect(34,48,8,8);
+    } else if(key==='reading'){
+      x.fillStyle='#1f3a72'; x.fillRect(14,20,36,26);
+      x.fillStyle='#2f5296'; x.fillRect(14,20,36,3);
+      x.fillStyle='#f0ead8'; x.fillRect(17,23,13,20); x.fillRect(34,23,13,20);
+      x.fillStyle='#d0c8b0'; for(let i=0;i<6;i++){ x.fillRect(19,26+i*3,9,1); x.fillRect(36,26+i*3,9,1); }
+      x.fillStyle='#1f3a72'; x.fillRect(30,20,4,26);
+      ellipse(x,32,33,7,5,'#f0f6ff'); ellipse(x,32,33,3,3,'#4d8dff'); ellipse(x,32,33,1,1,'#08102a');
+      x.fillStyle='#3a63a0'; for(let i=0;i<4;i++){ x.fillRect(6+i*2, 24+i*3, 8, 2); x.fillRect(50-i*2+0, 24+i*3, 8, 2); }
+      x.fillStyle='#7ba0cf'; x.fillRect(20,48,24,2);
+    } else if(key==='writing'){
+      for(let i=0;i<11;i++){
+        const yy = 46-i*3, w = 12 - Math.floor(i*0.6);
+        ellipse(x, 32+Math.round(Math.sin(i/2.2)*9), yy, w, 3, i%2 ? '#5a2c8e' : '#4a2372');
+      }
+      ellipse(x,32,16,11,9,'#6b34a4');
+      ellipse(x,32,14,8,6,'#8f4ed0');
+      x.fillStyle='#ffe9a8'; x.fillRect(26,14,4,4); x.fillRect(36,14,4,4);
+      x.fillStyle='#1a0a2a'; x.fillRect(27,15,2,3); x.fillRect(37,15,2,3);
+      x.fillStyle='#e8d8ff'; x.fillRect(28,22,8,2);
+      x.fillStyle='#f0e8ff'; x.fillRect(44,4,3,16);
+      x.fillStyle='#c8b8e0'; x.fillRect(44,4,1,16);
+    } else {
+      // Realm Overlord — dragon
+      x.fillStyle='#7a1420'; x.fillRect(16,26,32,22);
+      x.fillStyle='#a82430'; x.fillRect(16,26,32,4);
+      x.fillStyle='#4e0a12'; x.fillRect(40,30,8,18);
+      for(let i=0;i<7;i++){ x.fillStyle='#ff6a2a'; x.fillRect(18+i*4, 24, 3, 3); }
+      x.fillStyle='#8e1a26'; x.fillRect(2,10,16,20); x.fillRect(46,10,16,20);
+      x.fillStyle='#c02c38'; x.fillRect(2,10,16,3); x.fillRect(46,10,16,3);
+      x.fillStyle='#5e0e16'; for(let i=0;i<4;i++){ x.fillRect(4+i*4,13,1,16); x.fillRect(48+i*4,13,1,16); }
+      x.fillStyle='#a82430'; x.fillRect(22,10,20,16);
+      x.fillStyle='#c02c38'; x.fillRect(22,10,20,3);
+      x.fillStyle='#ffcf4d'; x.fillRect(25,16,5,4); x.fillRect(34,16,5,4);
+      x.fillStyle='#1a0206'; x.fillRect(27,17,2,3); x.fillRect(36,17,2,3);
+      x.fillStyle='#f0f4ff'; for(let i=0;i<5;i++) x.fillRect(25+i*3,24,2,3);
+      x.fillStyle='#e8e0d0'; x.fillRect(18,4,4,8); x.fillRect(42,4,4,8);
+      x.fillStyle='#7a1420'; x.fillRect(20,48,10,9); x.fillRect(34,48,10,9);
+      x.fillStyle='#e8e0d0'; x.fillRect(20,55,3,2); x.fillRect(27,55,3,2); x.fillRect(34,55,3,2); x.fillRect(41,55,3,2);
+    }
+    shadePass(s, 24, 32);
+    outline(s, '#0a0308');
+    return cache[ck] = {s, flash: flashOf(s)};
+  }
+
+  /* ---- 3x5 pixel digit font, drawn straight into the buffer ---- */
+  const GLYPH = {
+    '0':['111','101','101','101','111'], '1':['010','110','010','010','111'],
+    '2':['111','001','111','100','111'], '3':['111','001','111','001','111'],
+    '4':['101','101','111','001','001'], '5':['111','100','111','001','111'],
+    '6':['111','100','111','101','111'], '7':['111','001','010','010','010'],
+    '8':['111','101','111','101','111'], '9':['111','101','111','001','111'],
+    '/':['001','001','010','100','100'], '-':['000','000','111','000','000'],
+    '!':['010','010','010','000','010'], ' ':['000','000','000','000','000']
+  };
+  function pxText(x, str, px_, py, col, sc){
+    sc = sc||1; let cx = px_;
+    for(const ch of String(str)){
+      const g = GLYPH[ch] || GLYPH[' '];
+      x.fillStyle = col;
+      for(let r=0;r<5;r++) for(let c=0;c<3;c++) if(g[r][c]==='1') x.fillRect(cx+c*sc, py+r*sc, sc, sc);
+      cx += 4*sc;
+    }
+    return cx;
+  }
+  function textW(str, sc){ return String(str).length * 4 * (sc||1); }
+
+  /* ---- SNES-style status window ---- */
+  function window9(x, wx, wy, ww, wh){
+    x.fillStyle = '#0c1a52'; x.fillRect(wx, wy, ww, wh);
+    x.fillStyle = '#1c3a9e'; x.fillRect(wx+1, wy+1, ww-2, Math.floor(wh/2));
+    x.fillStyle = '#ffffff';
+    x.fillRect(wx+1, wy, ww-2, 1); x.fillRect(wx+1, wy+wh-1, ww-2, 1);
+    x.fillRect(wx, wy+1, 1, wh-2); x.fillRect(wx+ww-1, wy+1, 1, wh-2);
+  }
+  function gauge(x, gx, gy, gw, frac, c1, c2){
+    x.fillStyle = '#0a0a1a'; x.fillRect(gx, gy, gw, 5);
+    x.fillStyle = '#000';    x.fillRect(gx, gy, gw, 1);
+    const f = Math.max(0, Math.min(1, frac));
+    const w = Math.round((gw-2) * f);
+    if(w > 0){
+      x.fillStyle = c1; x.fillRect(gx+1, gy+1, w, 3);
+      x.fillStyle = c2; x.fillRect(gx+1, gy+1, w, 1);
+    }
+  }
+
+  /* ---- public API ---- */
+  let FX = [];
+  function hit(target, dmg, colour){
+    if(!live) return;
+    // Callers speak in 'player'/'boss'; the animation map keys the player
+    // sprite as 'hero', so normalise before looking it up.
+    const key = (target === 'boss') ? 'boss' : 'hero';
+    const t = live.anim[key];
+    if(!t) return;
+    t.flash = 10;
+    const other = (key === 'boss') ? live.anim.hero : live.anim.boss;
+    other.lunge = 12;
+    live.shake = 9;
+    live.whiteout = 3;
+    const sx = target==='boss' ? live.bossX + 30 : live.heroX + 18;
+    const sy = target==='boss' ? 74 : 88;
+    if(dmg!==undefined && dmg!==null){
+      FX.push({kind:'dmg', v:Math.round(dmg), x:sx, y:sy-10, life:52, col: target==='boss' ? '#ffd166' : '#ff5a6e'});
+    }
+    FX.push({kind:'slash', x:sx, y:sy, life:10, col: colour || (target==='boss' ? '#ffffff' : '#ff9aa8')});
+    for(let i=0;i<26;i++){
+      const a = Math.random()*Math.PI*2, sp = 0.5 + Math.random()*2.2;
+      FX.push({kind:'spark', x:sx, y:sy, vx:Math.cos(a)*sp, vy:Math.sin(a)*sp - 0.7,
+        life: 16+Math.floor(Math.random()*16), col: Math.random()<0.5 ? (colour||'#ffe9a8') : '#ffffff'});
+    }
+  }
+  function isActive(){ return !!live; }
+  /* Effectiveness banner ("SUPER EFFECTIVE!" etc) drawn as pixel text that
+     rises and fades over the struck combatant. */
+  function banner(target, text, cls){
+    if(!live) return;
+    const sx = target==='boss' ? live.bossX + 30 : live.heroX + 18;
+    const col = cls==='super' ? '#7dff9a' : (cls==='resist' ? '#9ab0cf' : '#ffffff');
+    FX.push({kind:'banner', text:String(text).toUpperCase(), x:sx, y:44, life:64, col});
+  }
+  function mount(el, opts){
+    unmount();
+    if(!el || !el.getContext) return;
+    const ctx = el.getContext('2d');
+    if(!ctx) return;                       // no 2D support — silently skip
+    ctx.imageSmoothingEnabled = false;
+    const scene = buildScene(opts.scene);
+    const hero  = buildHero(opts.hero||{});
+    const boss  = buildBoss(opts.bossKey||opts.scene);
+    if(!scene || !hero || !boss) return;
+    live = {
+      ctx, scene, hero, boss, getState: opts.getState,
+      heroX: 34, bossX: 150, t: 0, shake: 0, whiteout: 0,
+      anim: {hero:{flash:0, lunge:0}, boss:{flash:0, lunge:0}}
+    };
+    FX = [];
+    loop();
+  }
+  function unmount(){
+    if(rafId){ cancelAnimationFrame(rafId); rafId = null; }
+    live = null; FX = [];
+  }
+
+  function loop(){
+    if(!live) return;
+    const L = live, x = L.ctx;
+    L.t++;
+    const st = (L.getState && L.getState()) || {php:1,pmax:1,bhp:1,bmax:1,pname:'YOU',bname:'FOE'};
+    const shakeX = L.shake > 0 ? Math.round((Math.random()-0.5)*4) : 0;
+    const shakeY = L.shake > 0 ? Math.round((Math.random()-0.5)*3) : 0;
+    if(L.shake > 0) L.shake--;
+
+    x.save();
+    x.translate(shakeX, shakeY);
+    x.drawImage(L.scene.bg.c, 0, 0);
+    const f1 = -((L.t*0.12) % (W*2)), f2 = -((L.t*0.30) % (W*2));
+    if(L.scene.far){ x.drawImage(L.scene.far.c, Math.round(f1), 0); x.drawImage(L.scene.far.c, Math.round(f1)+W*2, 0); }
+    if(L.scene.near){ x.drawImage(L.scene.near.c, Math.round(f2), 0); x.drawImage(L.scene.near.c, Math.round(f2)+W*2, 0); }
+    x.drawImage(L.scene.fg.c, 0, 0);
+
+    // sprites — gentle idle bob, offset by lunge when attacking
+    const hb = Math.round(Math.sin(L.t/22)*1.5), bb = Math.round(Math.sin(L.t/17 + 1)*2);
+    const hl = L.anim.hero.lunge > 0 ? Math.round(L.anim.hero.lunge*1.6) : 0;
+    const bl = L.anim.boss.lunge > 0 ? Math.round(L.anim.boss.lunge*1.6) : 0;
+    if(L.anim.hero.lunge > 0) L.anim.hero.lunge--;
+    if(L.anim.boss.lunge > 0) L.anim.boss.lunge--;
+    const hy = 70 + hb, by = 58 + bb;
+    ellipse(x, L.heroX+20, GROUND_Y+2, 13, 3, 'rgba(0,0,0,0.42)');
+    ellipse(x, L.bossX+32, GROUND_Y+3, 20, 4, 'rgba(0,0,0,0.42)');
+    const hSrc = (L.anim.hero.flash>0 && L.anim.hero.flash%4<2) ? L.hero.flash.c : L.hero.s.c;
+    const bSrc = (L.anim.boss.flash>0 && L.anim.boss.flash%4<2) ? L.boss.flash.c : L.boss.s.c;
+    if(L.anim.hero.flash>0) L.anim.hero.flash--;
+    if(L.anim.boss.flash>0) L.anim.boss.flash--;
+    x.drawImage(hSrc, L.heroX + hl, hy);
+    x.drawImage(bSrc, L.bossX - bl, by);
+
+    // FX layer
+    for(let i=FX.length-1;i>=0;i--){
+      const p = FX[i]; p.life--;
+      if(p.kind==='spark'){
+        p.x += p.vx; p.y += p.vy; p.vy += 0.09;
+        x.fillStyle = p.col; x.fillRect(Math.round(p.x), Math.round(p.y), 2, 2);
+      } else if(p.kind==='dmg'){
+        const age = 52 - p.life;
+        const ry = age < 12 ? -age*1.5 : -18 - (age-12)*0.22;
+        const sc = age < 6 ? 3 : 2;
+        const str = String(p.v);
+        const wpx = textW(str, sc);
+        const dx = Math.round(p.x - wpx/2), dy = Math.round(p.y + ry);
+        pxText(x, str, dx+1, dy+1, '#1a0a12', sc);
+        pxText(x, str, dx, dy, p.col, sc);
+      } else if(p.kind==='slash'){
+        const k = 10 - p.life;
+        x.fillStyle = p.col;
+        for(let a=0;a<16;a++){
+          const ang = -0.9 + a*0.11, rr = 6 + k*2.6;
+          x.fillRect(Math.round(p.x + Math.cos(ang)*rr), Math.round(p.y + Math.sin(ang)*rr*0.8), 2, 2);
+        }
+      } else if(p.kind==='banner'){
+        const age = 64 - p.life;
+        const ry = -Math.min(18, age*0.9);
+        const wpx = textW(p.text, 1);
+        const bx = Math.round(p.x - wpx/2), by = Math.round(p.y + ry);
+        if(p.life > 8 || p.life % 2 === 0){       // flicker out at the end
+          pxText(x, p.text, bx+1, by+1, '#0a0a14', 1);
+          pxText(x, p.text, bx, by, p.col, 1);
+        }
+      }
+      if(p.life <= 0) FX.splice(i,1);
+    }
+    x.restore();
+
+    // impact whiteout
+    if(L.whiteout > 0){
+      x.fillStyle = 'rgba(255,255,255,'+(L.whiteout*0.16)+')';
+      x.fillRect(0,0,W,H);
+      L.whiteout--;
+    }
+
+    // status windows
+    const pf = st.pmax ? st.php/st.pmax : 0, bf = st.bmax ? st.bhp/st.bmax : 0;
+    window9(x, 4, H-30, 104, 26);
+    pxText(x, String(Math.max(0,Math.round(st.php))) + '/' + Math.round(st.pmax), 10, H-25, '#ffffff', 2);
+    gauge(x, 10, H-13, 92, pf, pf<0.3 ? '#e04a4a' : '#3ad07a', pf<0.3 ? '#ff8a8a' : '#a8f0c8');
+    window9(x, W-108, H-30, 104, 26);
+    const bstr = String(Math.max(0,Math.round(st.bhp))) + '/' + Math.round(st.bmax);
+    pxText(x, bstr, W-102, H-25, '#ffffff', 2);
+    gauge(x, W-102, H-13, 92, bf, '#d03a5a', '#ff8fa8');
+
+    rafId = requestAnimationFrame(loop);
+  }
+
+  return {mount, unmount, hit, banner, isActive, W, H};
+})();
+
 function renderBattle(){
   const s = state.battle;
   const track = getActiveTrack();
@@ -5440,20 +6788,12 @@ function renderBattle(){
     </div>
     <p style="margin:0 0 4px;font-size:12px;font-weight:700;color:var(--violet);">🗓️ Day ${p.totalDaysPlayed||1} challenge — enemies get tougher the more days you play!</p>
 
-    <div class="battle-arena ${s.playerHP>0 && s.playerHP<30 ? 'low-hp':''}">
-      ${battleBackdropSVG(s.subject)}
-      <div class="combatant">
-        ${playerPortraitHTML(p.avatarEmoji, p.avatarColor, 'playerIcon', p.bodyShape, p.weapon, p.equippedGear)}
-        <div class="combatant-label">You</div>
-        ${hpBarHTML(s.playerHP, PLAYER_MAX_HP, 'playerHPBar', 'player')}
-      </div>
-      <div class="vs-badge">VS</div>
-      <div class="combatant">
-        ${bossPortraitHTML(s.subject, 'bossIcon')}
-        <div class="combatant-label">${boss.name}</div>
-        ${hpBarHTML(s.bossHP, s.bossMaxHp, 'bossHPBar', 'boss')}
-      </div>
+    <div class="px-frame ${s.playerHP>0 && s.playerHP<30 ? 'low-hp':''}">
+      <canvas id="pxBattle" class="px-canvas" width="256" height="152"></canvas>
+      <div class="px-nameplate left">You</div>
+      <div class="px-nameplate right">${boss.name}</div>
     </div>
+    ${weaknessHintHTML(s.subject)}
 
     ${renderRelicTray(p, s.relicMenuKey, s.levelIdx, s.correctDamageBase, 'battle')}
     <div id="scoreRow" class="score-row">${scoreRowHTML(s)}</div>
@@ -5521,25 +6861,112 @@ function spawnParticleBurst(defender){
   }
 }
 
-function animateAttack(attackerId, defenderId, lungeClass){
+/* Full combat-FX sequence for a hit. In addition to the lunge/shake/
+   particles, this now fires an energy beam from attacker to defender, a
+   shockwave ring at the point of impact, a brief screen-edge flash, and
+   (when a damage amount is provided) a floating damage number — the core
+   feedback loop that makes a hit FEEL like a real video-game hit.
+   dmg and beamColor are optional so every existing call site keeps working. */
+/* Floating "SUPER EFFECTIVE!" / "Resisted…" label over the struck target.
+   Routes through the pixel engine when it's active, otherwise falls back to
+   a DOM element pinned over the defender icon. */
+function showEffectiveness(defenderId, ml){
+  if(PXE.isActive()){
+    PXE.banner(/boss/i.test(defenderId) ? 'boss' : 'hero', ml.text, ml.cls);
+    return;
+  }
+  const el = document.getElementById(defenderId);
+  if(!el) return;
+  const tag = document.createElement('div');
+  tag.className = 'effectiveness-pop ' + ml.cls;
+  tag.textContent = ml.text;
+  el.appendChild(tag);
+  setTimeout(()=>tag.remove(), 1100);
+}
+
+function animateAttack(attackerId, defenderId, lungeClass, dmg, beamColor){
+  // When the pixel renderer is running it owns all combat feedback — sprite
+  // flash, lunge, screen shake, sparks and the floating damage number are all
+  // drawn inside the low-res buffer. The DOM path below stays as a fallback
+  // for any environment where a 2D canvas context isn't available.
+  if(PXE.isActive()){
+    PXE.hit(/boss/i.test(defenderId) ? 'boss' : 'player', dmg, beamColor);
+    return;
+  }
   const attacker = document.getElementById(attackerId);
   const defender = document.getElementById(defenderId);
+  const color = beamColor || (lungeClass==='attack-right' ? '#00D9C0' : '#FF4D6D');
   if(attacker){ attacker.classList.add(lungeClass); setTimeout(()=>attacker.classList.remove(lungeClass), 450); }
+  if(attacker && defender){
+    const arena = defender.closest('.battle-arena');
+    if(arena){
+      // Energy beam: positioned from attacker center to defender center
+      const ar = arena.getBoundingClientRect();
+      const a = attacker.getBoundingClientRect();
+      const d = defender.getBoundingClientRect();
+      const x1 = a.left + a.width/2 - ar.left, y1 = a.top + a.height/2 - ar.top;
+      const x2 = d.left + d.width/2 - ar.left, y2 = d.top + d.height/2 - ar.top;
+      const len = Math.hypot(x2-x1, y2-y1);
+      const ang = Math.atan2(y2-y1, x2-x1) * 180/Math.PI;
+      // Rotation lives on an outer wrapper so the inner element can run a
+      // plain CSS scaleX animation. (An earlier version used the Web
+      // Animations API here, which throws in environments without it and
+      // silently killed the rest of the hit FX — pure CSS is safer.)
+      const beamWrap = document.createElement('div');
+      beamWrap.className = 'attack-beam-wrap';
+      beamWrap.style.cssText = `left:${x1}px;top:${y1}px;width:${len}px;transform:rotate(${ang}deg);`;
+      const beam = document.createElement('div');
+      beam.className = 'attack-beam';
+      beam.style.color = color;
+      beamWrap.appendChild(beam);
+      arena.appendChild(beamWrap);
+      setTimeout(()=>beamWrap.remove(), 340);
+    }
+  }
   if(defender){
     defender.classList.add('hit-shake');
     spawnParticleBurst(defender);
+    // Shockwave ring at impact
+    const shock = document.createElement('div');
+    shock.className = 'shockwave';
+    shock.style.color = color;
+    defender.appendChild(shock);
+    setTimeout(()=>shock.remove(), 500);
+    // Floating damage number
+    if(dmg !== undefined && dmg !== null){
+      const num = document.createElement('div');
+      num.className = 'dmg-number' + (lungeClass==='attack-left' ? ' hurt' : '');
+      num.textContent = (lungeClass==='attack-left' ? '-' : '') + Math.round(dmg);
+      defender.appendChild(num);
+      setTimeout(()=>num.remove(), 950);
+    }
     setTimeout(()=>defender.classList.remove('hit-shake'), 500);
     const arena = defender.closest('.battle-arena');
     if(arena){
       arena.classList.add('arena-shake');
       setTimeout(()=>arena.classList.remove('arena-shake'), 350);
     }
+    // Screen-edge flash — teal for player hits landing, red when the player takes damage
+    const flash = document.createElement('div');
+    flash.className = 'screen-flash';
+    flash.style.background = `radial-gradient(ellipse at center, transparent 55%, ${color} 130%)`;
+    document.body.appendChild(flash);
+    setTimeout(()=>flash.remove(), 340);
   }
 }
 
 function attachBattleEvents(){
   const s = state.battle;
   updateBattleTimerDisplay();
+  (function mountPixelScene(){
+    const p = getActiveProfile();
+    PXE.mount(document.getElementById('pxBattle'), {
+      scene: s.subject, bossKey: s.subject,
+      hero: {color: p.avatarColor, weapon: p.weapon, gear: p.equippedGear},
+      getState: ()=>({php: state.battle.playerHP, pmax: PLAYER_MAX_HP,
+                      bhp: state.battle.bossHP, bmax: state.battle.bossMaxHp})
+    });
+  })();
 
   const endBtn = document.getElementById('endEarlyBtn');
   if(endBtn) endBtn.addEventListener('click', ()=>{
@@ -5585,7 +7012,7 @@ function attachBattleEvents(){
     s.bossHP = Math.max(0, s.bossHP - amt);
     s.relicMenuKey = null;
     Sound.hitVillain();
-    animateAttack('playerIcon','bossIcon','attack-right');
+    animateAttack('playerIcon','bossIcon','attack-right', amt, '#FFD166');
     await saveProfile(state.activePlayerId, p);
     if(s.bossHP<=0){
       Sound.villainDefeated();
@@ -5664,11 +7091,15 @@ function attachBattleEvents(){
         const xpGain = 10 + s.levelIdx*5;
         comboBonus = s.correctStreak>=3 ? 5 * (s.correctStreak-2) : 0;
         s.xpEarned += xpGain + comboBonus;
-        const dmg = Math.max(1, Math.round(s.correctDamageBase * tierMult));
+        const tierBase = Math.round(s.correctDamageBase * tierMult);
+        const matchMult = matchupMultiplier(s.subject, s.subject);
+        const dmg = Math.max(1, Math.round(tierBase * matchMult));
         s.bossHP = Math.max(0, s.bossHP - dmg);
         Sound.correct();
         Sound.hitVillain();
-        animateAttack('playerIcon','bossIcon','attack-right');
+        animateAttack('playerIcon','bossIcon','attack-right', dmg);
+        const ml = matchupLabel(s.subject, s.subject);
+        if(ml) showEffectiveness('bossIcon', ml);
         if(s.correctStreak>0 && s.correctStreak%3===0){ fireConfetti(14); Sound.comboHit(); }
       } else {
         s.correctStreak = 0; s.wrongStreak += 1;
@@ -5677,7 +7108,7 @@ function attachBattleEvents(){
         Sound.incorrect();
         Sound.hitPlayer();
         if(s.playerHP>0 && s.playerHP<30) Sound.heartbeat();
-        animateAttack('bossIcon','playerIcon','attack-left');
+        animateAttack('bossIcon','playerIcon','attack-left', dmgTaken);
         recordMiss(p, track, s.subject, q);
       }
 
@@ -5957,19 +7388,10 @@ function renderFinalBoss(){
       <span class="level-chip" style="background:linear-gradient(135deg,#FF4D6D,#B14AFF);color:#2A0A14;">🐉 FINAL BOSS · ${subj.icon} ${subj.name}</span>
       <div class="timer" id="bossTimerWrap"><span id="bossTimerDisplay">${m}:${sec.toString().padStart(2,'0')}</span></div>
     </div>
-    <div class="battle-arena dark ${bs.playerHP>0 && bs.playerHP<30 ? 'low-hp':''}">
-      ${battleBackdropSVG('boss')}
-      <div class="combatant">
-        ${playerPortraitHTML(p.avatarEmoji, p.avatarColor, 'fbPlayerIcon', p.bodyShape, p.weapon, p.equippedGear)}
-        <div class="combatant-label">You</div>
-        ${hpBarHTML(bs.playerHP, PLAYER_MAX_HP, 'fbPlayerHPBar', 'player')}
-      </div>
-      <div class="vs-badge">VS</div>
-      <div class="combatant">
-        ${bossPortraitHTML('boss', 'fbBossIcon')}
-        <div class="combatant-label">Realm Overlord</div>
-        ${hpBarHTML(bs.bossHP, bs.bossMaxHp, 'fbBossHPBar', 'boss')}
-      </div>
+    <div class="px-frame boss ${bs.playerHP>0 && bs.playerHP<30 ? 'low-hp':''}">
+      <canvas id="pxFinalBoss" class="px-canvas" width="256" height="152"></canvas>
+      <div class="px-nameplate left">You</div>
+      <div class="px-nameplate right">Realm Overlord</div>
     </div>
     <p style="font-weight:700;color:#D8CFFF;margin-top:0;">⚔️ ${bs.correctCount} hits landed · Boss at ${pct}% HP · 🗓️ Day ${p.totalDaysPlayed||1} of summer</p>
     ${renderRelicTray(p, bs.relicMenuKey, (getActiveTrack().subjects[bs.currentSubject.key].levels.length-1), bs.correctDamageBase, 'finalboss')}
@@ -5988,6 +7410,15 @@ function renderFinalBoss(){
 function attachFinalBossEvents(){
   updateFinalBossTimerDisplay();
   const bs = state.finalBoss;
+  (function mountPixelScene(){
+    const p = getActiveProfile();
+    PXE.mount(document.getElementById('pxFinalBoss'), {
+      scene: 'boss', bossKey: 'boss',
+      hero: {color: p.avatarColor, weapon: p.weapon, gear: p.equippedGear},
+      getState: ()=>({php: state.finalBoss.playerHP, pmax: PLAYER_MAX_HP,
+                      bhp: state.finalBoss.bossHP, bmax: state.finalBoss.bossMaxHp})
+    });
+  })();
 
   const retreatBtn = document.getElementById('fbRetreatBtn');
   if(retreatBtn) retreatBtn.addEventListener('click', ()=>{
@@ -6035,7 +7466,7 @@ function attachFinalBossEvents(){
     bs.bossHP = Math.max(0, bs.bossHP - amt);
     bs.relicMenuKey = null;
     Sound.hitVillain();
-    animateAttack('fbPlayerIcon','fbBossIcon','attack-right');
+    animateAttack('fbPlayerIcon','fbBossIcon','attack-right', amt, '#FFD166');
     await saveProfile(state.activePlayerId, p);
     if(bs.bossHP<=0){
       Sound.villainDefeated();
@@ -6066,14 +7497,14 @@ function attachFinalBossEvents(){
         bs.bossHP = Math.max(0, bs.bossHP - dmg);
         Sound.correct();
         Sound.hitVillain();
-        animateAttack('fbPlayerIcon','fbBossIcon','attack-right');
+        animateAttack('fbPlayerIcon','fbBossIcon','attack-right', dmg);
       } else {
         const dmgTaken = Math.max(1, Math.round(bs.wrongDamageBase));
         bs.playerHP = Math.max(0, bs.playerHP - dmgTaken);
         Sound.incorrect();
         Sound.hitPlayer();
         if(bs.playerHP>0 && bs.playerHP<30) Sound.heartbeat();
-        animateAttack('fbBossIcon','fbPlayerIcon','attack-left');
+        animateAttack('fbBossIcon','fbPlayerIcon','attack-left', dmgTaken);
       }
 
       const bossBar = document.getElementById('fbBossHPBar'), bossTxt = document.getElementById('fbBossHPBarText');
@@ -6934,6 +8365,443 @@ function attachSparringResultEvents(){
 }
 
 /* =========================================================================
+   SPEED ROUND
+   45 seconds, answer as many as you can. Points escalate with a correct
+   streak (10, 12, 14 …) so a hot streak is worth chasing, and a wrong
+   answer resets the streak but costs no time — the pressure is the clock,
+   not punishment. No HP, no boss; a pure arcade palette-cleanser using the
+   same question bank. XP is scaled to score and capped so it can't be
+   farmed past the daily ceiling awardXP already enforces.
+   ========================================================================= */
+const SPEED_SECONDS = 45;
+function renderSpeedPick(){
+  const track = getActiveTrack();
+  const subs = SUBJECTS.filter(s=>track.subjects[s.key]);
+  return `
+  ${renderHeader()}
+  <div class="card setup-card" style="margin-bottom:16px;">
+    <span class="back-link" id="speedBackLink">← Back</span>
+    <h2 class="display" style="margin-top:0;">⚡ Speed Round</h2>
+    <p>${SPEED_SECONDS} seconds. Answer as many as you can — a hot streak scores more each time. No damage, no pressure but the clock. Ready?</p>
+  </div>
+  <div class="card">
+    <p style="font-weight:800;margin:0 0 10px;">Pick a subject:</p>
+    ${subs.map(s=>`<button class="btn ghost" style="width:100%;margin-bottom:9px;justify-content:flex-start;" data-speed-subject="${s.key}">${s.icon} ${s.name}</button>`).join('')}
+    <button class="btn brass" style="width:100%;margin-top:4px;" data-speed-subject="mixed">🎲 Mixed — everything!</button>
+  </div>`;
+}
+function attachSpeedPickEvents(){
+  document.getElementById('speedBackLink').addEventListener('click', ()=>{ state.screen='dashboard'; render(); });
+  app.querySelectorAll('[data-speed-subject]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{ Sound.unlock(); Sound.click(); startSpeed(btn.getAttribute('data-speed-subject')); });
+  });
+}
+function drawSpeedQuestion(){
+  const s = state.speed;
+  const p = getActiveProfile();
+  const track = getActiveTrack();
+  const subjKey = s.subject==='mixed' ? choose(SUBJECTS.filter(x=>track.subjects[x.key]).map(x=>x.key)) : s.subject;
+  const levels = track.subjects[subjKey].levels;
+  const targetIdx = Math.min(levels.length-1, p.levelBySubject ? (p.levelBySubject[subjKey]||0) : 0);
+  const picked = pickNextUniqueQuestion(levels, targetIdx, s.used, new Set(), s.recentConcepts);
+  s.used.add(picked.q);
+  if(s.used.size > 200) s.used = new Set([picked.q]); // avoid unbounded growth in a long round
+  if(picked.q._concept){ s.recentConcepts.push(picked.q._concept); if(s.recentConcepts.length>2) s.recentConcepts.shift(); }
+  s.currentSubject = subjKey;
+  s.currentQ = picked.q;
+}
+function startSpeed(subject){
+  const p = getActiveProfile();
+  state.speed = { subject, used:new Set(), recentConcepts:[], currentQ:null, currentSubject:null,
+    score:0, answered:0, correct:0, streak:0, bestStreak:0, timeLeft:SPEED_SECONDS, timerId:null, awaitingNext:false, ended:false };
+  drawSpeedQuestion();
+  state.screen = 'speed';
+  if(SETTINGS.musicOn){ Sound.startAmbient('boss'); startMusicRotation(); }
+  render();
+}
+function renderSpeed(){
+  const s = state.speed;
+  const subjMeta = s.subject==='mixed' ? {icon:'🎲', name:'Mixed'} : subjMetaFor(s.subject);
+  const q = s.currentQ;
+  const pct = Math.max(0, 100*s.timeLeft/SPEED_SECONDS);
+  const nextPts = 10 + Math.min(10, s.streak*2);
+  return `
+  ${renderHeader()}
+  <div class="card" style="background:linear-gradient(180deg,#101a3a,#1a2a55);color:#EAF2FF;">
+    <div class="session-header">
+      <span class="level-chip" style="background:linear-gradient(135deg,#00D9C0,#4D8DFF);color:#04121a;">⚡ SPEED ROUND · ${subjMeta.icon} ${subjMeta.name}</span>
+      <div class="speed-score-big" style="color:#FFD166;" id="speedScore">${s.score}</div>
+    </div>
+    <div class="speed-timer-bar"><div class="speed-timer-fill" id="speedTimerFill" style="width:${pct}%"></div></div>
+    <p style="font-size:12.5px;color:#AEC4E8;margin:0 0 8px;">⏱️ <span id="speedTimeLeft">${s.timeLeft}</span>s left · streak ×${s.streak} · next correct = <strong>${nextPts} pts</strong></p>
+    <div class="q-card">
+      ${renderQuestionBody(q)}
+      <div id="speedChoicesWrap">
+        ${q.c.map((choice,i)=>`<button class="choice" data-idx="${i}">${choice}</button>`).join('')}
+      </div>
+    </div>
+    <div style="margin-top:10px;"><span class="back-link" id="speedQuitBtn" style="color:#AEC4E8;">End round early</span></div>
+  </div>`;
+}
+function attachSpeedEvents(){
+  const s = state.speed;
+  if(!s.timerId){
+    s.timerId = setInterval(()=>{
+      s.timeLeft -= 1;
+      const fill = document.getElementById('speedTimerFill'); if(fill) fill.style.width = Math.max(0,100*s.timeLeft/SPEED_SECONDS)+'%';
+      const tl = document.getElementById('speedTimeLeft'); if(tl) tl.textContent = Math.max(0,s.timeLeft);
+      if(s.timeLeft<=0) endSpeed();
+    }, 1000);
+  }
+  app.querySelectorAll('#speedChoicesWrap .choice').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      if(s.awaitingNext || s.ended) return;
+      Sound.unlock();
+      const idx = parseInt(btn.getAttribute('data-idx'));
+      const q = s.currentQ;
+      const correct = idx === q.a;
+      s.answered += 1;
+      const p = getActiveProfile();
+      const log = todayLogEntry(p);
+      if(log.subjects[s.currentSubject]) log.subjects[s.currentSubject].total += 1;
+      app.querySelectorAll('#speedChoicesWrap .choice').forEach((b,i)=>{
+        b.disabled = true;
+        if(i===q.a) b.classList.add('correct');
+        else if(i===idx) b.classList.add('incorrect');
+      });
+      if(correct){
+        const pts = 10 + Math.min(10, s.streak*2);
+        s.score += pts; s.correct += 1; s.streak += 1; s.bestStreak = Math.max(s.bestStreak, s.streak);
+        if(log.subjects[s.currentSubject]) log.subjects[s.currentSubject].correct += 1;
+        p.correctBySubject[s.currentSubject] = (p.correctBySubject[s.currentSubject]||0) + 1;
+        Sound.correct();
+        const sc = document.getElementById('speedScore'); if(sc) sc.textContent = s.score;
+      } else {
+        s.streak = 0;
+        Sound.incorrect();
+      }
+      s.awaitingNext = true;
+      // brief reveal, then auto-advance — keeps the round fast without a click
+      setTimeout(()=>{
+        if(s.ended) return;
+        s.awaitingNext = false;
+        drawSpeedQuestion();
+        render();
+      }, 420);
+    });
+  });
+  document.getElementById('speedQuitBtn').addEventListener('click', ()=> endSpeed());
+}
+async function endSpeed(){
+  const s = state.speed;
+  if(s.ended) return;
+  s.ended = true;
+  if(s.timerId){ clearInterval(s.timerId); s.timerId = null; }
+  stopMusicRotation();
+  const p = getActiveProfile();
+  // XP scaled to score, capped so speed can't blow past the daily ceiling
+  const xp = awardXP(p, Math.min(120, Math.round(s.score/3)));
+  s.xpAwarded = xp;
+  await saveProfile(state.activePlayerId, p);
+  state.screen = 'speed-result';
+  render();
+}
+function renderSpeedResult(){
+  const s = state.speed;
+  const subjMeta = s.subject==='mixed' ? {icon:'🎲', name:'Mixed'} : subjMetaFor(s.subject);
+  const acc = s.answered ? Math.round(100*s.correct/s.answered) : 0;
+  return `
+  ${renderHeader()}
+  <div class="card" style="text-align:center;">
+    <div style="font-size:52px;line-height:1;">⚡</div>
+    <h2 class="display" style="margin:6px 0;">Time's Up!</h2>
+    <div class="speed-score-big" style="font-size:56px;color:var(--amber);">${s.score}</div>
+    <p style="color:var(--text-dim);margin:4px 0 14px;">points · ${subjMeta.icon} ${subjMeta.name}</p>
+    <div style="display:flex;justify-content:center;gap:22px;flex-wrap:wrap;margin-bottom:14px;">
+      <div><div style="font-weight:800;font-size:22px;">${s.correct}/${s.answered}</div><div style="font-size:12px;color:var(--text-dim);">correct (${acc}%)</div></div>
+      <div><div style="font-weight:800;font-size:22px;">×${s.bestStreak}</div><div style="font-size:12px;color:var(--text-dim);">best streak</div></div>
+      <div><div style="font-weight:800;font-size:22px;color:var(--teal);">+${s.xpAwarded||0}</div><div style="font-size:12px;color:var(--text-dim);">XP earned</div></div>
+    </div>
+    <button class="btn brass" style="width:100%;margin-bottom:8px;" id="speedAgainBtn">⚡ Go Again</button>
+    <button class="btn ghost" style="width:100%;" id="speedDoneBtn">Back to Base</button>
+  </div>`;
+}
+function attachSpeedResultEvents(){
+  Sound.unlock();
+  if(state.speed.score > 0){ fireConfetti(Math.min(40, 10 + Math.round(state.speed.score/8))); Sound.badge(); }
+  document.getElementById('speedAgainBtn').addEventListener('click', ()=>{ state.screen='speed-pick'; render(); });
+  document.getElementById('speedDoneBtn').addEventListener('click', ()=>{ state.screen='dashboard'; render(); });
+}
+
+/* =========================================================================
+   FAMILY RAID (co-op)
+   Two or more players take turns fighting one shared boss. On each turn the
+   active player answers a question drawn at THEIR OWN grade level (via their
+   own track), so a 3rd grader and a 6th grader can raid together fairly.
+   A correct answer damages the boss; the weakness ring applies per attacker,
+   so bringing the subject the boss is weak to hits for double — which makes
+   picking who takes which subject a real team decision. A wrong answer lets
+   the boss strike the shared party HP. Everyone shares one HP pool and one
+   goal, so it's cooperative, not competitive, and the youngest still lands
+   real hits. All participants earn XP on a win.
+   ========================================================================= */
+const COOP_PARTY_HP = 150;
+function renderCoopSetup(){
+  const eligible = state.playerIds.filter(id=>{ const p=state.profiles[id]; return p && p.name; });
+  const sel = state.coopDraft ? state.coopDraft.selected : [];
+  const subj = state.coopDraft ? state.coopDraft.subject : null;
+  if(eligible.length < 2){
+    return `
+    ${renderHeader()}
+    <div class="card setup-card">
+      <span class="back-link" id="coopBackLink">← Back</span>
+      <h2 class="display" style="margin-top:0;">👥 Family Raid</h2>
+      <p>Family Raid is a co-op fight — you take on one big boss together, taking turns. You'll need at least <strong>2 explorers</strong> on this device to raid. Create another player, then come back!</p>
+    </div>`;
+  }
+  const roster = eligible.map(id=>{
+    const p = state.profiles[id];
+    const on = sel.includes(id);
+    const av = p.avatarEmoji||'🧭', col = p.avatarColor||'var(--violet)';
+    return `<button class="coop-chip ${on?'active':''}" data-coop-toggle="${id}" style="cursor:pointer;">
+      <span style="width:22px;height:22px;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;background:${col}33;border:1.5px solid ${col};">${av}</span>
+      ${p.name} ${on?'✓':''}
+    </button>`;
+  }).join('');
+  const subjBtns = SUBJECTS.map(sm=>`<button class="btn ${subj===sm.key?'brass':'ghost'}" style="width:100%;margin-bottom:8px;justify-content:flex-start;" data-coop-subject="${sm.key}">${sm.icon} ${sm.name}${subj===sm.key?' ✓':''}</button>`).join('');
+  const ready = sel.length>=2 && subj;
+  return `
+  ${renderHeader()}
+  <div class="card setup-card" style="margin-bottom:14px;">
+    <span class="back-link" id="coopBackLink">← Back</span>
+    <h2 class="display" style="margin-top:0;">👥 Family Raid</h2>
+    <p>Fight one big boss <strong>together</strong>, taking turns. Each explorer answers questions at their own grade — so everyone can raid, big or small. Beat the boss before the party runs out of HP!</p>
+  </div>
+  <div class="card" style="margin-bottom:14px;">
+    <p style="font-weight:800;margin:0 0 8px;">1. Who's raiding? <span style="font-weight:600;color:var(--text-dim);font-size:12.5px;">(tap to add, pick 2+)</span></p>
+    <div class="coop-roster">${roster}</div>
+  </div>
+  <div class="card" style="margin-bottom:14px;">
+    <p style="font-weight:800;margin:0 0 8px;">2. Which boss?</p>
+    ${subjBtns}
+    ${subj?`<div style="margin-top:6px;">${weaknessHintHTML(subj)}<p style="font-size:12px;color:var(--text-dim);margin:6px 0 0;">💡 Tip: on your turn you answer <em>your own</em> subjects, but this boss takes <strong>2× damage</strong> from ${subjMetaFor(BOSS_MATCHUP[subj].weakTo).name}. Plan who hits hardest!</p></div>`:''}
+  </div>
+  <button class="btn brass" style="width:100%;${ready?'':'opacity:.5;pointer-events:none;'}" id="coopStartBtn">⚔️ Start the Raid!</button>`;
+}
+function attachCoopSetupEvents(){
+  if(!state.coopDraft) state.coopDraft = {selected:[], subject:null};
+  const back = document.getElementById('coopBackLink');
+  if(back) back.addEventListener('click', ()=>{ state.coopDraft=null; state.screen='dashboard'; render(); });
+  app.querySelectorAll('[data-coop-toggle]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      Sound.unlock(); Sound.click();
+      const id = btn.getAttribute('data-coop-toggle');
+      const sel = state.coopDraft.selected;
+      const i = sel.indexOf(id);
+      if(i>=0) sel.splice(i,1); else sel.push(id);
+      render();
+    });
+  });
+  app.querySelectorAll('[data-coop-subject]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      Sound.unlock(); Sound.click();
+      state.coopDraft.subject = btn.getAttribute('data-coop-subject');
+      render();
+    });
+  });
+  const start = document.getElementById('coopStartBtn');
+  if(start) start.addEventListener('click', ()=>{
+    Sound.unlock(); Sound.click();
+    if(state.coopDraft.selected.length>=2 && state.coopDraft.subject) startCoop(state.coopDraft.selected, state.coopDraft.subject);
+  });
+}
+function drawCoopQuestion(){
+  const c = state.coop;
+  const playerId = c.party[c.turnIdx].id;
+  const track = TRACKS[playerId];
+  const prof = state.profiles[playerId];
+  // Each raider answers questions in their OWN subjects at their own level;
+  // the attack subject rotates through what they know so the weakness ring
+  // comes into play. The boss's own subject is fixed (c.subject).
+  const attackSubject = c.subject; // everyone hammers the raid subject
+  const levels = track.subjects[attackSubject].levels;
+  const targetIdx = Math.min(levels.length-1, prof.levelBySubject ? (prof.levelBySubject[attackSubject]||0) : 0);
+  const picked = pickNextUniqueQuestion(levels, targetIdx, c.used, new Set(), c.recentConcepts);
+  c.used.add(picked.q);
+  if(picked.q._concept){ c.recentConcepts.push(picked.q._concept); if(c.recentConcepts.length>2) c.recentConcepts.shift(); }
+  c.currentQ = picked.q;
+  c.attackSubject = attackSubject;
+}
+function startCoop(playerIds, subject){
+  const party = playerIds.map(id=>({ id, name: state.profiles[id].name, dmgDealt:0, correct:0, answered:0 }));
+  const dayFactor = Math.max(...playerIds.map(id=>state.profiles[id].totalDaysPlayed||1));
+  const bossMaxHp = 60 + party.length*40 + Math.min(80, dayFactor*4); // scales with party size + days played
+  state.coop = {
+    party, subject, turnIdx:0, round:1,
+    bossHP: bossMaxHp, bossMaxHp,
+    partyHP: COOP_PARTY_HP, partyMaxHP: COOP_PARTY_HP,
+    used:new Set(), recentConcepts:[], currentQ:null, attackSubject:subject,
+    awaitingNext:false, result:null, lastMsg:null
+  };
+  drawCoopQuestion();
+  state.screen = 'coop-battle';
+  if(SETTINGS.musicOn){ Sound.startAmbient(subject); startMusicRotation(); }
+  render();
+}
+function renderCoopBattle(){
+  const c = state.coop;
+  const subjMeta = subjMetaFor(c.subject);
+  const boss = bossMeta(c.subject);
+  const active = c.party[c.turnIdx];
+  const activeProf = state.profiles[active.id];
+  const bossPct = Math.max(0, Math.round(100*c.bossHP/c.bossMaxHp));
+  const partyPct = Math.max(0, Math.round(100*c.partyHP/c.partyMaxHP));
+  const q = c.currentQ;
+  const roster = c.party.map((m,i)=>{
+    const pr = state.profiles[m.id];
+    return `<div class="coop-chip ${i===c.turnIdx?'active':''}">
+      <span>${pr.avatarEmoji||'🧭'}</span>${m.name} <span class="dmg">${m.dmgDealt}⚔️</span>
+    </div>`;
+  }).join('');
+  return `
+  ${renderHeader()}
+  <div class="card" style="background:linear-gradient(180deg,#1C1533,#2A1B4D);color:#F2EFFF;">
+    <div class="session-header">
+      <span class="level-chip" style="background:linear-gradient(135deg,#FF9F1C,#FF4D6D);color:#fff;">👥 FAMILY RAID · ${subjMeta.icon} ${boss.name}</span>
+    </div>
+    <div class="coop-roster">${roster}</div>
+    <div class="coop-turn-banner">🎯 ${active.name}'s turn!</div>
+    <div class="px-frame">
+      <canvas id="pxCoop" class="px-canvas" width="256" height="152"></canvas>
+      <div class="px-nameplate left">Party</div>
+      <div class="px-nameplate right">${boss.name}</div>
+    </div>
+    ${weaknessHintHTML(c.subject)}
+    <div class="q-card">
+      <p style="font-size:12.5px;color:#B7B4D6;margin:0 0 6px;">${active.name}, answer this ${subjMetaFor(c.attackSubject).name} question (your level):</p>
+      ${renderQuestionBody(q)}
+      <div id="coopChoicesWrap">
+        ${q.c.map((choice,i)=>`<button class="choice" data-idx="${i}">${choice}</button>`).join('')}
+      </div>
+      <div id="coopExplainWrap"></div>
+      <div id="coopNextWrap" style="margin-top:14px;"></div>
+    </div>
+    <div style="margin-top:10px;"><span class="back-link" id="coopQuitBtn" style="color:#D8CFFF;">Leave raid</span></div>
+  </div>`;
+}
+function attachCoopBattleEvents(){
+  const c = state.coop;
+  (function mountScene(){
+    PXE.mount(document.getElementById('pxCoop'), {
+      scene: c.subject, bossKey: c.subject,
+      hero: (()=>{ const pr = state.profiles[c.party[c.turnIdx].id]; return {color:pr.avatarColor, weapon:pr.weapon, gear:pr.equippedGear}; })(),
+      getState: ()=>({php: state.coop.partyHP, pmax: state.coop.partyMaxHP, bhp: state.coop.bossHP, bmax: state.coop.bossMaxHp})
+    });
+  })();
+  app.querySelectorAll('#coopChoicesWrap .choice').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      if(c.awaitingNext) return;
+      Sound.unlock();
+      const idx = parseInt(btn.getAttribute('data-idx'));
+      const q = c.currentQ;
+      const correct = idx === q.a;
+      const member = c.party[c.turnIdx];
+      member.answered += 1;
+      c.awaitingNext = true;
+      app.querySelectorAll('#coopChoicesWrap .choice').forEach((b,i)=>{
+        b.disabled = true;
+        if(i===q.a) b.classList.add('correct');
+        else if(i===idx) b.classList.add('incorrect');
+      });
+      let msg = '';
+      if(correct){
+        member.correct += 1;
+        const mult = matchupMultiplier(c.subject, c.attackSubject);
+        const base = Math.round(c.bossMaxHp / 8);
+        const dmg = Math.max(1, Math.round(base * mult));
+        c.bossHP = Math.max(0, c.bossHP - dmg);
+        member.dmgDealt += dmg;
+        Sound.correct(); Sound.hitVillain();
+        animateAttack('coopHero','coopBoss','attack-right', dmg);
+        const ml = matchupLabel(c.subject, c.attackSubject);
+        if(ml && PXE.isActive()) PXE.banner('boss', ml.text, ml.cls);
+        msg = `✅ ${member.name} hit for ${dmg}! ${q.n}`;
+      } else {
+        const dmgTaken = Math.round(c.partyMaxHP / 8);
+        c.partyHP = Math.max(0, c.partyHP - dmgTaken);
+        Sound.incorrect(); Sound.hitPlayer();
+        animateAttack('coopBoss','coopHero','attack-left', dmgTaken);
+        msg = `💥 Miss! The party takes ${dmgTaken} damage. ${q.n}`;
+      }
+      document.getElementById('coopExplainWrap').innerHTML = `<div class="explain">${msg}</div>`;
+      const over = c.bossHP<=0 || c.partyHP<=0;
+      const label = c.bossHP<=0 ? 'Victory! 🏆' : (c.partyHP<=0 ? 'See results' : `Next: ${c.party[(c.turnIdx+1)%c.party.length].name} →`);
+      document.getElementById('coopNextWrap').innerHTML = `<button class="btn brass" id="coopNextBtn">${label}</button>`;
+      document.getElementById('coopNextBtn').addEventListener('click', ()=>{
+        if(over){ c.result = c.bossHP<=0 ? 'victory' : 'defeat'; endCoop(); return; }
+        c.turnIdx = (c.turnIdx+1) % c.party.length;
+        if(c.turnIdx===0) c.round += 1;
+        c.awaitingNext = false;
+        drawCoopQuestion();
+        render();
+      });
+    });
+  });
+  document.getElementById('coopQuitBtn').addEventListener('click', ()=>{
+    PXE.unmount(); stopMusicRotation(); state.coop=null; state.coopDraft=null; state.screen='dashboard'; render();
+  });
+}
+async function endCoop(){
+  const c = state.coop;
+  PXE.unmount();
+  stopMusicRotation();
+  const won = c.result==='victory';
+  // Everyone who raided earns XP on a win, scaled by their own contribution
+  // but with a floor so the youngest/smallest contributor still shares the joy.
+  if(won){
+    for(const m of c.party){
+      const p = state.profiles[m.id];
+      const share = 40 + Math.min(60, m.correct*12);
+      m.xpAwarded = awardXP(p, share);
+      await saveProfile(m.id, p);
+    }
+  }
+  state.screen = 'coop-result';
+  render();
+}
+function renderCoopResult(){
+  const c = state.coop;
+  const won = c.result==='victory';
+  const boss = bossMeta(c.subject);
+  const mvp = c.party.slice().sort((a,b)=>b.dmgDealt-a.dmgDealt)[0];
+  const rows = c.party.slice().sort((a,b)=>b.dmgDealt-a.dmgDealt).map(m=>{
+    const pr = state.profiles[m.id];
+    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;border-radius:10px;background:var(--panel-tint);margin-bottom:6px;">
+      <span style="font-weight:700;">${pr.avatarEmoji||'🧭'} ${m.name}${m===mvp && won?' 👑':''}</span>
+      <span style="font-size:13px;color:var(--text-dim);">${m.dmgDealt}⚔️ dealt · ${m.correct}/${m.answered} correct${won?` · <span style="color:var(--teal);font-weight:700;">+${m.xpAwarded||0} XP</span>`:''}</span>
+    </div>`;
+  }).join('');
+  return `
+  ${renderHeader()}
+  <div class="card" style="text-align:center;">
+    <div style="font-size:52px;line-height:1;">${won?'🏆':'💥'}</div>
+    <h2 class="display" style="margin:6px 0;">${won?'Raid Cleared!':'The Party Fell…'}</h2>
+    <p style="color:var(--text-dim);margin:0 0 14px;">${won?`Your team defeated ${boss.name} together!`:`${boss.name} was too strong this time. Regroup and try again!`}</p>
+    <div style="text-align:left;margin-bottom:14px;">${rows}</div>
+    ${won?`<p style="font-weight:700;color:var(--amber);margin:0 0 12px;">👑 Top damage: ${mvp.name}!</p>`:''}
+    <button class="btn brass" style="width:100%;margin-bottom:8px;" id="coopAgainBtn">👥 Raid Again</button>
+    <button class="btn ghost" style="width:100%;" id="coopDoneBtn">Back to Base</button>
+  </div>`;
+}
+function attachCoopResultEvents(){
+  Sound.unlock();
+  if(state.coop.result==='victory'){ fireConfetti(50); Sound.levelUp&&Sound.levelUp(); Sound.badge&&Sound.badge(); }
+  else Sound.click();
+  document.getElementById('coopAgainBtn').addEventListener('click', ()=>{ state.screen='coop-setup'; render(); });
+  document.getElementById('coopDoneBtn').addEventListener('click', ()=>{ state.coop=null; state.coopDraft=null; state.screen='dashboard'; render(); });
+}
+
+/* =========================================================================
    GEAR SHOP — cosmetic equipment purchasable with earned XP (spent from
    gearWallet, never from xpTotal, so buying never lowers a player's rank).
    ========================================================================= */
@@ -7358,6 +9226,7 @@ init();
 </script>
 </body>
 </html>
+
 
 
 
