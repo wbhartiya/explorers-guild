@@ -3379,8 +3379,12 @@ function declineChallenge(challengeId){
 async function submitChallengeScore(challengeId, playerId, correctCount){
   const c = state.challenges.find(x=>x.id===challengeId);
   if(!c || c.status!=='active') return null;
-  if(c.fromPlayerId===playerId) c.fromScore = correctCount;
-  else if(c.toPlayerId===playerId) c.toScore = correctCount;
+  // Don't allow overwriting a score that's already in — a player plays their
+  // half of a challenge exactly once. (The UI hides the replay button, but
+  // guard here too so the invariant holds no matter how this is reached.)
+  if(c.fromPlayerId===playerId){ if(c.fromScore!==null) return c; c.fromScore = correctCount; }
+  else if(c.toPlayerId===playerId){ if(c.toScore!==null) return c; c.toScore = correctCount; }
+  else return null;
   if(c.fromScore!==null && c.toScore!==null){
     await resolveChallenge(c);
   } else {
@@ -3454,6 +3458,14 @@ function generatePlayerId(){
 async function deletePlayer(playerId){
   delete state.profiles[playerId];
   state.playerIds = state.playerIds.filter(id=>id!==playerId);
+  // Purge any challenges involving this player — otherwise they dangle
+  // forever (showing "Someone"/"opponent", never playable or resolvable, and
+  // still counting against the other player's 5-challenge limit).
+  const hadChallenges = state.challenges.some(c=>challengeInvolvesPlayer(c, playerId));
+  if(hadChallenges){
+    state.challenges = state.challenges.filter(c=>!challengeInvolvesPlayer(c, playerId));
+    await saveChallenges(state.challenges);
+  }
   await Store.delete('profile:'+playerId);
   await savePlayerIds();
   if(state.activePlayerId===playerId) state.activePlayerId = null;
@@ -3859,7 +3871,7 @@ function render(){
   // render() replaces app.innerHTML wholesale, which detaches the battle
   // canvas. Stop the animation loop first so it can't keep drawing into an
   // orphaned element; the battle attach handlers mount a fresh one.
-  PXE.unmount();
+  PXE.unmount(); PXE3D.unmount();
   if(state.screen==='loading'){ app.innerHTML = renderLoading(); return; }
   if(state.screen==='pick-track'){ app.innerHTML = renderPickTrack(); attachPickTrackEvents(); attachHeaderEvents(); return; }
   if(state.screen==='pick-grade'){ app.innerHTML = renderPickGrade(); attachPickGradeEvents(); attachHeaderEvents(); return; }
@@ -4431,7 +4443,7 @@ function buildSmoothPath(positions){
 }
 
 function renderTrailSVG(track, profile){
-  const positions = [ [80,165],[210,80],[360,160],[510,75],[660,160],[770,90] ];
+  const positions = [ [80,150],[210,72],[360,145],[510,68],[660,145],[770,80] ];
   const hexColors = {math:'#FF9F1C', science:'#00D9C0', history:'#FF4D6D', reading:'#4D8DFF', writing:'#B14AFF', boss:'#FF2E63'};
   const darkColors = {math:'#B8630A', science:'#00877A', history:'#B8203D', reading:'#2A56A8', writing:'#7A2FA0', boss:'#A80F3D'};
   const names = {math:'Number Peaks',science:'Bubbling Springs',history:'Ancient Ruins',reading:'Storybook Grove',writing:'Inkwell Marsh',boss:'SHADOW KEEP'};
@@ -4475,12 +4487,12 @@ function renderTrailSVG(track, profile){
   // multiplayer / practice modes rather than a subject battle.
   const otherPlayers = state.playerIds.filter(id=>id!==state.activePlayerId && state.profiles[id] && state.profiles[id].name).length;
   const zoneDefs = [
-    {zone:'training', x:150, y:238, color:'#00D9C0', dark:'#00877A', icon:'⚡', name:'Training Ground', enabled:true},
-    {zone:'coop',     x:425, y:238, color:'#FF9F1C', dark:'#B8630A', icon:'👥', name:'Raid Camp',       enabled:otherPlayers>=1},
-    {zone:'challenge',x:700, y:238, color:'#FF4D6D', dark:'#B8203D', icon:'⚔️', name:'Dueling Arena',   enabled:otherPlayers>=1}
+    {zone:'training', x:150, y:322, color:'#00D9C0', dark:'#00877A', icon:'⚡', name:'Training Ground', enabled:true},
+    {zone:'coop',     x:425, y:322, color:'#FF9F1C', dark:'#B8630A', icon:'👥', name:'Raid Camp',       enabled:otherPlayers>=1},
+    {zone:'challenge',x:700, y:322, color:'#FF4D6D', dark:'#B8203D', icon:'⚔️', name:'Dueling Arena',   enabled:otherPlayers>=1}
   ];
   // branch trail linking the main path down to each outpost
-  const branchTrail = zoneDefs.map(z=>`<path d="M ${z.x},178 Q ${z.x},210 ${z.x},${z.y-40}" fill="none" stroke="#4a4570" stroke-width="4" stroke-dasharray="2 9" stroke-linecap="round" opacity="0.55"/>`).join('');
+  const branchTrail = zoneDefs.map(z=>`<path d="M ${z.x},250 Q ${z.x},285 ${z.x},${z.y-40}" fill="none" stroke="#4a4570" stroke-width="4" stroke-dasharray="2 9" stroke-linecap="round" opacity="0.55"/>`).join('');
   const zoneNodes = zoneDefs.map(z=>{
     const gradId = 'mapZoneGrad-'+z.zone;
     const clickable = z.enabled;
@@ -4529,7 +4541,7 @@ function renderTrailSVG(track, profile){
 
   return `
   <div class="trail-wrap">
-    <svg class="trail-svg" viewBox="0 0 850 340" xmlns="http://www.w3.org/2000/svg">
+    <svg class="trail-svg" viewBox="0 0 850 420" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <linearGradient id="mapSky" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stop-color="#1b1440"/>
@@ -4541,7 +4553,7 @@ function renderTrailSVG(track, profile){
           <stop offset="100%" stop-color="#120c26" stop-opacity="0.6"/>
         </linearGradient>
       </defs>
-      <rect x="0" y="0" width="850" height="340" rx="18" fill="url(#mapSky)"/>
+      <rect x="0" y="0" width="850" height="420" rx="18" fill="url(#mapSky)"/>
       <g class="map-stars">${stars}</g>
       <!-- parallax mountain layers: far, mid, near -->
       <polygon points="0,100 70,60 150,100 230,50 310,100 850,100 850,270 0,270" fill="#1f1840" opacity="0.4"/>
@@ -4553,9 +4565,9 @@ function renderTrailSVG(track, profile){
       <g class="map-clouds-near" opacity="0.35" fill="#EDE6FF">
         <ellipse cx="700" cy="30" rx="28" ry="8"/><ellipse cx="725" cy="24" rx="18" ry="7"/>
       </g>
-      <rect x="0" y="150" width="850" height="190" fill="url(#mapGround)"/>
-      <line x1="40" y1="200" x2="810" y2="200" stroke="#4a4570" stroke-width="1" stroke-dasharray="3 7" opacity="0.35"/>
-      <text x="425" y="196" text-anchor="middle" font-size="10" fill="#8b87a8" letter-spacing="1.5">✦ SPECIAL OUTPOSTS ✦</text>
+      <rect x="0" y="150" width="850" height="270" fill="url(#mapGround)"/>
+      <line x1="40" y1="272" x2="810" y2="272" stroke="#4a4570" stroke-width="1" stroke-dasharray="3 7" opacity="0.35"/>
+      <text x="425" y="268" text-anchor="middle" font-size="10" fill="#8b87a8" letter-spacing="1.5">✦ SPECIAL OUTPOSTS ✦</text>
       <!-- compass rose -->
       <g transform="translate(802,235)" opacity="0.5">
         <circle r="16" fill="none" stroke="#EDE6FF" stroke-width="1.2"/>
@@ -6132,6 +6144,545 @@ function bossMeta(subjectKey){
    Static layers and sprites are pre-rendered once into offscreen canvases
    and cached, so the per-frame cost is a handful of drawImage calls.
    ========================================================================= */
+/* ===== N64-STYLE 3D ENGINE + BATTLE RENDERER (inserted) ===== */
+const E3D = (function(){
+  'use strict';
+
+  // ---- vec3 ----
+  const V = {
+    sub:(a,b)=>[a[0]-b[0],a[1]-b[1],a[2]-b[2]],
+    add:(a,b)=>[a[0]+b[0],a[1]+b[1],a[2]+b[2]],
+    cross:(a,b)=>[a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]],
+    dot:(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2],
+    scale:(a,s)=>[a[0]*s,a[1]*s,a[2]*s],
+    len:(a)=>Math.hypot(a[0],a[1],a[2]),
+    norm:(a)=>{ const l=Math.hypot(a[0],a[1],a[2])||1; return [a[0]/l,a[1]/l,a[2]/l]; }
+  };
+
+  // ---- mat4 (column-agnostic; we apply row-major to points) ----
+  function matMul(a,b){
+    const o=new Array(16);
+    for(let r=0;r<4;r++)for(let c=0;c<4;c++){
+      o[r*4+c]=a[r*4+0]*b[0*4+c]+a[r*4+1]*b[1*4+c]+a[r*4+2]*b[2*4+c]+a[r*4+3]*b[3*4+c];
+    }
+    return o;
+  }
+  function matIdent(){ return [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1]; }
+  function matTrans(x,y,z){ return [1,0,0,x, 0,1,0,y, 0,0,1,z, 0,0,0,1]; }
+  function matScale(x,y,z){ return [x,0,0,0, 0,y,0,0, 0,0,z,0, 0,0,0,1]; }
+  function matRotY(a){ const c=Math.cos(a),s=Math.sin(a); return [c,0,s,0, 0,1,0,0, -s,0,c,0, 0,0,0,1]; }
+  function matRotX(a){ const c=Math.cos(a),s=Math.sin(a); return [1,0,0,0, 0,c,-s,0, 0,s,c,0, 0,0,0,1]; }
+  function matRotZ(a){ const c=Math.cos(a),s=Math.sin(a); return [c,-s,0,0, s,c,0,0, 0,0,1,0, 0,0,0,1]; }
+  // transform a point (w=1) by a row-major mat4; returns [x,y,z,w]
+  function xform(m,p){
+    return [
+      m[0]*p[0]+m[1]*p[1]+m[2]*p[2]+m[3],
+      m[4]*p[0]+m[5]*p[1]+m[6]*p[2]+m[7],
+      m[8]*p[0]+m[9]*p[1]+m[10]*p[2]+m[11],
+      m[12]*p[0]+m[13]*p[1]+m[14]*p[2]+m[15]
+    ];
+  }
+  // transform a direction (w=0) — ignores translation
+  function xformDir(m,p){
+    return [
+      m[0]*p[0]+m[1]*p[1]+m[2]*p[2],
+      m[4]*p[0]+m[5]*p[1]+m[6]*p[2],
+      m[8]*p[0]+m[9]*p[1]+m[10]*p[2]
+    ];
+  }
+  // lookAt view matrix (row-major)
+  function lookAt(eye,center,up){
+    const f=V.norm(V.sub(center,eye));
+    const s=V.norm(V.cross(f,up));
+    const u=V.cross(s,f);
+    return [
+      s[0], s[1], s[2], -V.dot(s,eye),
+      u[0], u[1], u[2], -V.dot(u,eye),
+      -f[0],-f[1],-f[2], V.dot(f,eye),
+      0,0,0,1
+    ];
+  }
+
+  // ---- colour helpers ----
+  function hexToRgb(h){
+    h=(h||'#888').replace('#','');
+    if(h.length===3) h=h.split('').map(c=>c+c).join('');
+    const n=parseInt(h,16);
+    return [(n>>16)&255,(n>>8)&255,n&255];
+  }
+
+  // ---- mesh primitives ----
+  // A mesh = { verts:[[x,y,z]...], faces:[{idx:[i,j,k], color:[r,g,b]}...] }
+  // box centred at (cx,cy,cz) with half-sizes (hx,hy,hz)
+  function box(cx,cy,cz,hx,hy,hz,color){
+    const c=hexToRgb(color);
+    const v=[
+      [cx-hx,cy-hy,cz-hz],[cx+hx,cy-hy,cz-hz],[cx+hx,cy+hy,cz-hz],[cx-hx,cy+hy,cz-hz], // back z-
+      [cx-hx,cy-hy,cz+hz],[cx+hx,cy-hy,cz+hz],[cx+hx,cy+hy,cz+hz],[cx-hx,cy+hy,cz+hz]  // front z+
+    ];
+    // faces as two tris each, CCW when viewed from outside
+    const q=(a,b,c2,d,col)=>[{idx:[a,b,c2],color:col},{idx:[a,c2,d],color:col}];
+    let f=[];
+    f=f.concat(q(4,5,6,7,c));          // front (+z)
+    f=f.concat(q(1,0,3,2,c));          // back (-z)
+    f=f.concat(q(0,4,7,3,c));          // left (-x)
+    f=f.concat(q(5,1,2,6,c));          // right (+x)
+    f=f.concat(q(3,7,6,2,c));          // top (+y)
+    f=f.concat(q(0,1,5,4,c));          // bottom (-y)
+    return {verts:v, faces:f};
+  }
+  // merge meshes into one
+  function merge(...meshes){
+    const out={verts:[],faces:[]};
+    for(const m of meshes){
+      const off=out.verts.length;
+      out.verts=out.verts.concat(m.verts);
+      for(const f of m.faces) out.faces.push({idx:[f.idx[0]+off,f.idx[1]+off,f.idx[2]+off],color:f.color});
+    }
+    return out;
+  }
+  // octahedron (for crystals/gems)
+  function octa(cx,cy,cz,r,hy,color){
+    const c=hexToRgb(color);
+    const v=[[cx,cy+hy,cz],[cx,cy-hy,cz],[cx+r,cy,cz],[cx-r,cy,cz],[cx,cy,cz+r],[cx,cy,cz-r]];
+    const t=(a,b,cc)=>({idx:[a,b,cc],color:c});
+    const f=[t(0,4,2),t(0,2,5),t(0,5,3),t(0,3,4),t(1,2,4),t(1,5,2),t(1,3,5),t(1,4,3)];
+    return {verts:v,faces:f};
+  }
+  // low-poly sphere-ish (icosphere subdivision-lite via latitude bands)
+  function blob(cx,cy,cz,r, rings, seg, color, jitter){
+    const c=hexToRgb(color); const verts=[]; const faces=[];
+    jitter=jitter||0;
+    for(let i=0;i<=rings;i++){
+      const th=Math.PI*i/rings;
+      for(let j=0;j<seg;j++){
+        const ph=2*Math.PI*j/seg;
+        const jj=1+(Math.sin(i*3.1+j*1.7)*jitter);
+        verts.push([cx+r*jj*Math.sin(th)*Math.cos(ph), cy+r*jj*Math.cos(th), cz+r*jj*Math.sin(th)*Math.sin(ph)]);
+      }
+    }
+    const idx=(i,j)=> i*seg + (j%seg);
+    for(let i=0;i<rings;i++)for(let j=0;j<seg;j++){
+      const a=idx(i,j),b=idx(i,j+1),d=idx(i+1,j),e=idx(i+1,j+1);
+      faces.push({idx:[a,b,d],color:c}); faces.push({idx:[b,e,d],color:c});
+    }
+    return {verts,faces};
+  }
+  function tri(a,b,c,color){ return {verts:[a,b,c], faces:[{idx:[0,1,2],color:hexToRgb(color)}]}; }
+
+  // recolour a whole mesh
+  function tint(mesh,color){ const c=hexToRgb(color); return {verts:mesh.verts, faces:mesh.faces.map(f=>({idx:f.idx,color:c}))}; }
+
+  // ---- renderer ----
+  function createRenderer(W,H){
+    const img = { data:new Uint8ClampedArray(W*H*4), width:W, height:H };
+    const zbuf = new Float32Array(W*H);
+    let light = V.norm([-0.5,-0.9,-0.55]);   // directional light (world space)
+    let fog = {color:[20,16,40], near:7, far:20, amount:0.85};
+    let cam = matIdent(), proj = matIdent(), viewProj = matIdent();
+    let ambient = 0.42, diffuse = 0.72;
+
+    function setLight(d){ light = V.norm(d); }
+    function setFog(f){ fog = Object.assign(fog,f); }
+    function setLighting(a,d){ ambient=a; diffuse=d; }
+
+    function setCamera(eye,target,fovDeg){
+      const aspect=W/H;
+      const f=1/Math.tan((fovDeg*Math.PI/180)/2);
+      const near=0.1, far=100;
+      // row-major perspective
+      proj=[
+        f/aspect,0,0,0,
+        0,f,0,0,
+        0,0,(far+near)/(near-far), (2*far*near)/(near-far),
+        0,0,-1,0
+      ];
+      cam=lookAt(eye,target,[0,1,0]);
+      viewProj=matMul(proj,cam);
+    }
+
+    function clear(skyTop, skyBot){
+      // vertical sky gradient with a little ordered dithering for banding
+      const B=[0,8,2,10,12,4,14,6,3,11,1,9,15,7,13,5];
+      const t=hexToRgb(skyTop), b=hexToRgb(skyBot);
+      for(let y=0;y<H;y++){
+        const f=y/H;
+        for(let x=0;x<W;x++){
+          const dth=B[((y&3)*4)+(x&3)]/16;
+          const ff=Math.max(0,Math.min(1,f + (dth-0.5)*0.06));
+          const i=(y*W+x)*4;
+          img.data[i]  =t[0]+(b[0]-t[0])*ff;
+          img.data[i+1]=t[1]+(b[1]-t[1])*ff;
+          img.data[i+2]=t[2]+(b[2]-t[2])*ff;
+          img.data[i+3]=255;
+        }
+      }
+      zbuf.fill(Infinity);
+    }
+
+    // project a world point -> screen {x,y, invw, z(view depth)}
+    function project(m, p){
+      const wp = xform(m,p);                 // world
+      const cp = xform(cam,wp);              // camera/view space (z negative in front)
+      const clip = xform(proj,cp);
+      const w = clip[3] || 1e-6;
+      return {
+        x:(clip[0]/w*0.5+0.5)*W,
+        y:(1-(clip[1]/w*0.5+0.5))*H,
+        invw:1/w,
+        vz:-cp[2],                            // positive distance in front of camera
+        behind: cp[2] > -0.05
+      };
+    }
+
+    function shadeFace(baseColor, worldNormal, vz){
+      const nl = Math.max(0, V.dot(worldNormal, V.scale(light,-1)));
+      let lit = ambient + diffuse*nl;
+      lit = Math.min(1.25, lit);
+      let r=baseColor[0]*lit, g=baseColor[1]*lit, b=baseColor[2]*lit;
+      // depth fog
+      if(fog.amount>0){
+        let ft=(vz-fog.near)/(fog.far-fog.near);
+        ft=Math.max(0,Math.min(1,ft))*fog.amount;
+        r=r+(fog.color[0]-r)*ft; g=g+(fog.color[1]-g)*ft; b=b+(fog.color[2]-b)*ft;
+      }
+      return [r,g,b];
+    }
+
+    // rasterize one triangle (screen-space a,b,c with depth) flat colour
+    function rasterTri(a,b,c,col){
+      let minX=Math.max(0,Math.floor(Math.min(a.x,b.x,c.x)));
+      let maxX=Math.min(W-1,Math.ceil(Math.max(a.x,b.x,c.x)));
+      let minY=Math.max(0,Math.floor(Math.min(a.y,b.y,c.y)));
+      let maxY=Math.min(H-1,Math.ceil(Math.max(a.y,b.y,c.y)));
+      if(maxX<minX||maxY<minY) return;
+      const area=(b.x-a.x)*(c.y-a.y)-(b.y-a.y)*(c.x-a.x);
+      if(area===0) return;
+      const inv=1/area;
+      // edge-function coefficients: w0 = A0*px + B0*py + C0 (all * inv)
+      const A0=(b.y-c.y)*inv, B0=(c.x-b.x)*inv;
+      const A1=(c.y-a.y)*inv, B1=(a.x-c.x)*inv;
+      const px0=minX+0.5, py0=minY+0.5;
+      let w0row=((b.x-px0)*(c.y-py0)-(b.y-py0)*(c.x-px0))*inv;
+      let w1row=((c.x-px0)*(a.y-py0)-(c.y-py0)*(a.x-px0))*inv;
+      const ia=a.invw, ib=b.invw, ic=c.invw;
+      const r=col[0], g=col[1], bl=col[2];
+      const data=img.data;
+      for(let y=minY;y<=maxY;y++){
+        let w0=w0row, w1=w1row;
+        let rowi=y*W;
+        for(let x=minX;x<=maxX;x++){
+          if(w0>=0 && w1>=0){
+            const w2=1-w0-w1;
+            if(w2>=0){
+              const z=1/(w0*ia + w1*ib + w2*ic);
+              const idx=rowi+x;
+              if(z<zbuf[idx]){
+                zbuf[idx]=z;
+                const di=idx*4;
+                data[di]=r; data[di+1]=g; data[di+2]=bl; data[di+3]=255;
+              }
+            }
+          }
+          w0+=A0; w1+=A1;
+        }
+        w0row+=B0; w1row+=B1;
+      }
+    }
+
+    // draw a mesh with a model matrix
+    function drawMesh(mesh, model){
+      const normalMat = model; // uniform scale/rotation only → fine for normals
+      // pre-project all verts
+      const P=new Array(mesh.verts.length);
+      for(let i=0;i<mesh.verts.length;i++) P[i]=project(model, mesh.verts[i]);
+      for(const f of mesh.faces){
+        const A=P[f.idx[0]], B=P[f.idx[1]], C=P[f.idx[2]];
+        if(A.behind||B.behind||C.behind) continue;
+        // back-face cull in screen space (CCW front)
+        const sArea=(B.x-A.x)*(C.y-A.y)-(B.y-A.y)*(C.x-A.x);
+        if(sArea<=0) continue;
+        // world-space normal for lighting
+        const wa=xform(model,mesh.verts[f.idx[0]]), wb=xform(model,mesh.verts[f.idx[1]]), wc=xform(model,mesh.verts[f.idx[2]]);
+        const nrm=V.norm(V.cross(V.sub([wb[0],wb[1],wb[2]],[wa[0],wa[1],wa[2]]),V.sub([wc[0],wc[1],wc[2]],[wa[0],wa[1],wa[2]])));
+        const vz=(A.vz+B.vz+C.vz)/3;
+        const col=shadeFace(f.color,nrm,vz);
+        rasterTri(A,B,C,col);
+      }
+    }
+
+    // draw a fogged ground plane grid (classic N64 receding floor)
+    function drawGround(y, colorA, colorB, size, cells){
+      const ca=hexToRgb(colorA), cb=hexToRgb(colorB);
+      const step=size*2/cells;
+      for(let i=0;i<cells;i++)for(let j=0;j<cells;j++){
+        const x0=-size+i*step, z0=-size+j*step;
+        const v0=[x0,y,z0],v1=[x0+step,y,z0],v2=[x0+step,y,z0+step],v3=[x0,y,z0+step];
+        const col=((i+j)&1)?ca:cb;
+        const A=project(matIdent(),v0),B=project(matIdent(),v1),C=project(matIdent(),v2),D=project(matIdent(),v3);
+        if(A.behind||B.behind||C.behind||D.behind) continue;
+        const vz=(A.vz+B.vz+C.vz+D.vz)/4;
+        const shaded=shadeFace(col,[0,1,0],vz);
+        // ground faces are wound to face up; force draw (no cull) via both windings
+        rasterTri(A,B,C,shaded); rasterTri(A,C,D,shaded);
+      }
+    }
+
+    let _out = null;
+    function blitTo(ctx){
+      if(!_out){
+        // Prefer the context's own factory (works everywhere a canvas does);
+        // fall back to the global ImageData constructor only if present.
+        if(ctx.createImageData) _out = ctx.createImageData(W,H);
+        else if(typeof ImageData!=='undefined') _out = new ImageData(W,H);
+        else return; // no way to present; skip silently
+      }
+      _out.data.set(img.data);
+      ctx.putImageData(_out,0,0);
+    }
+    function getImage(){ return img; }
+
+    return { clear, setCamera, setLight, setFog, setLighting, drawMesh, drawGround, blitTo, getImage, W, H };
+  }
+
+  const Engine3D = { createRenderer, box, octa, blob, tri, merge, tint, V, matMul, matIdent, matTrans, matScale, matRotX, matRotY, matRotZ, hexToRgb };
+  return Engine3D;
+})();
+
+/* =========================================================================
+   N64-STYLE 3D BATTLE RENDERER (PXE3D)
+   Uses the software 3D engine (E3D) above to render the battle as real
+   low-poly, vertex-lit 3D — hero and boss as procedural meshes on a fogged
+   checkered ground with a perspective camera. Exposes the SAME API as the
+   2D PXE (mount/unmount/hit/banner/isActive) plus getState, so the battle
+   screens drive it without change. HUD, damage numbers, sparks and the
+   effectiveness banner are drawn in 2D on top of the 3D composite.
+   ========================================================================= */
+const PXE3D = (function(){
+  const W = 256, H = 152;
+  const R = E3D.createRenderer(W, H);
+  R.setLighting(0.56, 0.86);
+  let live = null, rafId = null, FX = [];
+  const meshCache = {};
+
+  function sh(hex,amt){ const c=E3D.hexToRgb(hex); return '#'+[c[0]+amt,c[1]+amt,c[2]+amt].map(v=>Math.max(0,Math.min(255,v)).toString(16).padStart(2,'0')).join(''); }
+
+  // ---- realm palettes: sky, ground, fog per subject ----
+  const REALM = {
+    math:    {skyT:'#4a3578',skyB:'#241a44',gA:'#3a2a64',gB:'#2c2050',fog:[52,30,74],  light:[-0.55,-0.8,-0.45]},
+    science: {skyT:'#1c6b5e',skyB:'#0c3330',gA:'#12564a',gB:'#0c3a34',fog:[24,74,66],  light:[-0.5,-0.82,-0.4]},
+    history: {skyT:'#8a5030',skyB:'#3d2018',gA:'#6a3a26',gB:'#432618',fog:[92,60,40],  light:[-0.5,-0.8,-0.5]},
+    reading: {skyT:'#2f4d86',skyB:'#131f3d',gA:'#233a6a',gB:'#16244a',fog:[40,60,110], light:[-0.55,-0.78,-0.42]},
+    writing: {skyT:'#5a2c8e',skyB:'#241045',gA:'#3c1c68',gB:'#281048',fog:[70,40,110], light:[-0.5,-0.82,-0.46]},
+    boss:    {skyT:'#7a1f22',skyB:'#2a0610',gA:'#4a1018',gB:'#2a060e',fog:[110,30,34], light:[-0.5,-0.85,-0.4]}
+  };
+
+  // ---- hero mesh reflects avatar colour + equipped gear ----
+  function buildHero(cfg){
+    const key='h_'+JSON.stringify(cfg||{});
+    if(meshCache[key]) return meshCache[key];
+    const cloth=(cfg&&cfg.color)||'#6a5bff', skin='#f0c088', metal='#d0d8e4', boot='#7a5230', gold='#f0c850';
+    const g=(cfg&&cfg.gear)||{};
+    const gcol=(slot,def)=>{ const it=g[slot]&&typeof gearItemById==='function'?gearItemById(g[slot]):null; return it&&it.color?it.color:def; };
+    const helmC=gcol('helmet',metal), armorC=gcol('armor',metal), shieldC=gcol('shield',metal), bootC=gcol('boots',boot);
+    const wep=(cfg&&cfg.weapon)||'sword';
+    const parts=[
+      E3D.box(0,1.28,0, 0.30,0.30,0.28, skin),
+      E3D.box(0,1.14,0.27, 0.09,0.05,0.03, sh(skin,-45)),
+      E3D.box(0,1.55,0, 0.33,0.14,0.31, helmC),
+      E3D.box(0,1.5,0.32, 0.30,0.05,0.02, gold),
+      E3D.box(0,1.8,0, 0.05,0.2,0.05, '#ff4d6d'),
+      E3D.box(0,0.58,-0.02, 0.40,0.52,0.24, cloth),
+      E3D.box(0,0.66,0.22, 0.38,0.28,0.06, armorC),
+      E3D.box(0,0.5,0.0, 0.44,0.08,0.30, gold),
+      E3D.box(0,0.55,-0.30, 0.40,0.60,0.04, sh(cloth,-70)),
+      E3D.box(-0.54,0.6,0, 0.13,0.4,0.15, cloth),
+      E3D.box(0.54,0.6,0, 0.13,0.4,0.15, cloth),
+      E3D.box(-0.54,0.12,0, 0.15,0.14,0.17, metal),
+      E3D.box(0.54,0.12,0, 0.15,0.14,0.17, metal),
+      E3D.box(-0.19,-0.35,0, 0.16,0.5,0.19, '#3242a0'),
+      E3D.box(0.19,-0.35,0, 0.16,0.5,0.19, '#3242a0'),
+      E3D.box(-0.19,-0.92,0.05, 0.19,0.13,0.24, bootC),
+      E3D.box(0.19,-0.92,0.05, 0.19,0.13,0.24, bootC)
+    ];
+    // weapon variants
+    if(wep==='staff'){ parts.push(E3D.box(0.72,0.7,0,0.05,0.9,0.05,boot)); parts.push(E3D.octa(0.72,1.32,0,0.16,0.2,'#b14aff')); }
+    else if(wep==='bow'){ parts.push(E3D.box(0.74,0.6,0,0.05,0.7,0.05,boot)); }
+    else if(wep==='hammer'){ parts.push(E3D.box(0.72,0.7,0,0.05,0.7,0.05,boot)); parts.push(E3D.box(0.72,1.15,0,0.22,0.16,0.18,metal)); }
+    else { parts.push(E3D.box(0.72,0.9,0,0.045,0.75,0.05,'#eef2ff')); parts.push(E3D.box(0.72,0.5,0,0.16,0.05,0.06,gold)); }
+    // shield
+    parts.push(E3D.box(-0.74,0.55,0.08, 0.05,0.34,0.26, shieldC));
+    parts.push(E3D.box(-0.80,0.55,0.08, 0.025,0.16,0.12, gold));
+    const m=E3D.merge(...parts);
+    meshCache[key]=m; return m;
+  }
+
+  // ---- one distinct low-poly boss mesh per realm ----
+  function buildBoss(realm){
+    const key='b_'+realm;
+    if(meshCache[key]) return meshCache[key];
+    let m;
+    if(realm==='math'){
+      m=E3D.merge(
+        E3D.octa(0,0.7,0,0.6,0.8,'#5a44c8'),
+        E3D.octa(0,0.7,0,0.32,0.45,'#8f6fe0'),
+        E3D.box(0,0.7,0,0.9,0.06,0.06,'#ffd166'),
+        E3D.box(0,0.7,0,0.06,0.9,0.06,'#ffd166'),
+        E3D.octa(-0.9,0.4,0,0.18,0.24,'#8f6fe0'),
+        E3D.octa(0.9,0.4,0,0.18,0.24,'#8f6fe0'),
+        E3D.octa(0,1.7,0,0.16,0.22,'#ffd166')
+      );
+    } else if(realm==='science'){
+      m=E3D.merge(
+        E3D.blob(0,0.5,0,0.75,5,7,'#1cae78',0.14),
+        E3D.box(-0.3,0.95,0.55,0.1,0.1,0.06,'#f0fff8'), E3D.box(-0.3,0.95,0.6,0.05,0.05,0.04,'#0a2c22'),
+        E3D.box(0.3,0.95,0.55,0.1,0.1,0.06,'#f0fff8'), E3D.box(0.3,0.95,0.6,0.05,0.05,0.04,'#0a2c22'),
+        E3D.box(-0.5,-0.3,0.2,0.12,0.4,0.12,'#0f6b4c'), E3D.box(0.5,-0.3,0.2,0.12,0.4,0.12,'#0f6b4c'),
+        E3D.box(-0.2,-0.3,0.3,0.12,0.4,0.12,'#0f6b4c'), E3D.box(0.2,-0.3,0.3,0.12,0.4,0.12,'#0f6b4c')
+      );
+    } else if(realm==='history'){
+      m=E3D.merge(
+        E3D.box(0,0.4,0,0.7,0.7,0.5,'#8a5a3c'),
+        E3D.box(0,1.0,0.1,0.5,0.35,0.4,'#a06a3a'),
+        E3D.box(0,0.5,0.4,0.55,0.5,0.06,'#c8a060'),      // shield/tablet
+        E3D.box(-0.25,1.2,0.35,0.08,0.08,0.05,'#ffd84d'), E3D.box(0.25,1.2,0.35,0.08,0.08,0.05,'#ffd84d'),
+        E3D.box(0.7,0.9,0,0.08,0.7,0.08,'#6a4a30'),      // spear
+        E3D.box(0.7,1.35,0,0.12,0.2,0.06,'#d0d8e4'),
+        E3D.box(-0.35,-0.4,0,0.2,0.4,0.24,'#6a4230'), E3D.box(0.35,-0.4,0,0.2,0.4,0.24,'#6a4230')
+      );
+    } else if(realm==='reading'){
+      m=E3D.merge(
+        E3D.box(0,0.5,0,0.75,0.6,0.4,'#2f5296'),
+        E3D.box(-0.35,0.5,0.42,0.32,0.5,0.05,'#f0ead8'), E3D.box(0.35,0.5,0.42,0.32,0.5,0.05,'#f0ead8'),
+        E3D.box(0,0.5,0.44,0.05,0.52,0.05,'#1f3a72'),
+        E3D.octa(0,0.9,0.5,0.14,0.16,'#f0f6ff'),
+        E3D.box(-0.5,1.0,0,0.16,0.5,0.1,'#3a63a0'), E3D.box(0.5,1.0,0,0.16,0.5,0.1,'#3a63a0'),
+        E3D.box(-0.4,-0.35,0,0.2,0.4,0.24,'#1f3a72'), E3D.box(0.4,-0.35,0,0.2,0.4,0.24,'#1f3a72')
+      );
+    } else if(realm==='writing'){
+      m=E3D.merge(
+        E3D.blob(0,0.6,0,0.62,5,7,'#7a3aa8',0.1),
+        E3D.octa(0,1.3,0,0.4,0.5,'#9a4ed0'),
+        E3D.box(-0.2,1.35,0.35,0.08,0.08,0.05,'#ffe9a8'), E3D.box(0.2,1.35,0.35,0.08,0.08,0.05,'#ffe9a8'),
+        E3D.box(0.5,1.4,0,0.06,0.7,0.06,'#f0e8ff'),       // quill
+        E3D.box(-0.5,0.5,0,0.14,0.45,0.14,'#5a2c8e'), E3D.box(0.5,0.5,0,0.14,0.45,0.14,'#5a2c8e'),
+        E3D.box(-0.3,-0.3,0,0.18,0.4,0.2,'#4a2372'), E3D.box(0.3,-0.3,0,0.18,0.4,0.2,'#4a2372')
+      );
+    } else { // boss / dragon
+      const body='#c02a38', dark='#7e1622', horn='#f0e8d0', belly='#e8a040';
+      m=E3D.merge(
+        E3D.box(0,0.35,0,0.72,0.62,0.5,body),
+        E3D.box(0,0.2,0.42,0.5,0.35,0.12,belly),
+        E3D.box(0,1.05,0.18,0.48,0.4,0.42,body),
+        E3D.box(0,0.95,0.55,0.34,0.2,0.12,dark),
+        E3D.box(-0.22,1.42,0.15,0.09,0.3,0.09,horn), E3D.box(0.22,1.42,0.15,0.09,0.3,0.09,horn),
+        E3D.box(-0.28,1.08,0.5,0.08,0.08,0.06,'#ffd84d'), E3D.box(0.28,1.08,0.5,0.08,0.08,0.06,'#ffd84d'),
+        E3D.box(-1.0,0.8,-0.1,0.5,0.6,0.06,sh(body,-30)), E3D.box(1.0,0.8,-0.1,0.5,0.6,0.06,sh(body,-30)),
+        E3D.box(-1.3,1.1,-0.15,0.28,0.7,0.05,dark), E3D.box(1.3,1.1,-0.15,0.28,0.7,0.05,dark),
+        E3D.box(-0.4,-0.45,0.05,0.24,0.42,0.28,dark), E3D.box(0.4,-0.45,0.05,0.24,0.42,0.28,dark),
+        E3D.box(0,0.3,-0.75,0.16,0.16,0.5,dark), E3D.box(0,0.3,-1.15,0.22,0.22,0.15,body)
+      );
+    }
+    meshCache[key]=m; return m;
+  }
+
+  // ---- 2D overlay helpers (HUD, pixel text) reuse a tiny font ----
+  const GLYPH={'0':['111','101','101','101','111'],'1':['010','110','010','010','111'],'2':['111','001','111','100','111'],'3':['111','001','111','001','111'],'4':['101','101','111','001','001'],'5':['111','100','111','001','111'],'6':['111','100','111','101','111'],'7':['111','001','010','010','010'],'8':['111','101','111','101','111'],'9':['111','101','111','001','111'],'/':['001','001','010','100','100'],'-':['000','000','111','000','000'],'!':['010','010','010','000','010'],' ':['000','000','000','000','000']};
+  function pxText(x,str,px,py,col,sc){ sc=sc||1; let cx=px; for(const ch of String(str)){ const g=GLYPH[ch]||GLYPH[' ']; x.fillStyle=col; for(let r=0;r<5;r++)for(let c=0;c<3;c++) if(g[r][c]==='1') x.fillRect(cx+c*sc,py+r*sc,sc,sc); cx+=4*sc; } return cx; }
+  function textW(str,sc){ return String(str).length*4*(sc||1); }
+  function window9(x,wx,wy,ww,wh){ x.fillStyle='#0c1a52'; x.fillRect(wx,wy,ww,wh); x.fillStyle='#1c3a9e'; x.fillRect(wx+1,wy+1,ww-2,Math.floor(wh/2)); x.fillStyle='#fff'; x.fillRect(wx+1,wy,ww-2,1); x.fillRect(wx+1,wy+wh-1,ww-2,1); x.fillRect(wx,wy+1,1,wh-2); x.fillRect(wx+ww-1,wy+1,1,wh-2); }
+  function gauge(x,gx,gy,gw,frac,c1,c2){ x.fillStyle='#0a0a1a'; x.fillRect(gx,gy,gw,5); x.fillStyle='#000'; x.fillRect(gx,gy,gw,1); const f=Math.max(0,Math.min(1,frac)); const w=Math.round((gw-2)*f); if(w>0){ x.fillStyle=c1; x.fillRect(gx+1,gy+1,w,3); x.fillStyle=c2; x.fillRect(gx+1,gy+1,w,1);} }
+
+  function hit(target,dmg,colour){
+    if(!live) return;
+    const t=live.anim[target==='boss'?'boss':'hero']; if(t){ t.flash=8; t.lunge=10; }
+    live.shake=9; live.whiteout=3;
+    const sx=target==='boss'? 168 : 88, sy=70;
+    if(dmg!=null) FX.push({kind:'dmg',v:Math.round(dmg),x:sx,y:sy-6,life:52,col:target==='boss'?'#ffd166':'#ff5a6e'});
+    for(let i=0;i<24;i++){ const a=Math.random()*Math.PI*2,sp=0.5+Math.random()*2.2; FX.push({kind:'spark',x:sx,y:sy,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-0.7,life:14+Math.floor(Math.random()*16),col:Math.random()<0.5?(colour||'#ffe9a8'):'#fff'}); }
+  }
+  function banner(target,text,cls){ if(!live) return; const sx=target==='boss'?168:88; const col=cls==='super'?'#7dff9a':(cls==='resist'?'#9ab0cf':'#fff'); FX.push({kind:'banner',text:String(text).toUpperCase(),x:sx,y:40,life:64,col}); }
+  function isActive(){ return !!live; }
+
+  function mount(el, opts){
+    unmount();
+    if(!el||!el.getContext) return;
+    const ctx=el.getContext('2d'); if(!ctx) return;
+    ctx.imageSmoothingEnabled=false;
+    const realm=REALM[opts.bossKey]||REALM[opts.scene]||REALM.math;
+    live={ ctx, realm, scene:opts.scene, getState:opts.getState,
+      hero:buildHero(opts.hero||{}), boss:buildBoss(opts.bossKey||opts.scene),
+      t:0, shake:0, whiteout:0, anim:{hero:{flash:0,lunge:0},boss:{flash:0,lunge:0}} };
+    FX=[]; loop();
+  }
+  function unmount(){ if(rafId){ cancelAnimationFrame(rafId); rafId=null; } live=null; FX=[]; }
+
+  function loop(){
+    if(!live) return;
+    const L=live, ctx=L.ctx;
+    // adaptive pacing: on slower devices, render the heavy 3D every other
+    // tick (~30fps). The idle animation is gentle enough that this is
+    // imperceptible, and it keeps input responsive on phones/tablets.
+    const now = (typeof performance!=='undefined'&&performance.now)?performance.now():Date.now();
+    if(L._lastFrame!=null){
+      const dt = now - L._lastFrame;
+      L._avg = L._avg==null ? dt : L._avg*0.9 + dt*0.1;
+    }
+    if(L._avg>26){ // ~sub-38fps: halve the render rate
+      L._skip = !L._skip;
+      if(L._skip){ L._lastFrame=now; rafId=requestAnimationFrame(loop); return; }
+    }
+    L._lastFrame=now;
+    L.t++;
+    const st=(L.getState&&L.getState())||{php:1,pmax:1,bhp:1,bmax:1};
+    // camera with a slow cinematic drift
+    const camX=Math.sin(L.t*0.006)*0.5;
+    R.setCamera([camX,1.3,6.0],[0,0.5,-0.3],44);
+    R.setLight(L.realm.light);
+    R.setFog({color:L.realm.fog,near:9,far:24,amount:0.68});
+    R.clear(L.realm.skyT,L.realm.skyB);
+    R.drawGround(-1.05,L.realm.gA,L.realm.gB,15,12);
+    // idle bob + attack lunge baked into model transforms
+    const hb=Math.sin(L.t/22)*0.04, bb=Math.sin(L.t/17+1)*0.05;
+    const hl=L.anim.hero.lunge>0?L.anim.hero.lunge*0.05:0, bl=L.anim.boss.lunge>0?L.anim.boss.lunge*0.05:0;
+    if(L.anim.hero.lunge>0)L.anim.hero.lunge--; if(L.anim.boss.lunge>0)L.anim.boss.lunge--;
+    const heroM=E3D.matMul(E3D.matTrans(-2.0+hl,hb,0.2),E3D.matRotY(0.5));
+    const bossM=E3D.matMul(E3D.matTrans(2.0-bl,0.15+bb,-0.5),E3D.matRotY(-0.55+Math.sin(L.t*0.01)*0.15));
+    R.drawMesh(L.hero,heroM);
+    R.drawMesh(L.boss,bossM);
+    // composite 3D to the visible canvas
+    R.blitTo(ctx);
+
+    // hit flash overlays (simple full-sprite tint via rectangles at their screen pos)
+    if(L.anim.hero.flash>0){ ctx.fillStyle='rgba(255,255,255,'+(L.anim.hero.flash/16)+')'; ctx.fillRect(60,40,60,80); L.anim.hero.flash--; }
+    if(L.anim.boss.flash>0){ ctx.fillStyle='rgba(255,255,255,'+(L.anim.boss.flash/16)+')'; ctx.fillRect(140,36,64,84); L.anim.boss.flash--; }
+
+    // FX (sparks / damage numbers / banner) in 2D on top
+    for(let i=FX.length-1;i>=0;i--){ const p=FX[i]; p.life--;
+      if(p.kind==='spark'){ p.x+=p.vx; p.y+=p.vy; p.vy+=0.09; ctx.fillStyle=p.col; ctx.fillRect(Math.round(p.x),Math.round(p.y),2,2); }
+      else if(p.kind==='dmg'){ const age=52-p.life; const ry=age<12?-age*1.5:-18-(age-12)*0.22; const sc=age<6?3:2; const s=String(p.v); const wpx=textW(s,sc); const dx=Math.round(p.x-wpx/2),dy=Math.round(p.y+ry); pxText(ctx,s,dx+1,dy+1,'#1a0a12',sc); pxText(ctx,s,dx,dy,p.col,sc); }
+      else if(p.kind==='banner'){ const age=64-p.life; const ry=-Math.min(16,age*0.9); const wpx=textW(p.text,1); const bx=Math.round(p.x-wpx/2),by=Math.round(p.y+ry); if(p.life>8||p.life%2===0){ pxText(ctx,p.text,bx+1,by+1,'#0a0a14',1); pxText(ctx,p.text,bx,by,p.col,1);} }
+      if(p.life<=0) FX.splice(i,1);
+    }
+    if(L.whiteout>0){ ctx.fillStyle='rgba(255,255,255,'+(L.whiteout*0.16)+')'; ctx.fillRect(0,0,W,H); L.whiteout--; }
+
+    // HUD
+    const pf=st.pmax?st.php/st.pmax:0, bf=st.bmax?st.bhp/st.bmax:0;
+    window9(ctx,4,H-30,104,26);
+    pxText(ctx,String(Math.max(0,Math.round(st.php)))+'/'+Math.round(st.pmax),10,H-25,'#fff',2);
+    gauge(ctx,10,H-13,92,pf,pf<0.3?'#e04a4a':'#3ad07a',pf<0.3?'#ff8a8a':'#a8f0c8');
+    window9(ctx,W-108,H-30,104,26);
+    pxText(ctx,String(Math.max(0,Math.round(st.bhp)))+'/'+Math.round(st.bmax),W-102,H-25,'#fff',2);
+    gauge(ctx,W-102,H-13,92,bf,'#d03a5a','#ff8fa8');
+
+    rafId=requestAnimationFrame(loop);
+  }
+
+  return { mount, unmount, hit, banner, isActive, W, H };
+})();
+
+/* ===== end 3D block ===== */
+
 const PXE = (function(){
   const W = 256, H = 152, GROUND_Y = 118;
   const BAYER = [0,8,2,10, 12,4,14,6, 3,11,1,9, 15,7,13,5];
@@ -6197,24 +6748,73 @@ const PXE = (function(){
      each shade, this lightens pixels whose upper-left neighbour is empty
      (catching the light) and darkens those whose lower-right neighbour is
      empty (falling into shadow) — applied to every sprite uniformly. */
+  /* FF-Advance-quality form shading. Rather than a single edge lift/drop,
+     this grades shade by how deep each pixel sits inside the silhouette
+     (a cheap distance transform) AND which way its nearest empty neighbour
+     faces. Light comes from the upper-left, so:
+       - upper-left-facing rim pixels get a bright highlight band
+       - the interior lightens gently toward the core (rounded volume)
+       - lower-right-facing rim pixels fall into progressively deep shadow
+     A final specular fleck is added to the brightest upper-left rim. The
+     result reads as hand-painted 3-4 shade sprite work instead of flat fills. */
   function shadePass(s, lift, drop){
     if(!s.x) return;
     const w = s.c.width, h = s.c.height;
     const img = s.x.getImageData(0,0,w,h), d = img.data;
-    const A = i => d[i*4+3] > 0;
+    const A = (xx,yy) => xx>=0 && yy>=0 && xx<w && yy<h && d[(yy*w+xx)*4+3] > 0;
     const src = new Uint8ClampedArray(d);
+    const S = (xx,yy) => xx>=0 && yy>=0 && xx<w && yy<h && src[(yy*w+xx)*4+3] > 0;
+
+    // 1) chamfer distance transform: how far each solid pixel is from empty
+    const dist = new Float32Array(w*h);
+    for(let y=0;y<h;y++) for(let i=0;i<w;i++){
+      if(!S(i,y)){ dist[y*w+i] = 0; continue; }
+      let best = 99;
+      best = Math.min(best, S(i-1,y)?0:1, S(i,y-1)?0:1);
+      dist[y*w+i] = best; // seed: 0 if edge, else large
+    }
+    // forward + backward passes to accumulate true chamfer distance
+    for(let y=0;y<h;y++) for(let i=0;i<w;i++){
+      if(!S(i,y)) continue;
+      let m = dist[y*w+i] || 99;
+      if(i>0) m = Math.min(m, (dist[y*w+i-1]||0)+1);
+      if(y>0) m = Math.min(m, (dist[(y-1)*w+i]||0)+1);
+      dist[y*w+i] = S(i,y) ? Math.min(m, 99) : 0;
+    }
+    for(let y=h-1;y>=0;y--) for(let i=w-1;i>=0;i--){
+      if(!S(i,y)) continue;
+      let m = dist[y*w+i];
+      if(i<w-1) m = Math.min(m, (dist[y*w+i+1]||0)+1);
+      if(y<h-1) m = Math.min(m, (dist[(y+1)*w+i]||0)+1);
+      dist[y*w+i] = m;
+    }
+
     for(let y=0;y<h;y++) for(let i=0;i<w;i++){
       const k = y*w+i;
-      if(!A(k)) continue;
-      const upEmpty   = (y===0)   || !(src[((y-1)*w+i)*4+3] > 0);
-      const leftEmpty = (i===0)   || !(src[(y*w+i-1)*4+3] > 0);
-      const dnEmpty   = (y===h-1) || !(src[((y+1)*w+i)*4+3] > 0);
-      const rtEmpty   = (i===w-1) || !(src[(y*w+i+1)*4+3] > 0);
+      if(!A(i,y)) continue;
+      const upEmpty   = !S(i,y-1), leftEmpty = !S(i-1,y);
+      const dnEmpty   = !S(i,y+1), rtEmpty   = !S(i+1,y);
+      const d0 = dist[k];
       let adj = 0;
-      if(upEmpty || leftEmpty) adj += lift;
-      if(dnEmpty || rtEmpty)   adj -= drop;
-      if(!adj) continue;
-      for(let ch=0; ch<3; ch++) d[k*4+ch] = Math.max(0, Math.min(255, d[k*4+ch] + adj));
+      // bright rim on the light-facing (upper-left) edge
+      if((upEmpty || leftEmpty) && !(dnEmpty||rtEmpty)) adj += lift * 1.35;
+      // deep shadow on the shadow-facing (lower-right) edge, deeper at corners
+      if(dnEmpty || rtEmpty) adj -= drop * ((dnEmpty && rtEmpty) ? 1.5 : 1.1);
+      // gentle interior lightening toward the core = rounded volume
+      if(!upEmpty && !leftEmpty && !dnEmpty && !rtEmpty){
+        adj += Math.min(lift*0.7, d0 * (lift*0.22));
+      }
+      if(adj){
+        for(let ch=0; ch<3; ch++) d[k*4+ch] = Math.max(0, Math.min(255, d[k*4+ch] + adj));
+      }
+    }
+    // 2) specular flecks: brightest pixel of each upper-left rim run
+    for(let y=1;y<h;y++) for(let i=1;i<w;i++){
+      const k=y*w+i;
+      if(!A(i,y)) continue;
+      if(!S(i-1,y) && !S(i,y-1) && S(i+1,y) && S(i,y+1)){ // convex upper-left corner
+        for(let ch=0; ch<3; ch++) d[k*4+ch] = Math.max(0, Math.min(255, d[k*4+ch] + lift*0.9));
+      }
     }
     s.x.putImageData(img, 0, 0);
   }
@@ -6336,21 +6936,46 @@ const PXE = (function(){
     sky(bg.x, s.ramp, GROUND_Y);
     // celestial body with a dithered halo
     const ox = 196, oy = 30;
-    for(let rr=18; rr>10; rr--) dither(bg.x, ox-rr, oy-rr, rr*2, rr*2, 'rgba(0,0,0,0)', s.orbGlow, 0.18);
+    for(let rr=22; rr>10; rr--) dither(bg.x, ox-rr, oy-rr, rr*2, rr*2, 'rgba(0,0,0,0)', s.orbGlow, 0.15);
+    // volumetric god-rays fanning down from the celestial body
+    bg.x.save();
+    bg.x.globalAlpha = 0.06;
+    for(let a=-3;a<=3;a++){
+      bg.x.fillStyle = s.orb;
+      bg.x.beginPath();
+      bg.x.moveTo(ox, oy);
+      bg.x.lineTo(ox + a*16 - 8, GROUND_Y);
+      bg.x.lineTo(ox + a*16 + 8, GROUND_Y);
+      bg.x.closePath(); bg.x.fill();
+    }
+    bg.x.restore();
     ellipse(bg.x, ox, oy, 9, 9, s.orbGlow);
     ellipse(bg.x, ox, oy, 7, 7, s.orb);
     const st = rnd(5);
-    for(let i=0;i<34;i++){ bg.x.fillStyle = i%4 ? '#ffffff' : s.accent; bg.x.fillRect(Math.floor(st()*W), Math.floor(st()*70), 1, 1); }
+    for(let i=0;i<40;i++){ bg.x.fillStyle = i%4 ? '#ffffff' : s.accent; bg.x.fillRect(Math.floor(st()*W), Math.floor(st()*66), 1, 1); }
+    // soft horizon glow band just above the ground line (atmospheric warmth)
+    for(let y=GROUND_Y-16;y<GROUND_Y;y++){
+      dither(bg.x, 0, y, W, 1, 'rgba(0,0,0,0)', s.orbGlow, 0.10*(1-(GROUND_Y-y)/16));
+    }
 
-    const mk = cfg => {
+    const mk = (cfg, fog) => {
       const one = surf(W, H); if(!one.x) return null;
       ridge(one.x, cfg);
+      // aerial perspective: fade distant ridges toward the sky colour so far
+      // layers recede — the single biggest cue for background depth.
+      if(fog>0){
+        one.x.globalCompositeOperation = 'source-atop';
+        for(let y=0;y<GROUND_Y;y++){
+          dither(one.x, 0, y, W, 1, 'rgba(0,0,0,0)', s.ramp[1], fog);
+        }
+        one.x.globalCompositeOperation = 'source-over';
+      }
       const two = surf(W*2, H);
       two.x.drawImage(one.c, 0, 0);
       two.x.save(); two.x.translate(W*2, 0); two.x.scale(-1, 1); two.x.drawImage(one.c, 0, 0); two.x.restore();
       return two;
     };
-    const far = mk(s.far), near = mk(s.near);
+    const far = mk(s.far, 0.4), near = mk(s.near, 0.12);
 
     const fg = surf(W, H);
     dither(fg.x, 0, GROUND_Y, W, H-GROUND_Y, s.ground[0], s.ground[1], 0.5);
@@ -6656,6 +7281,25 @@ const PXE = (function(){
     if(L.scene.near){ x.drawImage(L.scene.near.c, Math.round(f2), 0); x.drawImage(L.scene.near.c, Math.round(f2)+W*2, 0); }
     x.drawImage(L.scene.fg.c, 0, 0);
 
+    // drifting ambient motes: slow rising sparks of light tinted to the realm,
+    // giving the scene a living, atmospheric shimmer (FF-Advance backgrounds
+    // are never fully static). Deterministic sine paths, no per-mote state.
+    x.save();
+    for(let m=0;m<10;m++){
+      const seedX = (m*73) % W;
+      const life = (L.t*0.5 + m*40) % 200;
+      const my = H - 8 - life * 0.7;
+      const mx = seedX + Math.round(Math.sin((L.t*0.03) + m)*8);
+      const tw = (Math.sin(L.t*0.12 + m*1.7) + 1) / 2;
+      if(my > 12){
+        x.globalAlpha = 0.10 + tw*0.45 * (my/H);
+        x.fillStyle = m%3 ? L.scene.accent : '#ffffff';
+        x.fillRect(mx, Math.round(my), 1, 1);
+        if(tw > 0.7){ x.globalAlpha *= 0.5; x.fillRect(mx-1, Math.round(my), 1, 1); x.fillRect(mx+1, Math.round(my), 1, 1); }
+      }
+    }
+    x.restore();
+
     // sprites — gentle idle bob, offset by lunge when attacking
     const hb = Math.round(Math.sin(L.t/22)*1.5), bb = Math.round(Math.sin(L.t/17 + 1)*2);
     const hl = L.anim.hero.lunge > 0 ? Math.round(L.anim.hero.lunge*1.6) : 0;
@@ -6714,6 +7358,20 @@ const PXE = (function(){
       x.fillRect(0,0,W,H);
       L.whiteout--;
     }
+
+    // cinematic vignette (cached radial overlay) for framed-camera depth
+    if(!cache.__vignette){
+      const v = surf(W, H);
+      if(v.x){
+        const g = v.x.createRadialGradient(W/2, H/2-8, 40, W/2, H/2, W*0.62);
+        g.addColorStop(0, 'rgba(0,0,0,0)');
+        g.addColorStop(0.7, 'rgba(0,0,0,0)');
+        g.addColorStop(1, 'rgba(0,0,0,0.38)');
+        v.x.fillStyle = g; v.x.fillRect(0,0,W,H);
+      }
+      cache.__vignette = v.c;
+    }
+    x.drawImage(cache.__vignette, 0, 0);
 
     // status windows
     const pf = st.pmax ? st.php/st.pmax : 0, bf = st.bmax ? st.bhp/st.bmax : 0;
@@ -6871,8 +7529,9 @@ function spawnParticleBurst(defender){
    Routes through the pixel engine when it's active, otherwise falls back to
    a DOM element pinned over the defender icon. */
 function showEffectiveness(defenderId, ml){
-  if(PXE.isActive()){
-    PXE.banner(/boss/i.test(defenderId) ? 'boss' : 'hero', ml.text, ml.cls);
+  const eng = PXE3D.isActive() ? PXE3D : (PXE.isActive() ? PXE : null);
+  if(eng){
+    eng.banner(/boss/i.test(defenderId) ? 'boss' : 'hero', ml.text, ml.cls);
     return;
   }
   const el = document.getElementById(defenderId);
@@ -6889,8 +7548,9 @@ function animateAttack(attackerId, defenderId, lungeClass, dmg, beamColor){
   // flash, lunge, screen shake, sparks and the floating damage number are all
   // drawn inside the low-res buffer. The DOM path below stays as a fallback
   // for any environment where a 2D canvas context isn't available.
-  if(PXE.isActive()){
-    PXE.hit(/boss/i.test(defenderId) ? 'boss' : 'player', dmg, beamColor);
+  const eng = PXE3D.isActive() ? PXE3D : (PXE.isActive() ? PXE : null);
+  if(eng){
+    eng.hit(/boss/i.test(defenderId) ? 'boss' : 'player', dmg, beamColor);
     return;
   }
   const attacker = document.getElementById(attackerId);
@@ -6960,7 +7620,7 @@ function attachBattleEvents(){
   updateBattleTimerDisplay();
   (function mountPixelScene(){
     const p = getActiveProfile();
-    PXE.mount(document.getElementById('pxBattle'), {
+    PXE3D.mount(document.getElementById('pxBattle'), {
       scene: s.subject, bossKey: s.subject,
       hero: {color: p.avatarColor, weapon: p.weapon, gear: p.equippedGear},
       getState: ()=>({php: state.battle.playerHP, pmax: PLAYER_MAX_HP,
@@ -7412,7 +8072,7 @@ function attachFinalBossEvents(){
   const bs = state.finalBoss;
   (function mountPixelScene(){
     const p = getActiveProfile();
-    PXE.mount(document.getElementById('pxFinalBoss'), {
+    PXE3D.mount(document.getElementById('pxFinalBoss'), {
       scene: 'boss', bossKey: 'boss',
       hero: {color: p.avatarColor, weapon: p.weapon, gear: p.equippedGear},
       getState: ()=>({php: state.finalBoss.playerHP, pmax: PLAYER_MAX_HP,
@@ -8692,7 +9352,7 @@ function renderCoopBattle(){
 function attachCoopBattleEvents(){
   const c = state.coop;
   (function mountScene(){
-    PXE.mount(document.getElementById('pxCoop'), {
+    PXE3D.mount(document.getElementById('pxCoop'), {
       scene: c.subject, bossKey: c.subject,
       hero: (()=>{ const pr = state.profiles[c.party[c.turnIdx].id]; return {color:pr.avatarColor, weapon:pr.weapon, gear:pr.equippedGear}; })(),
       getState: ()=>({php: state.coop.partyHP, pmax: state.coop.partyMaxHP, bhp: state.coop.bossHP, bmax: state.coop.bossMaxHp})
@@ -8724,7 +9384,7 @@ function attachCoopBattleEvents(){
         Sound.correct(); Sound.hitVillain();
         animateAttack('coopHero','coopBoss','attack-right', dmg);
         const ml = matchupLabel(c.subject, c.attackSubject);
-        if(ml && PXE.isActive()) PXE.banner('boss', ml.text, ml.cls);
+        if(ml){ const e=PXE3D.isActive()?PXE3D:(PXE.isActive()?PXE:null); if(e) e.banner('boss', ml.text, ml.cls); }
         msg = `✅ ${member.name} hit for ${dmg}! ${q.n}`;
       } else {
         const dmgTaken = Math.round(c.partyMaxHP / 8);
@@ -8748,12 +9408,12 @@ function attachCoopBattleEvents(){
     });
   });
   document.getElementById('coopQuitBtn').addEventListener('click', ()=>{
-    PXE.unmount(); stopMusicRotation(); state.coop=null; state.coopDraft=null; state.screen='dashboard'; render();
+    PXE.unmount(); PXE3D.unmount(); stopMusicRotation(); state.coop=null; state.coopDraft=null; state.screen='dashboard'; render();
   });
 }
 async function endCoop(){
   const c = state.coop;
-  PXE.unmount();
+  PXE.unmount(); PXE3D.unmount();
   stopMusicRotation();
   const won = c.result==='victory';
   // Everyone who raided earns XP on a win, scaled by their own contribution
@@ -9036,7 +9696,7 @@ function renderChallengesCard(){
     return `<div class="gear-item-row">
       <div class="gear-item-info">
         <strong>${tied?'🤝 Tied':(won?'🏆 You won!':'😔 You lost')}</strong> vs ${opponent?opponent.name:'opponent'} in ${subjMeta.icon} ${subjMeta.name} (${myScore}-${theirScore})
-        ${tied?'':(won?` <span style="color:var(--teal);font-weight:700;">+${CHALLENGE_STAKE} XP</span>`:` <span style="color:var(--coral);font-weight:700;">−${CHALLENGE_STAKE} XP</span>`)}
+        ${tied?'':(won?` <span style="color:var(--teal);font-weight:700;">+${CHALLENGE_STAKE} Spendable XP</span>`:` <span style="color:var(--coral);font-weight:700;">−${CHALLENGE_STAKE} Spendable XP</span>`)}
       </div>
       <div class="gear-item-actions"><button class="btn ghost" data-dismiss-chal="${c.id}" style="min-width:auto;">Dismiss</button></div>
     </div>`;
@@ -9077,7 +9737,7 @@ function renderChallengePick(){
   <div class="card setup-card" style="margin-bottom:16px;">
     <span class="back-link" id="challengePickBackLink2">← Choose a different sibling</span>
     <h2 class="display" style="margin-top:0;">⚔️ Challenge ${opponent.name}</h2>
-    <p>Step 2 of 2: Pick a subject. You'll both play ${CHALLENGE_QUESTION_COUNT} questions — winner gets ${CHALLENGE_STAKE} bonus XP, loser loses ${CHALLENGE_STAKE} XP. They'll need to accept before it counts.</p>
+    <p>Step 2 of 2: Pick a subject. You'll both play ${CHALLENGE_QUESTION_COUNT} questions — winner gets ${CHALLENGE_STAKE} Spendable XP, loser loses ${CHALLENGE_STAKE}. Your rank XP is never at risk. They'll need to accept before it counts.</p>
   </div>
   <div class="card">${subjectRows}</div>`;
 }
@@ -9226,9 +9886,3 @@ init();
 </script>
 </body>
 </html>
-
-
-
-
-
-
